@@ -27,6 +27,17 @@ a.get = function (this, addr, mask, size)
   clock:negedge()
   this.valid:set(0)
 end
+a.put_full = function (this, addr, mask, size, data)
+  clock:negedge()
+  this.valid:set(1)
+  this.bits.opcode:set(tl.TLMessageA.PutFullData)
+  this.bits.address:set(addr)
+  this.bits.mask:set(mask)
+  this.bits.size:set(size)
+  this.bits.data:set(data, true)
+  clock:negedge()
+  this.valid:set(0)
+end
 
 local d = ([[
   | ready
@@ -50,15 +61,25 @@ verilua "appendTasks" {
     dut.reset = 1
     dut.clock:posedge(10)
     dut.reset = 0
+    d.ready:set(1)
 
     dut.clock:posedge(10)
 
+    local data = 0xdeadbeef
+    a:put_full(mBaseAddr, 0xf, 2, data)
+    dut.clock:posedge(10)
     a:get(mBaseAddr, 0xf, 2)
+    dut.clock:posedge_until(10, function ()
+        return d:fire() and d.bits.opcode:is(tl.TLMessageD.AccessAckData)
+    end)
+    d.bits.data:expect(data)
 
     dut.clock:posedge(1000)
     dut.cycles:dump()
 
     sim.finish()
+    print()
+    print("Verilua passed!")
   end,
 
   monitor_task = function()
