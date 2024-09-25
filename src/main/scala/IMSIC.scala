@@ -9,22 +9,22 @@ import org.chipsalliance.cde.config.Parameters
 import _root_.circt.stage.ChiselStage
 
 case class IntFileParams(
-  membersNum      : Int    = 2          , // h_max: members number with in a group
+  membersNum      : Int  = 2           ,// h_max: members number with in a group
 
-  mBaseAddr       : BigInt = 0x61000000, // A: base addr for machine-level interrupt files
-  mStrideBits     : Int    = 12        , // C: stride between each machine-level interrupt files
+  mBaseAddr       : Long = 0x61000000L ,// A: base addr for machine-level interrupt files
+  mStrideBits     : Int  = 12          ,// C: stride between each machine-level interrupt files
 
-  sgBaseAddr      : BigInt = 0x82900000, // B: base addr for supervisor- and guest-level interrupt files
-  sgStrideBits    : Int    = 15        , // D: stride between each supervisor- and guest-level interrupt files
-  geilen          : Int    = 4         , // number of guest interrupt files
+  sgBaseAddr      : Long = 0x82900000L ,// B: base addr for supervisor- and guest-level interrupt files
+  sgStrideBits    : Int  = 15          ,// D: stride between each supervisor- and guest-level interrupt files
+  geilen          : Int  = 4           ,// number of guest interrupt files
 
-  groupsNum       : Int    = 1         , // g_max: groups number
-  groupStrideBits : Int    = 16        , // E: stride between each interrupt file groups
+  groupsNum       : Int  = 1           ,// g_max: groups number
+  groupStrideBits : Int  = 16          ,// E: stride between each interrupt file groups
 ) {
-  def pow2(n: Int) = BigInt(1) << n
+  def pow2(n: Int) = 1L << n
 
   val k: Int = log2Ceil(membersNum)
-  println("IntFileParams.k: " + k)
+  println(f"IntFileParams.k: ${k}%d")
   require((mBaseAddr & (pow2(k + mStrideBits) -1)) == 0) // A should be aligned to a 2^(k+C)
   require(mStrideBits >= 12)
 
@@ -33,7 +33,7 @@ case class IntFileParams(
   require(groupStrideBits >= k + math.max(mStrideBits, sgStrideBits))
 
   val j: Int = log2Ceil(groupsNum + 1)
-  println("IntFileParams.j: " + j)
+  println(f"IntFileParams.j: ${j}%d")
   require((sgBaseAddr & (pow2(k + sgStrideBits) - 1)) == 0) // B should be aligned to a 2^(k+D)
 
   require((
@@ -45,14 +45,14 @@ case class IntFileParams(
     & sgBaseAddr
   ) == 0)
 
-  println("IntFileParams.membersNum:      " + membersNum     )
-  println("IntFileParams.mBaseAddr:       " + mBaseAddr      ) // TODO: hex
-  println("IntFileParams.mStrideBits:     " + mStrideBits    )
-  println("IntFileParams.sgBaseAddr:      " + sgBaseAddr     ) // TODO: hex
-  println("IntFileParams.sgStrideBits:    " + sgStrideBits   )
-  println("IntFileParams.geilen:          " + geilen         )
-  println("IntFileParams.groupsNum:       " + groupsNum      )
-  println("IntFileParams.groupStrideBits: " + groupStrideBits)
+  println(f"IntFileParams.membersNum:        ${membersNum     }%d")
+  println(f"IntFileParams.mBaseAddr:       0x${mBaseAddr      }%x")
+  println(f"IntFileParams.mStrideBits:       ${mStrideBits    }%d")
+  println(f"IntFileParams.sgBaseAddr:      0x${sgBaseAddr     }%x")
+  println(f"IntFileParams.sgStrideBits:      ${sgStrideBits   }%d")
+  println(f"IntFileParams.geilen:            ${geilen         }%d")
+  println(f"IntFileParams.groupsNum:         ${groupsNum      }%d")
+  println(f"IntFileParams.groupStrideBits:   ${groupStrideBits}%d")
 }
 
 class TLIMSIC(
