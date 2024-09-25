@@ -7,6 +7,7 @@ import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.regmapper._
 import freechips.rocketchip.prci.{ClockSinkDomain}
+import freechips.rocketchip.util._
 
 // _root_ disambiguates from package chisel3.util.circt if user imports chisel3.util._
 import _root_.circt.stage.ChiselStage
@@ -109,21 +110,36 @@ class TLIMSIC(
   }
 }
 
+class IMSIC()(implicit p: Parameters) extends LazyModule {
+  val tl = TLClientNode(
+    Seq(TLMasterPortParameters.v1(
+      Seq(TLMasterParameters.v1("tl", IdRange(0, 16)))
+  )))
+
+  val imsic = LazyModule(new TLIMSIC(IntFileParams())(Parameters.empty))
+  imsic.mIntFileNode := tl
+
+  lazy val module = new LazyModuleImp(this) {
+    tl.makeIOs()
+  }
+}
+
 /**
  * Generate Verilog sources
  */
 object TLIMSIC extends App {
-  val clockDomain = LazyModule(new ClockSinkDomain(take = None)(Parameters.empty))
-  val imsic = clockDomain {LazyModule(
-      new TLIMSIC(
-        IntFileParams(),
-      )(Parameters.empty)
-    )}
-  // val tlxbar = TLXbar()(Parameters.empty)
-  // imsic.mIntFileNode := tlxbar
+  val top = DisableMonitors(p => LazyModule(
+    new IMSIC()(Parameters.empty))
+  )(Parameters.empty)
 
   ChiselStage.emitSystemVerilogFile(
-    imsic.module,
-    firtoolOpts = Array("-disable-all-randomization", "-strip-debug-info")
+    top.module,
+    // more opts see: $CHISEL_FIRTOOL_PATH/firtool -h
+    firtoolOpts = Array(
+      "-disable-all-randomization",
+      "-strip-debug-info",
+      // without this, firtool will exit with error: Unhandled annotation
+      "--disable-annotation-unknown",
+    )
   )
 }
