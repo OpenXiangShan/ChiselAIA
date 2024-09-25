@@ -110,7 +110,7 @@ class TLIMSIC(
   }
 }
 
-class IMSIC()(implicit p: Parameters) extends LazyModule {
+class TLIMSICWrapper()(implicit p: Parameters) extends LazyModule {
   val tl = TLClientNode(
     Seq(TLMasterPortParameters.v1(
       Seq(TLMasterParameters.v1("tl", IdRange(0, 16)))
@@ -129,10 +129,10 @@ class IMSIC()(implicit p: Parameters) extends LazyModule {
  */
 object TLIMSIC extends App {
   val top = DisableMonitors(p => LazyModule(
-    new IMSIC()(Parameters.empty))
+    new TLIMSICWrapper()(Parameters.empty))
   )(Parameters.empty)
 
-  ChiselStage.emitSystemVerilogFile(
+  ChiselStage.emitSystemVerilog(
     top.module,
     // more opts see: $CHISEL_FIRTOOL_PATH/firtool -h
     firtoolOpts = Array(
@@ -140,7 +140,8 @@ object TLIMSIC extends App {
       "-strip-debug-info",
       // without this, firtool will exit with error: Unhandled annotation
       "--disable-annotation-unknown",
-      "--lowering-options=explicitBitcast,disallowLocalVariables,disallowPortDeclSharing,locationInfoStyle=none"
+      "--lowering-options=explicitBitcast,disallowLocalVariables,disallowPortDeclSharing,locationInfoStyle=none",
+      "--split-verilog", "-o=gen",
     )
   )
 }

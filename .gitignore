@@ -1,7 +1,7 @@
 .direnv
 .metals
-*.sv
 out
 .bloop
 .xmake
 build
+gen
