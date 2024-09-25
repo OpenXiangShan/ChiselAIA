@@ -8,6 +8,10 @@ import org.chipsalliance.cde.config.Parameters
 // _root_ disambiguates from package chisel3.util.circt if user imports chisel3.util._
 import _root_.circt.stage.ChiselStage
 
+object pow2 {
+  def apply(n: Int): Long = 1L << n
+}
+
 case class IntFileParams(
   membersNum      : Int  = 2           ,// h_max: members number with in a group
 
@@ -21,11 +25,11 @@ case class IntFileParams(
   groupsNum       : Int  = 1           ,// g_max: groups number
   groupStrideBits : Int  = 16          ,// E: stride between each interrupt file groups
 ) {
-  def pow2(n: Int) = 1L << n
+  val intFileWidth: Int  = 12           // interrupt file width: 12-bit width => 4KB size
 
   val k: Int = log2Ceil(membersNum)
   println(f"IntFileParams.k: ${k}%d")
-  require((mBaseAddr & (pow2(k + mStrideBits) -1)) == 0) // A should be aligned to a 2^(k+C)
+  require((mBaseAddr & (pow2(k + mStrideBits) -1)) == 0, "mBaseAddr should be aligned to a 2^(k+C)")
   require(mStrideBits >= 12)
 
   require(sgStrideBits >= log2Ceil(geilen+1)+12)
@@ -34,7 +38,7 @@ case class IntFileParams(
 
   val j: Int = log2Ceil(groupsNum + 1)
   println(f"IntFileParams.j: ${j}%d")
-  require((sgBaseAddr & (pow2(k + sgStrideBits) - 1)) == 0) // B should be aligned to a 2^(k+D)
+  require((sgBaseAddr & (pow2(k + sgStrideBits) - 1)) == 0, "sgBaseAddr should be aligned to a 2^(k+D)")
 
   require((
     ((pow2(j)-1) * pow2(groupStrideBits))
@@ -57,7 +61,34 @@ case class IntFileParams(
 
 class TLIMSIC(
   intFileParams: IntFileParams,
+  groupID: Int = 0, // g
+  memberID: Int = 1, // h
+  beatBytes: Int = 8,
 )(implicit p: Parameters) extends LazyModule {
+  require(groupID < intFileParams.groupsNum,    f"groupID ${groupID} should less than groupsNum ${intFileParams.groupsNum}")
+  require(memberID < intFileParams.membersNum,  f"memberID ${memberID} should less than membersNum ${intFileParams.membersNum}")
+  println(f"groupID:  0x${groupID }%x")
+  println(f"memberID: 0x${memberID}%x")
+
+  val device: SimpleDevice = new SimpleDevice(
+    "interrupt-controller",
+    Seq(f"riscv,imsic.${groupID}%d.${memberID}%d")
+  ) {}
+
+
+  // addr for the machine-level interrupt file: g*2^E + A + h*2^C
+  val mIntFileAddr = AddressSet(
+    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.mBaseAddr + memberID * pow2(intFileParams.mStrideBits),
+    pow2(intFileParams.intFileWidth) - 1
+  )
+  // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D
+  val sgIntFileAddr = AddressSet(
+    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.sgBaseAddr + memberID * pow2(intFileParams.sgStrideBits),
+    pow2(intFileParams.intFileWidth) * (1+intFileParams.geilen) - 1
+  )
+  println(f"mIntFileAddr:  [0x${mIntFileAddr.base }%x, 0x${mIntFileAddr.max }%x]")
+  println(f"sgIntFileAddr: [0x${sgIntFileAddr.base}%x, 0x${sgIntFileAddr.max}%x]")
+
   // TODO
   // val intFileNode: TLRegisterNode = TLRegisterNode(
   // )
