@@ -9,21 +9,21 @@ import org.chipsalliance.cde.config.Parameters
 import _root_.circt.stage.ChiselStage
 
 case class IntFileParams(
-  hartsNum: Int       = 2, // h_max: harts number with in a group
+  membersNum      : Int    = 2          , // h_max: members number with in a group
 
-  mBaseAddr: BigInt   = 0x61000000, // A: base addr for machine-level interrupt files
-  mStrideBits: Int    = 12, // C: stride between each machine-level interrupt files
+  mBaseAddr       : BigInt = 0x61000000, // A: base addr for machine-level interrupt files
+  mStrideBits     : Int    = 12        , // C: stride between each machine-level interrupt files
 
-  sgBaseAddr: BigInt  = 0x82900000, // B: base addr for supervisor- and guest-level interrupt files
-  sgStrideBits: Int   = 15, // D: stride between each supervisor- and guest-level interrupt files
-  geilen: Int         = 4, // number of guest interrupt files
+  sgBaseAddr      : BigInt = 0x82900000, // B: base addr for supervisor- and guest-level interrupt files
+  sgStrideBits    : Int    = 15        , // D: stride between each supervisor- and guest-level interrupt files
+  geilen          : Int    = 4         , // number of guest interrupt files
 
-  groupsNum: Int      = 1, // g_max: groups number
-  groupStrideBits: Int= 16, // E: stride between each interrupt file groups
+  groupsNum       : Int    = 1         , // g_max: groups number
+  groupStrideBits : Int    = 16        , // E: stride between each interrupt file groups
 ) {
   def pow2(n: Int) = BigInt(1) << n
 
-  val k: Int = log2Ceil(hartsNum)
+  val k: Int = log2Ceil(membersNum)
   println("IntFileParams.k: " + k)
   require((mBaseAddr & (pow2(k + mStrideBits) -1)) == 0) // A should be aligned to a 2^(k+C)
   require(mStrideBits >= 12)
@@ -45,13 +45,13 @@ case class IntFileParams(
     & sgBaseAddr
   ) == 0)
 
-  println("IntFileParams.hartsNum:        " + hartsNum)
-  println("IntFileParams.mBaseAddr:       " + mBaseAddr) // TODO: hex
-  println("IntFileParams.mStrideBits:     " + mStrideBits)
-  println("IntFileParams.sgBaseAddr:      " + sgBaseAddr) // TODO: hex
-  println("IntFileParams.sgStrideBits:    " + sgStrideBits)
-  println("IntFileParams.geilen:          " + geilen)
-  println("IntFileParams.groupsNum:       " + groupsNum)
+  println("IntFileParams.membersNum:      " + membersNum     )
+  println("IntFileParams.mBaseAddr:       " + mBaseAddr      ) // TODO: hex
+  println("IntFileParams.mStrideBits:     " + mStrideBits    )
+  println("IntFileParams.sgBaseAddr:      " + sgBaseAddr     ) // TODO: hex
+  println("IntFileParams.sgStrideBits:    " + sgStrideBits   )
+  println("IntFileParams.geilen:          " + geilen         )
+  println("IntFileParams.groupsNum:       " + groupsNum      )
   println("IntFileParams.groupStrideBits: " + groupStrideBits)
 }
 
