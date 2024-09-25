@@ -1,12 +1,17 @@
 let
   name = "OpenAIA.scala";
   pkgs = import <nixpkgs> {};
+  # verilua currently is private repo, so I use a local directory
+  verilua = pkgs.callPackage ~/Codes/verilua {};
 in pkgs.mkShell {
   inherit name;
 
   buildInputs = [
     pkgs.mill
     pkgs.verilator
+    pkgs.gtkwave
+
+    verilua
   ];
 
   shellHook = let
@@ -18,5 +23,6 @@ in pkgs.mkShell {
     }){}).circt;
   in ''
     export CHISEL_FIRTOOL_PATH=${circt_1_62_0}/bin/
+    source ${verilua}/envs
   '';
 }

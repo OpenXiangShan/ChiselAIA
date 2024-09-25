@@ -3,3 +3,5 @@
 *.sv
 out
 .bloop
+.xmake
+build
