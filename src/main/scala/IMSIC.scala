@@ -140,6 +140,7 @@ object TLIMSIC extends App {
       "-strip-debug-info",
       // without this, firtool will exit with error: Unhandled annotation
       "--disable-annotation-unknown",
+      "--lowering-options=explicitBitcast,disallowLocalVariables,disallowPortDeclSharing,locationInfoStyle=none"
     )
   )
 }
