@@ -4,6 +4,9 @@ import chisel3._
 import chisel3.util._
 import freechips.rocketchip.diplomacy._
 import org.chipsalliance.cde.config.Parameters
+import freechips.rocketchip.tilelink._
+import freechips.rocketchip.regmapper._
+import freechips.rocketchip.prci.{ClockSinkDomain}
 
 // _root_ disambiguates from package chisel3.util.circt if user imports chisel3.util._
 import _root_.circt.stage.ChiselStage
@@ -89,11 +92,20 @@ class TLIMSIC(
   println(f"mIntFileAddr:  [0x${mIntFileAddr.base }%x, 0x${mIntFileAddr.max }%x]")
   println(f"sgIntFileAddr: [0x${sgIntFileAddr.base}%x, 0x${sgIntFileAddr.max}%x]")
 
-  // TODO
-  // val intFileNode: TLRegisterNode = TLRegisterNode(
-  // )
+  val mIntFileNode: TLRegisterNode = TLRegisterNode(
+    address = Seq(mIntFileAddr),
+    device = device,
+    beatBytes = beatBytes,
+    undefZero = true,
+    concurrency = 1
+  )
 
   lazy val module = new LazyModuleImp(this) {
+    val m = RegInit(0.U(32.W))
+    val mRF = RegField(32, m)
+    mIntFileNode.regmap(
+      0 -> Seq(mRF)
+    )
   }
 }
 
@@ -101,12 +113,17 @@ class TLIMSIC(
  * Generate Verilog sources
  */
 object TLIMSIC extends App {
-  ChiselStage.emitSystemVerilogFile(
-    (LazyModule(
+  val clockDomain = LazyModule(new ClockSinkDomain(take = None)(Parameters.empty))
+  val imsic = clockDomain {LazyModule(
       new TLIMSIC(
         IntFileParams(),
       )(Parameters.empty)
-    )).module,
+    )}
+  // val tlxbar = TLXbar()(Parameters.empty)
+  // imsic.mIntFileNode := tlxbar
+
+  ChiselStage.emitSystemVerilogFile(
+    imsic.module,
     firtoolOpts = Array("-disable-all-randomization", "-strip-debug-info")
   )
 }
