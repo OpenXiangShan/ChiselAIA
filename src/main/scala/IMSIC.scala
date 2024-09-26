@@ -83,6 +83,44 @@ object ParallelPriorityMux {
   def apply[T <: Data](sel: Seq[Bool], in: Seq[T]): T = apply(sel zip in)
 }
 
+// TODO: implement all signals in the belowing two bundles
+// Based on Xiangshan NewCSR
+class CSRToIMSICBundle extends Bundle {
+  private final val AddrWidth = 12
+
+  // val addr = ValidIO(new Bundle {
+  //   val addr = UInt(AddrWidth.W)
+  //   val virt = Bool()
+  //   val priv = UInt(2.W) // U, S, M
+  // })
+
+  // val VGEINWidth = 6
+  // val vgein = UInt(VGEINWidth.W)
+
+  // val wdata = ValidIO(new Bundle {
+  //   val op = UInt(2.W)
+  //   val data = UInt(64.W)
+  // })
+
+  // val mClaim = Bool()
+  // val sClaim = Bool()
+  // val vsClaim = Bool()
+}
+class IMSICToCSRBundle extends Bundle {
+  // private val NumVSIRFiles = 63
+  // val rdata = ValidIO(new Bundle {
+  //   val data = UInt(64.W)
+  //   val illegal = Bool()
+  // })
+  // val meip    = Bool()
+  // val seip    = Bool()
+  // val vseip   = UInt(NumVSIRFiles.W)
+  // 11 bits: 32*64 = 2048 interrupt sources
+  val mtopei  = UInt(11.W)
+  // val stopei  = UInt(11.W)
+  // val vstopei = UInt(11.W)
+}
+
 
 class TLIMSIC(
   intFileParams: IntFileParams,
@@ -123,10 +161,12 @@ class TLIMSIC(
   )
 
   lazy val module = new LazyModuleImp(this) {
+    val toCSR = IO(Output(new IMSICToCSRBundle))
+    val fromCSR = IO(Input(new CSRToIMSICBundle))
+    dontTouch(toCSR)
+    dontTouch(fromCSR)
+
     // TODO: Add a struct for these CSRs in a interrupt file
-    /// direct CSRs
-    val mtopei = RegInit(0.U(11.W)) // 32*64 = 2048 interrupt sources
-    dontTouch(mtopei)
     /// indirect CSRs
     val meidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
     val meithreshold = RegInit(0.U(64.W))
@@ -157,7 +197,7 @@ class TLIMSIC(
     //  otherwise, the returned topei will become the max index, that is 2048-1
     val meipBools = Cat(meip.reverse).asBools :+ true.B
     val meieBools = Cat(meie.reverse).asBools :+ true.B
-    mtopei := ParallelPriorityMux(
+    toCSR.mtopei := ParallelPriorityMux(
       (meipBools zip meieBools).zipWithIndex.map {
         case ((p: Bool, e: Bool), i: Int)
           => (p & e, i.U)

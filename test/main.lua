@@ -71,9 +71,9 @@ verilua "appendTasks" {
     dut.clock:posedge(10)
     a:get(mBaseAddr, 0xf, 2)
     dut.clock:posedge_until(10, function ()
-      return dut.u_TLIMSICWrapper.imsic.mtopei:get() ~= 0
+      return dut.u_TLIMSICWrapper.imsic.toCSR_mtopei:get() ~= 0
     end)
-    dut.u_TLIMSICWrapper.imsic.mtopei:expect(bit.band(data, 0x7ff))
+    dut.u_TLIMSICWrapper.imsic.toCSR_mtopei:expect(bit.band(data, 0x7ff))
 
     dut.clock:posedge(1000)
     dut.cycles:dump()
