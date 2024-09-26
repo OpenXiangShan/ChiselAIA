@@ -93,7 +93,7 @@ class IMSICToCSRBundle extends Bundle {
   //   val data = UInt(64.W)
   //   val illegal = Bool()
   // })
-  // val meip    = Bool()
+  val meip    = Bool()
   // val seip    = Bool()
   // val vseip   = UInt(NumVSIRFiles.W)
   // 11 bits: 32*64 = 2048 interrupt sources
@@ -151,7 +151,9 @@ class TLIMSIC(
     /// indirect CSRs
     val meidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
     val meithreshold = RegInit(0.U(64.W))
+    // TODO: meip(0)(0) is read-only false.B
     val meip = RegInit(VecInit.fill(32){0.U(64.W)})
+    // TODO: meie(0)(0) is read-only false.B
     val meie = RegInit(VecInit.fill(32){Fill(64, 1.U)}) // TODO: default: disable all
     dontTouch(meip)
     // TODO: End of the CSRs for a interrupt file
@@ -172,17 +174,19 @@ class TLIMSIC(
       mseteipnum := 0.U
     }
 
-    // The ":+ true.B" trick explain:
-    //  Append true.B to handle the cornor case, where all bits in eip and eie are disabled.
-    //  If do not append true.B, then we need to check whether the eip & eie are empty,
-    //  otherwise, the returned topei will become the max index, that is 2048-1
-    val meipBools = Cat(meip.reverse).asBools :+ true.B
-    val meieBools = Cat(meie.reverse).asBools :+ true.B
-    toCSR.mtopei := ParallelPriorityMux(
-      (meipBools zip meieBools).zipWithIndex.map {
-        case ((p: Bool, e: Bool), i: Int)
-          => (p & e, i.U)
-      }
+    val meipBools = Cat(meip.reverse).asBools
+    val meieBools = Cat(meie.reverse).asBools
+    toCSR.meip := ParallelOR(
+      (meipBools zip meipBools).map {
+        case (p: Bool, e: Bool) => p & e
+    })
+    toCSR.mtopei := Mux(
+      toCSR.meip,
+      ParallelPriorityMux(
+        (meipBools zip meieBools).zipWithIndex.map {
+          case ((p: Bool, e: Bool), i: Int) => (p & e, i.U)
+      }),
+      0.U
     )
   }
 }

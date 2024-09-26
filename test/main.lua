@@ -66,6 +66,8 @@ verilua "appendTasks" {
 
     dut.clock:posedge(10)
 
+    dut.u_TLIMSICWrapper.imsic.toCSR_meip:expect(0)
+
     local data = 0x1103
     a:put_full(mBaseAddr, 0xf, 2, data)
     dut.clock:posedge(10)
@@ -74,6 +76,7 @@ verilua "appendTasks" {
       return dut.u_TLIMSICWrapper.imsic.toCSR_mtopei:get() ~= 0
     end)
     dut.u_TLIMSICWrapper.imsic.toCSR_mtopei:expect(bit.band(data, 0x7ff))
+    dut.u_TLIMSICWrapper.imsic.toCSR_meip:expect(1)
 
     dut.clock:posedge(1000)
     dut.cycles:dump()
