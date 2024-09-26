@@ -176,7 +176,7 @@ class TLIMSIC(
     val meipBools = Cat(meip.reverse).asBools
     val meieBools = Cat(meie.reverse).asBools
     toCSR.meip := ParallelOR(
-      (meipBools zip meipBools).map {
+      (meipBools zip meieBools).map {
         case (p: Bool, e: Bool) => p & e
     })
     toCSR.mtopei := Mux(
