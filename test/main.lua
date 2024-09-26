@@ -63,9 +63,9 @@ local inject_interrupt = function(intnum)
   clock:posedge()
 end
 local claim = function()
-    dut.clock:posedge(1)
+    dut.clock:negedge(1)
     dut.fromCSR_mClaim:set(1)
-    dut.clock:posedge(1)
+    dut.clock:negedge(1)
     dut.fromCSR_mClaim:set(0)
 end
 
