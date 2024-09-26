@@ -83,7 +83,7 @@ class CSRToIMSICBundle extends Bundle {
   //   val data = UInt(64.W)
   // })
 
-  // val mClaim = Bool()
+  val mClaim = Bool()
   // val sClaim = Bool()
   // val vsClaim = Bool()
 }
@@ -149,7 +149,7 @@ class TLIMSIC(
     // TODO: Add a struct for these CSRs in a interrupt file
     /// indirect CSRs
     val meidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
-    val meithreshold = RegInit(0.U(64.W))
+    val meithreshold = RegInit(0.U(64.W)) // TODO: implement its logic
     // TODO: meip(0)(0) is read-only false.B
     val meip = RegInit(VecInit.fill(32){0.U(64.W)})
     // TODO: meie(0)(0) is read-only false.B
@@ -187,6 +187,11 @@ class TLIMSIC(
       }),
       0.U
     )
+
+    when(fromCSR.mClaim && toCSR.meip) {
+      // clear the pending bit indexed by xtopei in xeip
+      meip(toCSR.mtopei(10,6)) := meip(toCSR.mtopei(10,6)) & ~(1.U << toCSR.mtopei(5,0))
+    }
   }
 }
 

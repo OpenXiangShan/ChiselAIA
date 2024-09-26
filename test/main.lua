@@ -55,6 +55,20 @@ local d = ([[
 }
 
 local mBaseAddr = 0x61001000
+local inject_interrupt = function(intnum)
+  a:put_full(mBaseAddr, 0xf, 2, intnum)
+  dut.clock:posedge_until(10, function ()
+    return dut.u_TLIMSICWrapper.imsic.mseteipnum:get() == intnum
+  end)
+  clock:posedge()
+end
+local claim = function()
+    dut.clock:posedge(1)
+    dut.fromCSR_mClaim:set(1)
+    dut.clock:posedge(1)
+    dut.fromCSR_mClaim:set(0)
+end
+
 verilua "appendTasks" {
   main_task = function ()
     sim.dump_wave()
@@ -66,18 +80,38 @@ verilua "appendTasks" {
 
     dut.clock:posedge(10)
 
-    dut.u_TLIMSICWrapper.imsic.toCSR_meip:expect(0)
+    dut.toCSR_meip:expect(0)
 
-    local data = 0x1103
-    a:put_full(mBaseAddr, 0xf, 2, data)
-    dut.clock:posedge(10)
-    a:get(mBaseAddr, 0xf, 2)
-    dut.clock:posedge_until(10, function ()
-      return dut.u_TLIMSICWrapper.imsic.toCSR_mtopei:get() ~= 0
-    end)
-    dut.u_TLIMSICWrapper.imsic.toCSR_mtopei:expect(bit.band(data, 0x7ff))
-    dut.u_TLIMSICWrapper.imsic.toCSR_meip:expect(1)
+    do
+      dut.cycles:dump()
+      print("mseteipnum began")
+      inject_interrupt(1996)
+      dut.toCSR_mtopei:expect(1996)
+      dut.toCSR_meip:expect(1)
+      print("mseteipnum passed")
+    end
 
+    do
+      dut.cycles:dump()
+      print("mclaim began")
+      claim()
+      dut.toCSR_mtopei:expect(0)
+      print("mclaim passed")
+    end
+
+    do
+      dut.cycles:dump()
+      print("2_mseteipnum_1_mclaim began")
+      inject_interrupt(12)
+      dut.toCSR_mtopei:expect(12)
+      inject_interrupt(8)
+      dut.toCSR_mtopei:expect(8)
+      claim()
+      dut.toCSR_mtopei:expect(12)
+      print("2_mseteipnum_1_mclaim passed")
+    end
+
+    dut.cycles:dump()
     dut.clock:posedge(1000)
     dut.cycles:dump()
 
