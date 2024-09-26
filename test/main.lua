@@ -66,14 +66,14 @@ verilua "appendTasks" {
 
     dut.clock:posedge(10)
 
-    local data = 0x6
+    local data = 0x1103
     a:put_full(mBaseAddr, 0xf, 2, data)
     dut.clock:posedge(10)
     a:get(mBaseAddr, 0xf, 2)
     dut.clock:posedge_until(10, function ()
-      return dut.u_TLIMSICWrapper.imsic.meip_0:get() ~= 0
+      return dut.u_TLIMSICWrapper.imsic.mtopei:get() ~= 0
     end)
-    dut.u_TLIMSICWrapper.imsic.meip_0:expect(bit.lshift(1, data))
+    dut.u_TLIMSICWrapper.imsic.mtopei:expect(bit.band(data, 0x7ff))
 
     dut.clock:posedge(1000)
     dut.cycles:dump()

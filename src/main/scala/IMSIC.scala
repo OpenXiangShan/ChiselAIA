@@ -63,6 +63,27 @@ case class IntFileParams(
   println(f"IntFileParams.groupStrideBits:   ${groupStrideBits}%d")
 }
 
+// From Xiangshan utility
+object ParallelOperation {
+  def apply[T](xs: Seq[T], func: (T, T) => T): T = {
+    require(xs.nonEmpty)
+    xs match {
+      case Seq(a) => a
+      case Seq(a, b) => func(a, b)
+      case _ =>
+        apply(Seq(apply(xs take xs.size/2, func), apply(xs drop xs.size/2, func)), func)
+    }
+  }
+}
+object ParallelPriorityMux {
+  def apply[T <: Data](in: Seq[(Bool, T)]): T = {
+    ParallelOperation(in, (a: (Bool, T), b: (Bool, T)) => (a._1 || b._1, Mux(a._1, a._2, b._2)))._2
+  }
+  def apply[T <: Data](sel: Bits, in: Seq[T]): T = apply((0 until in.size).map(sel(_)), in)
+  def apply[T <: Data](sel: Seq[Bool], in: Seq[T]): T = apply(sel zip in)
+}
+
+
 class TLIMSIC(
   intFileParams: IntFileParams,
   groupID: Int = 0, // g
@@ -103,6 +124,10 @@ class TLIMSIC(
 
   lazy val module = new LazyModuleImp(this) {
     // TODO: Add a struct for these CSRs in a interrupt file
+    /// direct CSRs
+    val mtopei = RegInit(0.U(11.W)) // 32*64 = 2048 interrupt sources
+    dontTouch(mtopei)
+    /// indirect CSRs
     val meidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
     val meithreshold = RegInit(0.U(64.W))
     val meip = RegInit(VecInit.fill(32){0.U(64.W)})
@@ -125,6 +150,19 @@ class TLIMSIC(
       meip(mseteipnum(10,6)) := meip(mseteipnum(10,6)) | (1.U << (mseteipnum(5,0)))
       mseteipnum := 0.U
     }
+
+    // The ":+ true.B" trick explain:
+    //  Append true.B to handle the cornor case, where all bits in eip and eie are disabled.
+    //  If do not append true.B, then we need to check whether the eip & eie are empty,
+    //  otherwise, the returned topei will become the max index, that is 2048-1
+    val meipBools = Cat(meip.reverse).asBools :+ true.B
+    val meieBools = Cat(meie.reverse).asBools :+ true.B
+    mtopei := ParallelPriorityMux(
+      (meipBools zip meieBools).zipWithIndex.map {
+        case ((p: Bool, e: Bool), i: Int)
+          => (p & e, i.U)
+      }
+    )
   }
 }
 
