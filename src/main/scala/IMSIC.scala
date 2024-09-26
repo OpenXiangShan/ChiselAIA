@@ -102,11 +102,29 @@ class TLIMSIC(
   )
 
   lazy val module = new LazyModuleImp(this) {
-    val m = RegInit(0.U(32.W))
-    val mRF = RegField(32, m)
+    // TODO: Add a struct for these CSRs in a interrupt file
+    val meidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
+    val meithreshold = RegInit(0.U(64.W))
+    val meip = RegInit(VecInit.fill(32){0.U(64.W)})
+    val meie = RegInit(VecInit.fill(32){Fill(64, 1.U)}) // TODO: default: disable all
+    dontTouch(meip)
+    // TODO: End of the CSRs for a interrupt file
+
+    // TODO: directly access TL protocol, instead of use the regmap
+    val mseteipnum = RegInit(0.U(32.W))
+    val mseteipnumRF = RegField(32, mseteipnum)
     mIntFileNode.regmap(
-      0 -> Seq(mRF)
+      0 -> Seq(mseteipnumRF)
     )
+    // TODO: parameterization
+    when (
+      mseteipnum =/= 0.U
+      & meie(mseteipnum(10,6))(mseteipnum(5,0))
+    ) {
+      // set meip bit
+      meip(mseteipnum(10,6)) := meip(mseteipnum(10,6)) | (1.U << (mseteipnum(5,0)))
+      mseteipnum := 0.U
+    }
   }
 }
 

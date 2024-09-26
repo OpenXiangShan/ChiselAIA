@@ -1,4 +1,5 @@
 local tl = require("TileLink")
+local bit = require("bit")
 local clock = dut.clock:chdl()
 local a = ([[
   | ready
@@ -65,14 +66,14 @@ verilua "appendTasks" {
 
     dut.clock:posedge(10)
 
-    local data = 0xdeadbeef
+    local data = 0x6
     a:put_full(mBaseAddr, 0xf, 2, data)
     dut.clock:posedge(10)
     a:get(mBaseAddr, 0xf, 2)
     dut.clock:posedge_until(10, function ()
-        return d:fire() and d.bits.opcode:is(tl.TLMessageD.AccessAckData)
+      return dut.u_TLIMSICWrapper.imsic.meip_0:get() ~= 0
     end)
-    d.bits.data:expect(data)
+    dut.u_TLIMSICWrapper.imsic.meip_0:expect(bit.lshift(1, data))
 
     dut.clock:posedge(1000)
     dut.cycles:dump()
