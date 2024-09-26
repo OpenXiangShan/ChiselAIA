@@ -141,11 +141,10 @@ class TLIMSIC(
     concurrency = 1
   )
 
-  lazy val module = new LazyModuleImp(this) {
+  lazy val module = new Imp
+  class Imp extends LazyModuleImp(this) {
     val toCSR = IO(Output(new IMSICToCSRBundle))
     val fromCSR = IO(Input(new CSRToIMSICBundle))
-    dontTouch(toCSR)
-    dontTouch(fromCSR)
 
     // TODO: Add a struct for these CSRs in a interrupt file
     /// indirect CSRs
@@ -202,6 +201,13 @@ class TLIMSICWrapper()(implicit p: Parameters) extends LazyModule {
 
   lazy val module = new LazyModuleImp(this) {
     tl.makeIOs()
+    val toCSR = IO(Output(new IMSICToCSRBundle))
+    val fromCSR = IO(Input(new CSRToIMSICBundle))
+    toCSR   <> imsic.module.toCSR
+    fromCSR <> imsic.module.fromCSR
+
+    dontTouch(imsic.module.toCSR)
+    dontTouch(imsic.module.fromCSR)
   }
 }
 
