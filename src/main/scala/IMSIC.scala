@@ -8,6 +8,7 @@ import freechips.rocketchip.tilelink._
 import freechips.rocketchip.regmapper._
 import freechips.rocketchip.prci.{ClockSinkDomain}
 import freechips.rocketchip.util._
+import xs.utils._
 
 // _root_ disambiguates from package chisel3.util.circt if user imports chisel3.util._
 import _root_.circt.stage.ChiselStage
@@ -61,26 +62,6 @@ case class IntFileParams(
   println(f"IntFileParams.geilen:            ${geilen         }%d")
   println(f"IntFileParams.groupsNum:         ${groupsNum      }%d")
   println(f"IntFileParams.groupStrideBits:   ${groupStrideBits}%d")
-}
-
-// From Xiangshan utility
-object ParallelOperation {
-  def apply[T](xs: Seq[T], func: (T, T) => T): T = {
-    require(xs.nonEmpty)
-    xs match {
-      case Seq(a) => a
-      case Seq(a, b) => func(a, b)
-      case _ =>
-        apply(Seq(apply(xs take xs.size/2, func), apply(xs drop xs.size/2, func)), func)
-    }
-  }
-}
-object ParallelPriorityMux {
-  def apply[T <: Data](in: Seq[(Bool, T)]): T = {
-    ParallelOperation(in, (a: (Bool, T), b: (Bool, T)) => (a._1 || b._1, Mux(a._1, a._2, b._2)))._2
-  }
-  def apply[T <: Data](sel: Bits, in: Seq[T]): T = apply((0 until in.size).map(sel(_)), in)
-  def apply[T <: Data](sel: Seq[Bool], in: Seq[T]): T = apply(sel zip in)
 }
 
 // TODO: implement all signals in the belowing two bundles

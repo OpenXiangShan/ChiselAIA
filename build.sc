@@ -31,6 +31,12 @@ trait HasChisel extends SbtModule {
   override def scalacPluginIvyDeps = super.scalacPluginIvyDeps() ++ Agg(chiselPluginIvy.get)
 }
 
+object xsutils extends SbtModule with HasChisel {
+  override def ivyDeps = Agg(defaultVersions("chisel"))
+  override def millSourcePath = os.pwd / "xs-utils"
+  override def moduleDeps = super.moduleDeps ++ Seq(rocketchip)
+}
+
 object rocketchip
 extends millbuild.`rocket-chip`.common.RocketChipModule
 with HasChisel {
@@ -93,7 +99,8 @@ object OpenAIA extends SbtModule { m =>
     ivy"org.chipsalliance:::chisel-plugin:6.5.0",
   )
   override def moduleDeps = super.moduleDeps ++ Seq(
-    rocketchip
+    rocketchip,
+    xsutils,
   )
   def rocketModule = rocketchip
 }
