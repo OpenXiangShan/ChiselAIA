@@ -59,6 +59,7 @@ local csr_addr_eidelivery = 0x70
 local csr_addr_eithreshold = 0x72
 local csr_addr_eip0 = 0x80
 local csr_addr_eip2 = 0x82
+local csr_addr_eie0 = 0xC0
 local inject_interrupt = function(intnum)
   a:put_full(mBaseAddr, 0xf, 2, intnum)
   dut.clock:posedge_until(10, function ()
@@ -170,6 +171,19 @@ verilua "appendTasks" {
       dut.toCSR_mtopei:expect(2)
       print("write_csr:eip end")
     end
+
+    do
+      dut.cycles:dump()
+      print("write_csr:eie began")
+      local mtopei = dut.toCSR_mtopei:get()
+      local mask = bit.lshift(1, mtopei)
+      write_csr_op(csr_addr_eie0, mask, op_csrrc)
+      assert(dut.toCSR_mtopei:get() ~= mtopei)
+      write_csr_op(csr_addr_eie0, mask, op_csrrs)
+      dut.toCSR_mtopei:expect(mtopei)
+      print("write_csr:eie passed")
+    end
+
     dut.cycles:dump()
     dut.clock:posedge(1000)
     dut.cycles:dump()
