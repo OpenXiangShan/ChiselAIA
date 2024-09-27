@@ -189,7 +189,9 @@ class TLIMSIC(
         Map(
           RegMap(0x70, meidelivery),
           RegMap(0x72, meithreshold),
-        ),
+        ) ++ meip.zipWithIndex.map {
+          case (v: UInt, i: Int) => RegMap(0x80 + i*2, v)
+        }.toMap,
         /*raddr*/ fromCSR.addr.bits.addr,
         /*rdata*/ toCSR.rdata.bits.data,
         /*waddr*/ fromCSR.addr.bits.addr,

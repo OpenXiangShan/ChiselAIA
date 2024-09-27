@@ -57,6 +57,8 @@ local d = ([[
 local mBaseAddr = 0x61001000
 local csr_addr_eidelivery = 0x70
 local csr_addr_eithreshold = 0x72
+local csr_addr_eip0 = 0x80
+local csr_addr_eip2 = 0x82
 local inject_interrupt = function(intnum)
   a:put_full(mBaseAddr, 0xf, 2, intnum)
   dut.clock:posedge_until(10, function ()
@@ -161,6 +163,13 @@ verilua "appendTasks" {
       print("write_csr:meithreshold end")
     end
 
+    do
+      dut.cycles:dump()
+      print("write_csr:eip began")
+      write_csr(csr_addr_eip0, 0xc)
+      dut.toCSR_mtopei:expect(2)
+      print("write_csr:eip end")
+    end
     dut.cycles:dump()
     dut.clock:posedge(1000)
     dut.cycles:dump()
