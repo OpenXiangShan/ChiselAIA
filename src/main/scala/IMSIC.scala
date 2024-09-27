@@ -100,9 +100,9 @@ class IMSICToCSRBundle extends Bundle {
     // TODO:
     // val illegal = Bool()
   })
-  val meip    = Bool()
-  // val seip    = Bool()
-  // val vseip   = UInt(NumVSIRFiles.W)
+  val meipB    = Bool()
+  // val seipB    = Bool()
+  // val vseipB   = UInt(NumVSIRFiles.W)
   // 11 bits: 32*64 = 2048 interrupt sources
   val mtopei  = UInt(11.W)
   // val stopei  = UInt(11.W)
@@ -157,11 +157,11 @@ class TLIMSIC(
     /// indirect CSRs
     val meidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
     val meithreshold = RegInit(0.U(64.W))
-    // TODO: meip(0)(0) is read-only false.B
-    val meip = RegInit(VecInit.fill(32){0.U(64.W)})
-    // TODO: meie(0)(0) is read-only false.B
-    val meie = RegInit(VecInit.fill(32){Fill(64, 1.U)}) // TODO: default: disable all
-    dontTouch(meip)
+    // TODO: meips(0)(0) is read-only false.B
+    val meips = RegInit(VecInit.fill(32){0.U(64.W)})
+    // TODO: meies(0)(0) is read-only false.B
+    val meies = RegInit(VecInit.fill(32){Fill(64, 1.U)}) // TODO: default: disable all
+    dontTouch(meips)
 
     locally { // scope for xiselect CSR reg map
       val wdata = WireDefault(0.U(64.W))
@@ -189,8 +189,8 @@ class TLIMSIC(
         Map(
           RegMap(0x70, meidelivery),
           RegMap(0x72, meithreshold),
-        ) ++ meip.zipWithIndex.map {
-          case (v: UInt, i: Int) => RegMap(0x80 + i*2, v)
+        ) ++ meips.zipWithIndex.map { case (meip: UInt, i: Int) =>
+          RegMap(0x80+i*2, meip)
         }.toMap,
         /*raddr*/ fromCSR.addr.bits.addr,
         /*rdata*/ toCSR.rdata.bits.data,
@@ -212,10 +212,10 @@ class TLIMSIC(
     // TODO: parameterization
     when (
       mseteipnum =/= 0.U
-      & meie(mseteipnum(10,6))(mseteipnum(5,0))
+      & meies(mseteipnum(10,6))(mseteipnum(5,0))
     ) {
-      // set meip bit
-      meip(mseteipnum(10,6)) := meip(mseteipnum(10,6)) | (1.U << (mseteipnum(5,0)))
+      // set meips bit
+      meips(mseteipnum(10,6)) := meips(mseteipnum(10,6)) | (1.U << (mseteipnum(5,0)))
       mseteipnum := 0.U
     }
 
@@ -226,8 +226,8 @@ class TLIMSIC(
       //  otherwise, the returned topei will become the max index, that is 2048-1
       // TODO: require the support max interrupt sources number must be 2^N
       //              [0,                2^N-1] :+ 2^N
-      val meipBools = Cat(meip.reverse).asBools :+ true.B
-      val meieBools = Cat(meie.reverse).asBools :+ true.B
+      val meipBools = Cat(meips.reverse).asBools :+ true.B
+      val meieBools = Cat(meies.reverse).asBools :+ true.B
       def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
         val tmp_xtopei = Mux(xeidelivery(0), xtopei, 0.U)
         // {
@@ -246,11 +246,11 @@ class TLIMSIC(
         )
       )
     }
-    toCSR.meip := toCSR.mtopei =/= 0.U
+    toCSR.meipB := toCSR.mtopei =/= 0.U
 
     when(fromCSR.mClaim) {
       // clear the pending bit indexed by xtopei in xeip
-      meip(toCSR.mtopei(10,6)) := meip(toCSR.mtopei(10,6)) & ~(1.U << toCSR.mtopei(5,0))
+      meips(toCSR.mtopei(10,6)) := meips(toCSR.mtopei(10,6)) & ~(1.U << toCSR.mtopei(5,0))
     }
   }
 }

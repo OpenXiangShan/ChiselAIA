@@ -101,14 +101,14 @@ verilua "appendTasks" {
 
     dut.clock:posedge(10)
 
-    dut.toCSR_meip:expect(0)
+    dut.toCSR_meipB:expect(0)
 
     do
       dut.cycles:dump()
       print("mseteipnum began")
       inject_interrupt(1996)
       dut.toCSR_mtopei:expect(1996)
-      dut.toCSR_meip:expect(1)
+      dut.toCSR_meipB:expect(1)
       print("mseteipnum passed")
     end
 
@@ -146,7 +146,7 @@ verilua "appendTasks" {
       dut.cycles:dump()
       print("write_csr:meidelivery began")
       write_csr(csr_addr_eidelivery, 0)
-      dut.toCSR_meip:expect(0)
+      dut.toCSR_meipB:expect(0)
       write_csr(csr_addr_eidelivery, 1)
       print("write_csr:meidelivery passed")
     end
