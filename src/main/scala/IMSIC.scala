@@ -163,40 +163,42 @@ class TLIMSIC(
     val meie = RegInit(VecInit.fill(32){Fill(64, 1.U)}) // TODO: default: disable all
     dontTouch(meip)
 
-    val wdata = WireDefault(0.U(64.W))
-    val wmask = WireDefault(0.U(64.W))
-    when(fromCSR.wdata.valid) {
-      switch(fromCSR.wdata.bits.op) {
-        is(OpType.ILLEGAL) {
-          // TODO
-        }
-        is(OpType.CSRRW) {
-          wdata := fromCSR.wdata.bits.data
-          wmask := Fill(64, 1.U)
-        }
-        is(OpType.CSRRS) {
-          wdata := Fill(64, 1.U)
-          wmask := fromCSR.wdata.bits.data
-        }
-        is(OpType.CSRRC) {
-          wdata := 0.U
-          wmask := fromCSR.wdata.bits.data
+    locally { // scope for xiselect CSR reg map
+      val wdata = WireDefault(0.U(64.W))
+      val wmask = WireDefault(0.U(64.W))
+      when(fromCSR.wdata.valid) {
+        switch(fromCSR.wdata.bits.op) {
+          is(OpType.ILLEGAL) {
+            // TODO
+          }
+          is(OpType.CSRRW) {
+            wdata := fromCSR.wdata.bits.data
+            wmask := Fill(64, 1.U)
+          }
+          is(OpType.CSRRS) {
+            wdata := Fill(64, 1.U)
+            wmask := fromCSR.wdata.bits.data
+          }
+          is(OpType.CSRRC) {
+            wdata := 0.U
+            wmask := fromCSR.wdata.bits.data
+          }
         }
       }
-    }
-    RegMap.generate(
-      Map(
-        RegMap(0x70, meidelivery),
-        RegMap(0x72, meithreshold),
-      ),
-      /*raddr*/ fromCSR.addr.bits.addr,
-      /*rdata*/ toCSR.rdata.bits.data,
-      /*waddr*/ fromCSR.addr.bits.addr,
-      /*wen  */ fromCSR.wdata.valid,
-      /*wdata*/ wdata,
-      /*wmask*/ wmask,
-    )
-    toCSR.rdata.valid := RegNext(fromCSR.addr.valid)
+      RegMap.generate(
+        Map(
+          RegMap(0x70, meidelivery),
+          RegMap(0x72, meithreshold),
+        ),
+        /*raddr*/ fromCSR.addr.bits.addr,
+        /*rdata*/ toCSR.rdata.bits.data,
+        /*waddr*/ fromCSR.addr.bits.addr,
+        /*wen  */ fromCSR.wdata.valid,
+        /*wdata*/ wdata,
+        /*wmask*/ wmask,
+      )
+      toCSR.rdata.valid := RegNext(fromCSR.addr.valid)
+    } // end of scope for xiselect CSR reg map
     // TODO: End of the CSRs for a interrupt file
 
     // TODO: directly access TL protocol, instead of use the regmap
