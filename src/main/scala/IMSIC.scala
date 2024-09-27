@@ -156,7 +156,7 @@ class TLIMSIC(
     // TODO: Add a struct for these CSRs in a interrupt file
     /// indirect CSRs
     val meidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
-    val meithreshold = RegInit(0.U(64.W)) // TODO: implement its logic
+    val meithreshold = RegInit(0.U(64.W))
     // TODO: meip(0)(0) is read-only false.B
     val meip = RegInit(VecInit.fill(32){0.U(64.W)})
     // TODO: meie(0)(0) is read-only false.B
@@ -187,6 +187,7 @@ class TLIMSIC(
     RegMap.generate(
       Map(
         RegMap(0x70, meidelivery),
+        RegMap(0x72, meithreshold),
       ),
       /*raddr*/ fromCSR.addr.bits.addr,
       /*rdata*/ toCSR.rdata.bits.data,
@@ -214,23 +215,33 @@ class TLIMSIC(
       mseteipnum := 0.U
     }
 
-    // The ":+ true.B" trick explain:
-    //  Append true.B to handle the cornor case, where all bits in eip and eie are disabled.
-    //  If do not append true.B, then we need to check whether the eip & eie are empty,
-    //  otherwise, the returned topei will become the max index, that is 2048-1
-    // TODO: require the support max interrupt sources number must be 2^N
-    //              [0,                2^N-1] :+ 2^N
-    val meipBools = Cat(meip.reverse).asBools :+ true.B
-    val meieBools = Cat(meie.reverse).asBools :+ true.B
-    toCSR.mtopei := Mux(
-      meidelivery(0),
-      ParallelPriorityMux(
-        (meipBools zip meieBools).zipWithIndex.map {
-          case ((p: Bool, e: Bool), i: Int) => (p & e, i.U)
-        }
-      ),
-      0.U
-    )
+    locally { // scope for xtopei
+      // The ":+ true.B" trick explain:
+      //  Append true.B to handle the cornor case, where all bits in eip and eie are disabled.
+      //  If do not append true.B, then we need to check whether the eip & eie are empty,
+      //  otherwise, the returned topei will become the max index, that is 2048-1
+      // TODO: require the support max interrupt sources number must be 2^N
+      //              [0,                2^N-1] :+ 2^N
+      val meipBools = Cat(meip.reverse).asBools :+ true.B
+      val meieBools = Cat(meie.reverse).asBools :+ true.B
+      def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
+        val tmp_xtopei = Mux(xeidelivery(0), xtopei, 0.U)
+        // {
+        //   all interrupts are enabled, when meithreshold == 0;
+        //   interrupts, when i < meithreshold, are enabled;
+        // } <=> interrupts, when i <= (meithreshold -1), are enabled
+        Mux(tmp_xtopei <= (xeithreshold-1.U), tmp_xtopei, 0.U)
+      }
+      toCSR.mtopei := xtopei_filter(
+        meidelivery,
+        meithreshold,
+        ParallelPriorityMux(
+          (meipBools zip meieBools).zipWithIndex.map {
+            case ((p: Bool, e: Bool), i: Int) => (p & e, i.U)
+          }
+        )
+      )
+    }
     toCSR.meip := toCSR.mtopei =/= 0.U
 
     when(fromCSR.mClaim) {
