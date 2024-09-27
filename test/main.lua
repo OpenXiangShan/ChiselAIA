@@ -90,6 +90,13 @@ end
 local write_csr = function(miselect, data)
   write_csr_op(miselect, data, op_csrrw)
 end
+local read_csr = function(miselect)
+  dut.clock:negedge(1)
+  dut.fromCSR_addr_valid:set(1)
+  dut.fromCSR_addr_bits_addr:set(miselect)
+  dut.clock:negedge(1)
+  dut.fromCSR_addr_valid:set(0)
+end
 
 verilua "appendTasks" {
   main_task = function ()
@@ -182,6 +189,14 @@ verilua "appendTasks" {
       write_csr_op(csr_addr_eie0, mask, op_csrrs)
       dut.toCSR_mtopei:expect(mtopei)
       print("write_csr:eie passed")
+    end
+
+    do
+      dut.cycles:dump()
+      print("read_csr:eie began")
+      read_csr(csr_addr_eie0)
+      dut.toCSR_rdata_bits_data:expect(dut.u_TLIMSICWrapper.imsic.meies_0:get())
+      print("read_csr:eie passed")
     end
 
     dut.cycles:dump()
