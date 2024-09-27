@@ -55,6 +55,7 @@ local d = ([[
 }
 
 local mBaseAddr = 0x61001000
+local csr_addr_eidelivery = 0x70
 local inject_interrupt = function(intnum)
   a:put_full(mBaseAddr, 0xf, 2, intnum)
   dut.clock:posedge_until(10, function ()
@@ -67,6 +68,23 @@ local claim = function()
     dut.fromCSR_mClaim:set(1)
     dut.clock:negedge(1)
     dut.fromCSR_mClaim:set(0)
+end
+local op_csrrw = 1
+local op_csrrs = 2
+local op_csrrc = 3
+local write_csr_op = function(miselect, data, op)
+  dut.clock:negedge(1)
+  dut.fromCSR_addr_valid:set(1)
+  dut.fromCSR_addr_bits_addr:set(miselect)
+  dut.fromCSR_wdata_valid:set(1)
+  dut.fromCSR_wdata_bits_op:set(op)
+  dut.fromCSR_wdata_bits_data:chdl():set(data, true)
+  dut.clock:negedge(1)
+  dut.fromCSR_addr_valid:set(0)
+  dut.fromCSR_wdata_valid:set(0)
+end
+local write_csr = function(miselect, data)
+  write_csr_op(miselect, data, op_csrrw)
 end
 
 verilua "appendTasks" {
@@ -109,6 +127,25 @@ verilua "appendTasks" {
       claim()
       dut.toCSR_mtopei:expect(12)
       print("2_mseteipnum_1_mclaim passed")
+    end
+
+    do
+      dut.cycles:dump()
+      print("write_csr:op began")
+      write_csr_op(csr_addr_eidelivery, 0xc0, op_csrrs)
+      dut.u_TLIMSICWrapper.imsic.meidelivery:expect(0xc1)
+      write_csr_op(csr_addr_eidelivery, 0xc0, op_csrrc)
+      dut.u_TLIMSICWrapper.imsic.meidelivery:expect(0x1)
+      print("write_csr:op passed")
+    end
+
+    do
+      dut.cycles:dump()
+      print("write_csr:meidelivery began")
+      write_csr(csr_addr_eidelivery, 0)
+      dut.toCSR_meip:expect(0)
+      write_csr(csr_addr_eidelivery, 1)
+      print("write_csr:meidelivery passed")
     end
 
     dut.cycles:dump()

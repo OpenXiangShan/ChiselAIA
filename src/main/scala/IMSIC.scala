@@ -66,22 +66,28 @@ case class IntFileParams(
 
 // TODO: implement all signals in the belowing two bundles
 // Based on Xiangshan NewCSR
+object OpType extends ChiselEnum {
+  val ILLEGAL = Value(0.U)
+  val CSRRW   = Value(1.U)
+  val CSRRS   = Value(2.U)
+  val CSRRC   = Value(3.U)
+}
 class CSRToIMSICBundle extends Bundle {
   private final val AddrWidth = 12
 
-  // val addr = ValidIO(new Bundle {
-  //   val addr = UInt(AddrWidth.W)
-  //   val virt = Bool()
-  //   val priv = UInt(2.W) // U, S, M
-  // })
+  val addr = ValidIO(new Bundle {
+    val addr = UInt(AddrWidth.W)
+    // val virt = Bool()
+    // val priv = UInt(2.W) // U, S, M
+  })
 
   // val VGEINWidth = 6
   // val vgein = UInt(VGEINWidth.W)
 
-  // val wdata = ValidIO(new Bundle {
-  //   val op = UInt(2.W)
-  //   val data = UInt(64.W)
-  // })
+  val wdata = ValidIO(new Bundle {
+    val op = OpType()
+    val data = UInt(64.W)
+  })
 
   val mClaim = Bool()
   // val sClaim = Bool()
@@ -89,10 +95,11 @@ class CSRToIMSICBundle extends Bundle {
 }
 class IMSICToCSRBundle extends Bundle {
   // private val NumVSIRFiles = 63
-  // val rdata = ValidIO(new Bundle {
-  //   val data = UInt(64.W)
-  //   val illegal = Bool()
-  // })
+  val rdata = ValidIO(new Bundle {
+    val data = UInt(64.W)
+    // TODO:
+    // val illegal = Bool()
+  })
   val meip    = Bool()
   // val seip    = Bool()
   // val vseip   = UInt(NumVSIRFiles.W)
@@ -155,6 +162,40 @@ class TLIMSIC(
     // TODO: meie(0)(0) is read-only false.B
     val meie = RegInit(VecInit.fill(32){Fill(64, 1.U)}) // TODO: default: disable all
     dontTouch(meip)
+
+    val wdata = WireDefault(0.U(64.W))
+    val wmask = WireDefault(0.U(64.W))
+    when(fromCSR.wdata.valid) {
+      switch(fromCSR.wdata.bits.op) {
+        is(OpType.ILLEGAL) {
+          // TODO
+        }
+        is(OpType.CSRRW) {
+          wdata := fromCSR.wdata.bits.data
+          wmask := Fill(64, 1.U)
+        }
+        is(OpType.CSRRS) {
+          wdata := Fill(64, 1.U)
+          wmask := fromCSR.wdata.bits.data
+        }
+        is(OpType.CSRRC) {
+          wdata := 0.U
+          wmask := fromCSR.wdata.bits.data
+        }
+      }
+    }
+    RegMap.generate(
+      Map(
+        RegMap(0x70, meidelivery),
+      ),
+      /*raddr*/ fromCSR.addr.bits.addr,
+      /*rdata*/ toCSR.rdata.bits.data,
+      /*waddr*/ fromCSR.addr.bits.addr,
+      /*wen  */ fromCSR.wdata.valid,
+      /*wdata*/ wdata,
+      /*wmask*/ wmask,
+    )
+    toCSR.rdata.valid := RegNext(fromCSR.addr.valid)
     // TODO: End of the CSRs for a interrupt file
 
     // TODO: directly access TL protocol, instead of use the regmap
@@ -175,10 +216,14 @@ class TLIMSIC(
 
     val meipBools = Cat(meip.reverse).asBools
     val meieBools = Cat(meie.reverse).asBools
-    toCSR.meip := ParallelOR(
-      (meipBools zip meieBools).map {
-        case (p: Bool, e: Bool) => p & e
-    })
+    toCSR.meip := Mux(
+      meidelivery(0),
+      ParallelOR(
+        (meipBools zip meieBools).map {
+          case (p: Bool, e: Bool) => p & e
+      }),
+      false.B
+    )
     toCSR.mtopei := Mux(
       toCSR.meip,
       ParallelPriorityMux(
