@@ -255,20 +255,20 @@ class TLIMSIC(
 
 
   // addr for the machine-level interrupt file: g*2^E + A + h*2^C
-  val mIntFileAddr = AddressSet(
+  val mAddr = AddressSet(
     groupID * pow2(intFileParams.groupStrideBits) + intFileParams.mBaseAddr + memberID * pow2(intFileParams.mStrideBits),
     pow2(intFileParams.intFileWidth) - 1
   )
   // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D
-  val sgIntFileAddr = AddressSet(
+  val sgAddr = AddressSet(
     groupID * pow2(intFileParams.groupStrideBits) + intFileParams.sgBaseAddr + memberID * pow2(intFileParams.sgStrideBits),
     pow2(intFileParams.intFileWidth) * (1+intFileParams.geilen) - 1
   )
-  println(f"mIntFileAddr:  [0x${mIntFileAddr.base }%x, 0x${mIntFileAddr.max }%x]")
-  println(f"sgIntFileAddr: [0x${sgIntFileAddr.base}%x, 0x${sgIntFileAddr.max}%x]")
+  println(f"mAddr:  [0x${mAddr.base }%x, 0x${mAddr.max }%x]")
+  println(f"sgAddr: [0x${sgAddr.base}%x, 0x${sgAddr.max}%x]")
 
-  val mIntFileNode: TLRegisterNode = TLRegisterNode(
-    address = Seq(mIntFileAddr),
+  val mTLNode: TLRegisterNode = TLRegisterNode(
+    address = Seq(mAddr),
     device = device,
     beatBytes = beatBytes,
     undefZero = true,
@@ -284,7 +284,7 @@ class TLIMSIC(
     // TODO: directly access TL protocol, instead of use the regmap
     val mseteipnum = RegInit(0.U(32.W))
     val mseteipnumRF = RegField(32, mseteipnum)
-    mIntFileNode.regmap(
+    mTLNode.regmap(
       0 -> Seq(mseteipnumRF)
     )
     when (mseteipnum =/= 0.U) {
@@ -310,7 +310,7 @@ class TLIMSICWrapper()(implicit p: Parameters) extends LazyModule {
   )))
 
   val imsic = LazyModule(new TLIMSIC(IntFileParams())(Parameters.empty))
-  imsic.mIntFileNode := tl
+  imsic.mTLNode := tl
 
   lazy val module = new LazyModuleImp(this) {
     tl.makeIOs()
