@@ -64,8 +64,6 @@ case class IntFileParams(
   println(f"IntFileParams.groupStrideBits:   ${groupStrideBits}%d")
 }
 
-// TODO: implement all signals in the belowing two bundles
-// Based on Xiangshan NewCSR
 object OpType extends ChiselEnum {
   val ILLEGAL = Value(0.U)
   val CSRRW   = Value(1.U)
@@ -77,33 +75,6 @@ object PrivType extends ChiselEnum {
   val S = Value(1.U)
   val M = Value(3.U)
 }
-class CSRToIMSICBundle extends Bundle {
-  private final val AddrWidth = 12
-
-  val addr = ValidIO(UInt(AddrWidth.W))
-  val virt = Bool()
-  val priv = PrivType()
-
-  val VGEINWidth = 6
-  val vgein = UInt(VGEINWidth.W)
-
-  val wdata = ValidIO(new Bundle {
-    val op = OpType()
-    val data = UInt(64.W)
-  })
-
-  val claims = Vec(3, Bool()) // m, s, TODO: vs
-}
-class IMSICToCSRBundle extends Bundle {
-  // private val NumVSIRFiles = 63
-  val rdata = ValidIO(UInt(64.W))
-  // TODO:
-  // val illegal = Bool()
-  val pendings = Vec(2 + 4, Bool()) // TODO: NumVSIRFiles.W
-  // 11 bits: 32*64 = 2048 interrupt sources
-  val topeis  = Vec(3, UInt(11.W)) // m, s, TODO: vs
-}
-
 
 class IntFile extends Module {
   // TODO: unify this parameterization with CSRToIMSICBundle's
@@ -264,6 +235,35 @@ class TLIMSIC(
     concurrency = 1
   ))
 
+  // TODO: implement all signals in the belowing two bundles
+  // Based on Xiangshan NewCSR
+  class CSRToIMSICBundle extends Bundle {
+    private final val AddrWidth = 12
+  
+    val addr = ValidIO(UInt(AddrWidth.W))
+    val virt = Bool()
+    val priv = PrivType()
+  
+    val VGEINWidth = 6
+    val vgein = UInt(VGEINWidth.W)
+  
+    val wdata = ValidIO(new Bundle {
+      val op = OpType()
+      val data = UInt(64.W)
+    })
+  
+    val claims = Vec(3, Bool()) // m, s, TODO: vs
+  }
+  class IMSICToCSRBundle extends Bundle {
+    // private val NumVSIRFiles = 63
+    val rdata = ValidIO(UInt(64.W))
+    // TODO:
+    // val illegal = Bool()
+    val pendings = Vec(2 + 4, Bool()) // TODO: NumVSIRFiles.W
+    // 11 bits: 32*64 = 2048 interrupt sources
+    val topeis  = Vec(3, UInt(11.W)) // m, s, TODO: vs
+  }
+
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
     val toCSR = IO(Output(new IMSICToCSRBundle))
@@ -341,8 +341,8 @@ class TLIMSICWrapper()(implicit p: Parameters) extends LazyModule {
   lazy val module = new LazyModuleImp(this) {
     mTLCNode.makeIOs()(ValName("m"))
     sgTLCNode.makeIOs()(ValName("sg"))
-    val toCSR = IO(Output(new IMSICToCSRBundle))
-    val fromCSR = IO(Input(new CSRToIMSICBundle))
+    val toCSR = IO(Output(chiselTypeOf(imsic.module.toCSR)))
+    val fromCSR = IO(Input(chiselTypeOf(imsic.module.fromCSR)))
     toCSR   <> imsic.module.toCSR
     fromCSR <> imsic.module.fromCSR
 
