@@ -87,16 +87,16 @@ class CSRToIMSICBundle extends Bundle {
     val data = UInt(64.W)
   })
 
-  val claims = Vec(2, Bool()) // m, s, TODO: vs
+  val claims = Vec(3, Bool()) // m, s, TODO: vs
 }
 class IMSICToCSRBundle extends Bundle {
   // private val NumVSIRFiles = 63
   val rdata = ValidIO(UInt(64.W))
   // TODO:
   // val illegal = Bool()
-  val pendings = Vec(2, Bool()) // TODO: NumVSIRFiles.W
+  val pendings = Vec(2 + 4, Bool()) // TODO: NumVSIRFiles.W
   // 11 bits: 32*64 = 2048 interrupt sources
-  val topeis  = Vec(2, UInt(11.W)) // m, s, TODO: vs
+  val topeis  = Vec(3, UInt(11.W)) // m, s, TODO: vs
 }
 
 
@@ -266,37 +266,43 @@ class TLIMSIC(
 
     // TODO: parameterization
     // TODO: use a more compact way to generate onehot
-    val intFilesSelOH = WireDefault(0.U(2.W))
+    val intFilesSelOH = WireDefault(0.U(2.W+4.W)) // TODO: parameterization
     when (fromCSR.priv === 3.U) {
       intFilesSelOH := 1.U
     }.elsewhen (fromCSR.priv === 1.U) {
       intFilesSelOH := 2.U
     }
 
-    Seq(mTLNode, sgTLNode).zipWithIndex.map { case (tlNode, i) => {
+    Seq(mTLNode, sgTLNode).zipWithIndex.map { case (tlNode, nodei) => {
       // TODO: directly access TL protocol, instead of use the regmap
-      val seteipnum = RegInit(0.U(32.W))
-      val seteipnumRF = RegField(32, seteipnum)
-      tlNode.regmap(
-        0 -> Seq(seteipnumRF)
-      )
-      when (seteipnum =/= 0.U) {seteipnum := 0.U}
+      Range.BigInt(
+        0,
+        tlNode.address.head.mask,
+        pow2(intFileParams.intFileWidth)
+      ).zipWithIndex.map { case (addr: BigInt, addri: Int) => {
+        val ii = nodei + addri // index for intFiles: M, S, G1, G2, ...
+        val pi = if(ii>2) 2 else ii // index for privileges: M, S, VS.
 
-      def sel[T<:Data](old: Valid[T]): Valid[T] = {
-        val new_ = Wire(Valid(chiselTypeOf(old.bits)))
-        new_.bits := old.bits
-        new_.valid := old.valid & intFilesSelOH(i)
-        new_
-      }
-      val intFile = Module(new IntFile)
-      intFile.fromCSR.seteipnum.valid := seteipnum =/= 0.U
-      intFile.fromCSR.seteipnum.bits  := seteipnum
-      intFile.fromCSR.addr            := sel(fromCSR.addr)
-      intFile.fromCSR.wdata           := sel(fromCSR.wdata)
-      intFile.fromCSR.claim           := fromCSR.claims(i) & intFilesSelOH(i)
-      toCSR.rdata       := intFile.toCSR.rdata
-      toCSR.pendings(i) := intFile.toCSR.pending
-      toCSR.topeis(i)   := intFile.toCSR.topei
+        val seteipnum = RegInit(0.U(32.W))
+        tlNode.regmap(addr.toInt -> Seq(RegField(32, seteipnum)))
+        when (seteipnum =/= 0.U) {seteipnum := 0.U}
+
+        def sel[T<:Data](old: Valid[T]): Valid[T] = {
+          val new_ = Wire(Valid(chiselTypeOf(old.bits)))
+          new_.bits := old.bits
+          new_.valid := old.valid & intFilesSelOH(ii)
+          new_
+        }
+        val intFile = Module(new IntFile)
+        intFile.fromCSR.seteipnum.valid := seteipnum =/= 0.U
+        intFile.fromCSR.seteipnum.bits  := seteipnum
+        intFile.fromCSR.addr            := sel(fromCSR.addr)
+        intFile.fromCSR.wdata           := sel(fromCSR.wdata)
+        intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(ii)
+        toCSR.rdata        := intFile.toCSR.rdata
+        toCSR.pendings(ii) := intFile.toCSR.pending
+        toCSR.topeis(pi)   := intFile.toCSR.topei
+      }}
     }}
   }
 }
