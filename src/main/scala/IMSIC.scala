@@ -64,42 +64,107 @@ case class IntFileParams(
   println(f"IntFileParams.groupStrideBits:   ${groupStrideBits}%d")
 }
 
-object OpType extends ChiselEnum {
-  val ILLEGAL = Value(0.U)
-  val CSRRW   = Value(1.U)
-  val CSRRS   = Value(2.U)
-  val CSRRC   = Value(3.U)
-}
-object PrivType extends ChiselEnum {
-  val U = Value(0.U)
-  val S = Value(1.U)
-  val M = Value(3.U)
-}
 
-class IntFile extends Module {
-  // TODO: unify this parameterization with CSRToIMSICBundle's
-  private final val AddrWidth = 12
+class TLIMSIC(
+  intFileParams: IntFileParams,
+  groupID: Int = 0, // g
+  memberID: Int = 1, // h
+  beatBytes: Int = 8,
+)(implicit p: Parameters) extends LazyModule {
+  require(groupID < intFileParams.groupsNum,    f"groupID ${groupID} should less than groupsNum ${intFileParams.groupsNum}")
+  require(memberID < intFileParams.membersNum,  f"memberID ${memberID} should less than membersNum ${intFileParams.membersNum}")
+  println(f"groupID:  0x${groupID }%x")
+  println(f"memberID: 0x${memberID}%x")
 
-  val fromCSR = IO(Input(new Bundle {
-    val seteipnum = ValidIO(UInt(32.W))
+  val device: SimpleDevice = new SimpleDevice(
+    "interrupt-controller",
+    Seq(f"riscv,imsic.${groupID}%d.${memberID}%d")
+  )
+
+
+  // addr for the machine-level interrupt file: g*2^E + A + h*2^C
+  val mAddr = AddressSet(
+    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.mBaseAddr + memberID * pow2(intFileParams.mStrideBits),
+    pow2(intFileParams.intFileWidth) - 1
+  )
+  // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D
+  val sgAddr = AddressSet(
+    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.sgBaseAddr + memberID * pow2(intFileParams.sgStrideBits),
+    pow2(intFileParams.intFileWidth) * pow2(log2Ceil(1+intFileParams.geilen)) - 1
+  )
+  println(f"mAddr:  [0x${mAddr.base }%x, 0x${mAddr.max }%x]")
+  println(f"sgAddr: [0x${sgAddr.base}%x, 0x${sgAddr.max}%x]")
+
+  val Seq(mTLNode, sgTLNode) = Seq(mAddr, sgAddr).map( addr => TLRegisterNode(
+    address = Seq(addr),
+    device = device,
+    beatBytes = beatBytes,
+    undefZero = true,
+    concurrency = 1
+  ))
+
+  // TODO: implement all signals in the belowing two bundles
+  // Based on Xiangshan NewCSR
+  object OpType extends ChiselEnum {
+    val ILLEGAL = Value(0.U)
+    val CSRRW   = Value(1.U)
+    val CSRRS   = Value(2.U)
+    val CSRRC   = Value(3.U)
+  }
+  object PrivType extends ChiselEnum {
+    val U = Value(0.U)
+    val S = Value(1.U)
+    val M = Value(3.U)
+  }
+  class CSRToIMSICBundle extends Bundle {
+    private final val AddrWidth = 12
+  
     val addr = ValidIO(UInt(AddrWidth.W))
+    val virt = Bool()
+    val priv = PrivType()
+  
+    val VGEINWidth = 6
+    val vgein = UInt(VGEINWidth.W)
+  
     val wdata = ValidIO(new Bundle {
       val op = OpType()
       val data = UInt(64.W)
     })
-    val claim = Bool()
-  }))
-
-  val toCSR = IO(Output(new Bundle {
+  
+    val claims = Vec(3, Bool()) // m, s, TODO: vs
+  }
+  class IMSICToCSRBundle extends Bundle {
+    // private val NumVSIRFiles = 63
     val rdata = ValidIO(UInt(64.W))
     // TODO:
     // val illegal = Bool()
-    val pending = Bool()
+    val pendings = Vec(2 + 4, Bool()) // TODO: NumVSIRFiles.W
     // 11 bits: 32*64 = 2048 interrupt sources
-    val topei  = UInt(11.W)
-  }))
-
-  // TODO: LazyModule?
+    val topeis  = Vec(3, UInt(11.W)) // m, s, TODO: vs
+  }
+  class IntFile extends Module {
+    // TODO: unify this parameterization with CSRToIMSICBundle's
+    private final val AddrWidth = 12
+  
+    val fromCSR = IO(Input(new Bundle {
+      val seteipnum = ValidIO(UInt(32.W))
+      val addr = ValidIO(UInt(AddrWidth.W))
+      val wdata = ValidIO(new Bundle {
+        val op = OpType()
+        val data = UInt(64.W)
+      })
+      val claim = Bool()
+    }))
+  
+    val toCSR = IO(Output(new Bundle {
+      val rdata = ValidIO(UInt(64.W))
+      // TODO:
+      // val illegal = Bool()
+      val pending = Bool()
+      // 11 bits: 32*64 = 2048 interrupt sources
+      val topei  = UInt(11.W)
+    }))
+  
     // TODO: Add a struct for these CSRs in a interrupt file
     /// indirect CSRs
     val eidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
@@ -195,73 +260,6 @@ class IntFile extends Module {
       // clear the pending bit indexed by xtopei in xeip
       eips(toCSR.topei(10,6)) := eips(toCSR.topei(10,6)) & ~(1.U << toCSR.topei(5,0))
     }
-}
-
-class TLIMSIC(
-  intFileParams: IntFileParams,
-  groupID: Int = 0, // g
-  memberID: Int = 1, // h
-  beatBytes: Int = 8,
-)(implicit p: Parameters) extends LazyModule {
-  require(groupID < intFileParams.groupsNum,    f"groupID ${groupID} should less than groupsNum ${intFileParams.groupsNum}")
-  require(memberID < intFileParams.membersNum,  f"memberID ${memberID} should less than membersNum ${intFileParams.membersNum}")
-  println(f"groupID:  0x${groupID }%x")
-  println(f"memberID: 0x${memberID}%x")
-
-  val device: SimpleDevice = new SimpleDevice(
-    "interrupt-controller",
-    Seq(f"riscv,imsic.${groupID}%d.${memberID}%d")
-  )
-
-
-  // addr for the machine-level interrupt file: g*2^E + A + h*2^C
-  val mAddr = AddressSet(
-    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.mBaseAddr + memberID * pow2(intFileParams.mStrideBits),
-    pow2(intFileParams.intFileWidth) - 1
-  )
-  // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D
-  val sgAddr = AddressSet(
-    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.sgBaseAddr + memberID * pow2(intFileParams.sgStrideBits),
-    pow2(intFileParams.intFileWidth) * pow2(log2Ceil(1+intFileParams.geilen)) - 1
-  )
-  println(f"mAddr:  [0x${mAddr.base }%x, 0x${mAddr.max }%x]")
-  println(f"sgAddr: [0x${sgAddr.base}%x, 0x${sgAddr.max}%x]")
-
-  val Seq(mTLNode, sgTLNode) = Seq(mAddr, sgAddr).map( addr => TLRegisterNode(
-    address = Seq(addr),
-    device = device,
-    beatBytes = beatBytes,
-    undefZero = true,
-    concurrency = 1
-  ))
-
-  // TODO: implement all signals in the belowing two bundles
-  // Based on Xiangshan NewCSR
-  class CSRToIMSICBundle extends Bundle {
-    private final val AddrWidth = 12
-  
-    val addr = ValidIO(UInt(AddrWidth.W))
-    val virt = Bool()
-    val priv = PrivType()
-  
-    val VGEINWidth = 6
-    val vgein = UInt(VGEINWidth.W)
-  
-    val wdata = ValidIO(new Bundle {
-      val op = OpType()
-      val data = UInt(64.W)
-    })
-  
-    val claims = Vec(3, Bool()) // m, s, TODO: vs
-  }
-  class IMSICToCSRBundle extends Bundle {
-    // private val NumVSIRFiles = 63
-    val rdata = ValidIO(UInt(64.W))
-    // TODO:
-    // val illegal = Bool()
-    val pendings = Vec(2 + 4, Bool()) // TODO: NumVSIRFiles.W
-    // 11 bits: 32*64 = 2048 interrupt sources
-    val topeis  = Vec(3, UInt(11.W)) // m, s, TODO: vs
   }
 
   lazy val module = new Imp
