@@ -77,9 +77,9 @@ class CSRToIMSICBundle extends Bundle {
 
   val addr = ValidIO(new Bundle {
     val addr = UInt(AddrWidth.W)
-    // val virt = Bool()
-    // val priv = UInt(2.W) // U, S, M
   })
+  // val virt = Bool()
+  val priv = UInt(2.W) // U, S, M
 
   // val VGEINWidth = 6
   // val vgein = UInt(VGEINWidth.W)
@@ -274,6 +274,15 @@ class TLIMSIC(
     val toCSR = IO(Output(new IMSICToCSRBundle))
     val fromCSR = IO(Input(new CSRToIMSICBundle))
 
+    // TODO: parameterization
+    // TODO: use a more compact way to generate onehot
+    val intFilesSelOH = WireDefault(0.U(2.W))
+    when (fromCSR.priv === 3.U) {
+      intFilesSelOH := 1.U
+    }.elsewhen (fromCSR.priv === 1.U) {
+      intFilesSelOH := 2.U
+    }
+
     Seq(mTLNode, sgTLNode).zipWithIndex.map { case (tlNode, i) => {
       // TODO: directly access TL protocol, instead of use the regmap
       val seteipnum = RegInit(0.U(32.W))
@@ -282,13 +291,19 @@ class TLIMSIC(
         0 -> Seq(seteipnumRF)
       )
       when (seteipnum =/= 0.U) {seteipnum := 0.U}
+
+      def sel[T<:Data](old: Valid[T]): Valid[T] = {
+        val new_ = Wire(Valid(chiselTypeOf(old.bits)))
+        new_.bits := old.bits
+        new_.valid := old.valid & intFilesSelOH(i)
+        new_
+      }
       val intFile = Module(new IntFile)
       intFile.fromCSR.seteipnum.valid      := seteipnum =/= 0.U
       intFile.fromCSR.seteipnum.bits.value := seteipnum
-      intFile.fromCSR.addr.valid           := fromCSR.addr.valid
-      intFile.fromCSR.addr.bits.addr       := fromCSR.addr.bits.addr
-      intFile.fromCSR.wdata                := fromCSR.wdata
-      intFile.fromCSR.claim                := fromCSR.claims(i)
+      intFile.fromCSR.addr                 := sel(fromCSR.addr)
+      intFile.fromCSR.wdata                := sel(fromCSR.wdata)
+      intFile.fromCSR.claim                := fromCSR.claims(i) & intFilesSelOH(i)
       toCSR.rdata       := intFile.toCSR.rdata
       toCSR.pendings(i) := intFile.toCSR.pending
       toCSR.topeis(i)   := intFile.toCSR.topei

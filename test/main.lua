@@ -1,69 +1,85 @@
 local tl = require("TileLink")
 local bit = require("bit")
 local clock = dut.clock:chdl()
-local a = ([[
-  | ready
-  | valid
-  | opcode
-  | param
-  | size
-  | source
-  | address
-  | mask
-  | data
-  | corrupt
-]]):bundle{
-  hier = cfg.top,
-  prefix = "m_0_a_",
-  is_decoupled = true,
-  name = "tilelink_channel_a"
-}
-a.get = function (this, addr, mask, size)
-  clock:negedge()
-  this.valid:set(1)
-  this.bits.opcode:set(tl.TLMessageA.Get)
-  this.bits.address:set(addr)
-  this.bits.mask:set(mask)
-  this.bits.size:set(size)
-  clock:negedge()
-  this.valid:set(0)
+local gen_a = function (mode)
+  return ([[
+    | ready
+    | valid
+    | opcode
+    | param
+    | size
+    | source
+    | address
+    | mask
+    | data
+    | corrupt
+  ]]):bundle{
+    hier = cfg.top,
+    prefix = mode .. "_0_a_",
+    is_decoupled = true,
+    name = "tilelink_channel_a"
+  }
 end
-a.put_full = function (this, addr, mask, size, data)
+local m_a = gen_a("m")
+local sg_a = gen_a("sg")
+local a_get = function (a, addr, mask, size)
   clock:negedge()
-  this.valid:set(1)
-  this.bits.opcode:set(tl.TLMessageA.PutFullData)
-  this.bits.address:set(addr)
-  this.bits.mask:set(mask)
-  this.bits.size:set(size)
-  this.bits.data:set(data, true)
+  a.valid:set(1)
+  a.bits.opcode:set(tl.TLMessageA.Get)
+  a.bits.address:set(addr)
+  a.bits.mask:set(mask)
+  a.bits.size:set(size)
   clock:negedge()
-  this.valid:set(0)
+  a.valid:set(0)
+end
+local a_put_full = function (a, addr, mask, size, data)
+  clock:negedge()
+  a.valid:set(1)
+  a.bits.opcode:set(tl.TLMessageA.PutFullData)
+  a.bits.address:set(addr)
+  a.bits.mask:set(mask)
+  a.bits.size:set(size)
+  a.bits.data:set(data, true)
+  clock:negedge()
+  a.valid:set(0)
 end
 
-local d = ([[
-  | ready
-  | valid
-  | opcode
-  | size
-  | source
-  | data
-]]):bundle{
-  hier = cfg.top,
-  prefix = "m_0_d_",
-  is_decoupled = true,
-  name = "tilelink_channel_d"
-}
+local gen_d = function (mode)
+  return ([[
+    | ready
+    | valid
+    | opcode
+    | size
+    | source
+    | data
+  ]]):bundle{
+    hier = cfg.top,
+    prefix = mode .. "_0_d_",
+    is_decoupled = true,
+    name = "tilelink_channel_d"
+  }
+end
+local m_d = gen_d("m")
+local sg_d = gen_d("sg")
 
 local mBaseAddr = 0x61001000
+local sgBaseAddr = 0x82908000
 local csr_addr_eidelivery = 0x70
 local csr_addr_eithreshold = 0x72
 local csr_addr_eip0 = 0x80
 local csr_addr_eip2 = 0x82
 local csr_addr_eie0 = 0xC0
-local inject_interrupt = function(intnum)
-  a:put_full(mBaseAddr, 0xf, 2, intnum)
+local m_int = function(intnum)
+  a_put_full(m_a, mBaseAddr, 0xf, 2, intnum)
   dut.clock:posedge_until(10, function ()
     return dut.u_TLIMSICWrapper.imsic.seteipnum:get() == intnum
+  end)
+  clock:posedge()
+end
+local s_int = function(intnum)
+  a_put_full(sg_a, sgBaseAddr, 0xf, 2, intnum)
+  dut.clock:posedge_until(10, function ()
+    return dut.u_TLIMSICWrapper.imsic.seteipnum_1:get() == intnum
   end)
   clock:posedge()
 end
@@ -97,6 +113,12 @@ local read_csr = function(miselect)
   dut.clock:negedge(1)
   dut.fromCSR_addr_valid:set(0)
 end
+local select_m_intfile = function()
+  dut.fromCSR_priv:set(3)
+end
+local select_s_intfile = function()
+  dut.fromCSR_priv:set(1)
+end
 
 verilua "appendTasks" {
   main_task = function ()
@@ -105,16 +127,18 @@ verilua "appendTasks" {
     dut.reset = 1
     dut.clock:posedge(10)
     dut.reset = 0
-    d.ready:set(1)
+    m_d.ready:set(1)
+    sg_d.ready:set(1)
 
     dut.clock:posedge(10)
 
     dut.toCSR_pendings_0:expect(0)
+    select_m_intfile()
 
     do
       dut.cycles:dump()
       print("mseteipnum began")
-      inject_interrupt(1996)
+      m_int(1996)
       dut.toCSR_topeis_0:expect(1996)
       dut.toCSR_pendings_0:expect(1)
       print("mseteipnum passed")
@@ -131,9 +155,9 @@ verilua "appendTasks" {
     do
       dut.cycles:dump()
       print("2_mseteipnum_1_mclaim began")
-      inject_interrupt(12)
+      m_int(12)
       dut.toCSR_topeis_0:expect(12)
-      inject_interrupt(8)
+      m_int(8)
       dut.toCSR_topeis_0:expect(8)
       claim()
       dut.toCSR_topeis_0:expect(12)
@@ -199,6 +223,18 @@ verilua "appendTasks" {
       print("read_csr:eie passed")
     end
 
+    do
+      dut.cycles:dump()
+      dut.toCSR_topeis_1:expect(0)
+      select_s_intfile()
+      print("simple_supervisor_level began")
+      s_int(1234)
+      dut.toCSR_topeis_1:expect(1234)
+      dut.toCSR_pendings_1:expect(1)
+      select_m_intfile()
+      print("simple_supervisor_level end")
+    end
+
     dut.cycles:dump()
     dut.clock:posedge(1000)
     dut.cycles:dump()
@@ -213,12 +249,12 @@ verilua "appendTasks" {
     local cycles = dut.cycles:chdl()
     while true do
       local _cycles = cycles:get()
-      if a:fire() then
-        ("[" .. _cycles .. "] [monitor] " .. a:dump_str()):print()
+      if m_a:fire() then
+        ("[" .. _cycles .. "] [monitor] " .. m_a:dump_str()):print()
       end
 
-      if d:fire() then
-        ("[" .. _cycles .. "] [monitor] " .. d:dump_str()):print()
+      if m_d:fire() then
+        ("[" .. _cycles .. "] [monitor] " .. m_d:dump_str()):print()
       end
 
       clock:posedge()
