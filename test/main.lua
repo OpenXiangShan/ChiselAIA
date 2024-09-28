@@ -14,7 +14,7 @@ local a = ([[
   | corrupt
 ]]):bundle{
   hier = cfg.top,
-  prefix = "localanon_0_a_",
+  prefix = "m_0_a_",
   is_decoupled = true,
   name = "tilelink_channel_a"
 }
@@ -49,7 +49,7 @@ local d = ([[
   | data
 ]]):bundle{
   hier = cfg.top,
-  prefix = "localanon_0_d_",
+  prefix = "m_0_d_",
   is_decoupled = true,
   name = "tilelink_channel_d"
 }

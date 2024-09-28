@@ -90,7 +90,7 @@ class CSRToIMSICBundle extends Bundle {
   })
 
   val mClaim = Bool()
-  // val sClaim = Bool()
+  val sClaim = Bool()
   // val vsClaim = Bool()
 }
 class IMSICToCSRBundle extends Bundle {
@@ -101,11 +101,11 @@ class IMSICToCSRBundle extends Bundle {
     // val illegal = Bool()
   })
   val meipB    = Bool()
-  // val seipB    = Bool()
+  val seipB    = Bool()
   // val vseipB   = UInt(NumVSIRFiles.W)
   // 11 bits: 32*64 = 2048 interrupt sources
   val mtopei  = UInt(11.W)
-  // val stopei  = UInt(11.W)
+  val stopei  = UInt(11.W)
   // val vstopei = UInt(11.W)
 }
 
@@ -267,8 +267,15 @@ class TLIMSIC(
   println(f"mAddr:  [0x${mAddr.base }%x, 0x${mAddr.max }%x]")
   println(f"sgAddr: [0x${sgAddr.base}%x, 0x${sgAddr.max}%x]")
 
-  val mTLNode: TLRegisterNode = TLRegisterNode(
+  val mTLNode = TLRegisterNode(
     address = Seq(mAddr),
+    device = device,
+    beatBytes = beatBytes,
+    undefZero = true,
+    concurrency = 1
+  )
+  val sgTLNode = TLRegisterNode(
+    address = Seq(sgAddr),
     device = device,
     beatBytes = beatBytes,
     undefZero = true,
@@ -300,20 +307,45 @@ class TLIMSIC(
     toCSR.rdata  := mIntFile.toCSR.rdata
     toCSR.meipB  := mIntFile.toCSR.eipB
     toCSR.mtopei := mIntFile.toCSR.topei
+
+    val sseteipnum = RegInit(0.U(32.W))
+    val sseteipnumRF = RegField(32, sseteipnum)
+    sgTLNode.regmap(
+      0 -> Seq(sseteipnumRF)
+    )
+    when (sseteipnum =/= 0.U) {
+      sseteipnum := 0.U
+    }
+    val sIntFile = Module(new IntFile)
+    sIntFile.fromCSR.seteipnum.valid      := sseteipnum =/= 0.U
+    sIntFile.fromCSR.seteipnum.bits.value := sseteipnum
+    sIntFile.fromCSR.addr.valid           := fromCSR.addr.valid
+    sIntFile.fromCSR.addr.bits.addr       := fromCSR.addr.bits.addr
+    sIntFile.fromCSR.wdata                := fromCSR.wdata
+    sIntFile.fromCSR.claim                := fromCSR.sClaim
+    toCSR.rdata  := sIntFile.toCSR.rdata
+    toCSR.seipB  := sIntFile.toCSR.eipB
+    toCSR.stopei := sIntFile.toCSR.topei
   }
 }
 
 class TLIMSICWrapper()(implicit p: Parameters) extends LazyModule {
-  val tl = TLClientNode(
+  val mTLCNode = TLClientNode(
     Seq(TLMasterPortParameters.v1(
-      Seq(TLMasterParameters.v1("tl", IdRange(0, 16)))
+      Seq(TLMasterParameters.v1("m_tl", IdRange(0, 16)))
+  )))
+  val sgTLCNode = TLClientNode(
+    Seq(TLMasterPortParameters.v1(
+      Seq(TLMasterParameters.v1("sg_tl", IdRange(0, 16)))
   )))
 
   val imsic = LazyModule(new TLIMSIC(IntFileParams())(Parameters.empty))
-  imsic.mTLNode := tl
+  imsic.mTLNode := mTLCNode
+  imsic.sgTLNode := sgTLCNode
 
   lazy val module = new LazyModuleImp(this) {
-    tl.makeIOs()
+    mTLCNode.makeIOs()(ValName("m"))
+    sgTLCNode.makeIOs()(ValName("sg"))
     val toCSR = IO(Output(new IMSICToCSRBundle))
     val fromCSR = IO(Input(new CSRToIMSICBundle))
     toCSR   <> imsic.module.toCSR
