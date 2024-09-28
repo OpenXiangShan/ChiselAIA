@@ -72,15 +72,20 @@ object OpType extends ChiselEnum {
   val CSRRS   = Value(2.U)
   val CSRRC   = Value(3.U)
 }
+object PrivType extends ChiselEnum {
+  val U = Value(0.U)
+  val S = Value(1.U)
+  val M = Value(3.U)
+}
 class CSRToIMSICBundle extends Bundle {
   private final val AddrWidth = 12
 
   val addr = ValidIO(UInt(AddrWidth.W))
-  // val virt = Bool()
-  val priv = UInt(2.W) // U, S, M
+  val virt = Bool()
+  val priv = PrivType()
 
-  // val VGEINWidth = 6
-  // val vgein = UInt(VGEINWidth.W)
+  val VGEINWidth = 6
+  val vgein = UInt(VGEINWidth.W)
 
   val wdata = ValidIO(new Bundle {
     val op = OpType()
@@ -246,7 +251,7 @@ class TLIMSIC(
   // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D
   val sgAddr = AddressSet(
     groupID * pow2(intFileParams.groupStrideBits) + intFileParams.sgBaseAddr + memberID * pow2(intFileParams.sgStrideBits),
-    pow2(intFileParams.intFileWidth) * (1+intFileParams.geilen) - 1
+    pow2(intFileParams.intFileWidth) * pow2(log2Ceil(1+intFileParams.geilen)) - 1
   )
   println(f"mAddr:  [0x${mAddr.base }%x, 0x${mAddr.max }%x]")
   println(f"sgAddr: [0x${sgAddr.base}%x, 0x${sgAddr.max}%x]")
@@ -266,25 +271,29 @@ class TLIMSIC(
 
     // TODO: parameterization
     // TODO: use a more compact way to generate onehot
-    val intFilesSelOH = WireDefault(0.U(2.W+4.W)) // TODO: parameterization
-    when (fromCSR.priv === 3.U) {
-      intFilesSelOH := 1.U
-    }.elsewhen (fromCSR.priv === 1.U) {
-      intFilesSelOH := 2.U
+    val intFilesSel = WireDefault(0.U(log2Ceil(6).W)) // TODO: parameterization
+    when (fromCSR.priv === PrivType.M) {
+      intFilesSel := 0.U
+    }.elsewhen (fromCSR.priv === PrivType.S) {
+      when (!fromCSR.virt) {
+        intFilesSel := 1.U
+      }.otherwise {
+        intFilesSel := 2.U + fromCSR.vgein
+      }
     }
+    val intFilesSelOH = UIntToOH(intFilesSel, 2 + 4) // TODO: parameterization
+    val tmp_topeis = Wire(Vec(2 + 4, UInt(11.W))) // m, s, vs0, vs1, ...
 
-    Seq(mTLNode, sgTLNode).zipWithIndex.map { case (tlNode, nodei) => {
+    Seq((mTLNode,1), (sgTLNode,1+intFileParams.geilen)).zipWithIndex.map {
+      case ((tlNode: TLRegisterNode, thisNodeintFilesNum: Int), nodei: Int)
+    => {
       // TODO: directly access TL protocol, instead of use the regmap
-      Range.BigInt(
-        0,
-        tlNode.address.head.mask,
-        pow2(intFileParams.intFileWidth)
-      ).zipWithIndex.map { case (addr: BigInt, addri: Int) => {
-        val ii = nodei + addri // index for intFiles: M, S, G1, G2, ...
+      // thisNode_ii: index for intFiles in this node: S, G1, G2, ...
+      val maps = (0 until thisNodeintFilesNum).map { thisNode_ii => {
+        val ii = nodei + thisNode_ii
         val pi = if(ii>2) 2 else ii // index for privileges: M, S, VS.
 
         val seteipnum = RegInit(0.U(32.W))
-        tlNode.regmap(addr.toInt -> Seq(RegField(32, seteipnum)))
         when (seteipnum =/= 0.U) {seteipnum := 0.U}
 
         def sel[T<:Data](old: Valid[T]): Valid[T] = {
@@ -301,9 +310,17 @@ class TLIMSIC(
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(ii)
         toCSR.rdata        := intFile.toCSR.rdata
         toCSR.pendings(ii) := intFile.toCSR.pending
-        toCSR.topeis(pi)   := intFile.toCSR.topei
+        tmp_topeis(ii)     := intFile.toCSR.topei
+        (thisNode_ii * pow2(intFileParams.intFileWidth).toInt -> Seq(RegField(32, seteipnum)))
       }}
+      tlNode.regmap((maps): _*)
     }}
+    toCSR.topeis(0) := tmp_topeis(0) // m
+    toCSR.topeis(1) := tmp_topeis(1) // s
+    toCSR.topeis(2) := ParallelMux(
+      UIntToOH(fromCSR.vgein, 4).asBools, // TODO: parameterization
+      tmp_topeis.drop(2)
+    ) // vs
   }
 }
 

@@ -83,6 +83,13 @@ local s_int = function(intnum)
   end)
   clock:posedge()
 end
+local v_int_vgein2 = function(intnum)
+  a_put_full(sg_a, sgBaseAddr + 0x1000*(1+2), 0xf, 2, intnum)
+  dut.clock:posedge_until(10, function ()
+    return dut.u_TLIMSICWrapper.imsic.seteipnum_4:get() == intnum
+  end)
+  clock:posedge()
+end
 local claim = function()
     dut.clock:negedge(1)
     dut.fromCSR_claims_0:set(1)
@@ -114,10 +121,20 @@ local read_csr = function(miselect)
   dut.fromCSR_addr_valid:set(0)
 end
 local select_m_intfile = function()
+  dut.clock:negedge(1)
   dut.fromCSR_priv:set(3)
+  dut.fromCSR_virt:set(0)
 end
 local select_s_intfile = function()
+  dut.clock:negedge(1)
   dut.fromCSR_priv:set(1)
+  dut.fromCSR_virt:set(0)
+end
+local select_vs_intfile = function(vgein)
+  dut.clock:negedge(1)
+  dut.fromCSR_priv:set(1)
+  dut.fromCSR_vgein:set(vgein)
+  dut.fromCSR_virt:set(1)
 end
 
 verilua "appendTasks" {
@@ -233,6 +250,20 @@ verilua "appendTasks" {
       dut.toCSR_pendings_1:expect(1)
       select_m_intfile()
       print("simple_supervisor_level end")
+    end
+
+    do
+      dut.cycles:dump()
+      select_vs_intfile(2)
+      dut.toCSR_topeis_2:expect(0)
+      print("simple_virtualized_supervisor_level:vgein2 began")
+      v_int_vgein2(137)
+      dut.toCSR_topeis_2:expect(137)
+      dut.toCSR_pendings_4:expect(1)
+      select_m_intfile()
+      dut.toCSR_topeis_2:expect(137)
+      dut.toCSR_pendings_4:expect(1)
+      print("simple_virtualized_supervisor_level:vgein2 end")
     end
 
     dut.cycles:dump()
