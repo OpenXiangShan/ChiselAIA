@@ -142,13 +142,13 @@ class IntFile extends Module {
   // TODO: LazyModule?
     // TODO: Add a struct for these CSRs in a interrupt file
     /// indirect CSRs
-    val meidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
-    val meithreshold = RegInit(0.U(64.W))
-    // TODO: meips(0)(0) is read-only false.B
-    val meips = RegInit(VecInit.fill(32){0.U(64.W)})
-    // TODO: meies(0)(0) is read-only false.B
-    val meies = RegInit(VecInit.fill(32){Fill(64, 1.U)}) // TODO: default: disable all
-    dontTouch(meips)
+    val eidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
+    val eithreshold = RegInit(0.U(64.W))
+    // TODO: eips(0)(0) is read-only false.B
+    val eips = RegInit(VecInit.fill(32){0.U(64.W)})
+    // TODO: eies(0)(0) is read-only false.B
+    val eies = RegInit(VecInit.fill(32){Fill(64, 1.U)}) // TODO: default: disable all
+    dontTouch(eips)
 
     locally { // scope for xiselect CSR reg map
       val wdata = WireDefault(0.U(64.W))
@@ -174,12 +174,12 @@ class IntFile extends Module {
       }
       RegMap.generate(
         Map(
-          RegMap(0x70, meidelivery),
-          RegMap(0x72, meithreshold),
-        ) ++ meips.zipWithIndex.map { case (meip: UInt, i: Int) =>
-          RegMap(0x80+i*2, meip)
-        }.toMap ++ meies.zipWithIndex.map { case (meie: UInt, i: Int) =>
-          RegMap(0xC0+i*2, meie)
+          RegMap(0x70, eidelivery),
+          RegMap(0x72, eithreshold),
+        ) ++ eips.zipWithIndex.map { case (eip: UInt, i: Int) =>
+          RegMap(0x80+i*2, eip)
+        }.toMap ++ eies.zipWithIndex.map { case (eie: UInt, i: Int) =>
+          RegMap(0xC0+i*2, eie)
         },
         /*raddr*/ fromCSR.addr.bits.addr,
         /*rdata*/ toCSR.rdata.bits.data,
@@ -196,10 +196,10 @@ class IntFile extends Module {
     // TODO: locally: shorter name fromCSR.seteipnum.bits.value
     when (
       fromCSR.seteipnum.valid
-      & meies(fromCSR.seteipnum.bits.value(10,6))(fromCSR.seteipnum.bits.value(5,0))
+      & eies(fromCSR.seteipnum.bits.value(10,6))(fromCSR.seteipnum.bits.value(5,0))
     ) {
-      // set meips bit
-      meips(fromCSR.seteipnum.bits.value(10,6)) := meips(fromCSR.seteipnum.bits.value(10,6)) | (1.U << (fromCSR.seteipnum.bits.value(5,0)))
+      // set eips bit
+      eips(fromCSR.seteipnum.bits.value(10,6)) := eips(fromCSR.seteipnum.bits.value(10,6)) | (1.U << (fromCSR.seteipnum.bits.value(5,0)))
     }
 
     locally { // scope for xtopei
@@ -209,21 +209,21 @@ class IntFile extends Module {
       //  otherwise, the returned topei will become the max index, that is 2048-1
       // TODO: require the support max interrupt sources number must be 2^N
       //              [0,                2^N-1] :+ 2^N
-      val meipBools = Cat(meips.reverse).asBools :+ true.B
-      val meieBools = Cat(meies.reverse).asBools :+ true.B
+      val eipBools = Cat(eips.reverse).asBools :+ true.B
+      val eieBools = Cat(eies.reverse).asBools :+ true.B
       def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
         val tmp_xtopei = Mux(xeidelivery(0), xtopei, 0.U)
         // {
-        //   all interrupts are enabled, when meithreshold == 0;
-        //   interrupts, when i < meithreshold, are enabled;
-        // } <=> interrupts, when i <= (meithreshold -1), are enabled
+        //   all interrupts are enabled, when eithreshold == 0;
+        //   interrupts, when i < eithreshold, are enabled;
+        // } <=> interrupts, when i <= (eithreshold -1), are enabled
         Mux(tmp_xtopei <= (xeithreshold-1.U), tmp_xtopei, 0.U)
       }
       toCSR.topei := xtopei_filter(
-        meidelivery,
-        meithreshold,
+        eidelivery,
+        eithreshold,
         ParallelPriorityMux(
-          (meipBools zip meieBools).zipWithIndex.map {
+          (eipBools zip eieBools).zipWithIndex.map {
             case ((p: Bool, e: Bool), i: Int) => (p & e, i.U)
           }
         )
@@ -233,7 +233,7 @@ class IntFile extends Module {
 
     when(fromCSR.claim) {
       // clear the pending bit indexed by xtopei in xeip
-      meips(toCSR.topei(10,6)) := meips(toCSR.topei(10,6)) & ~(1.U << toCSR.topei(5,0))
+      eips(toCSR.topei(10,6)) := eips(toCSR.topei(10,6)) & ~(1.U << toCSR.topei(5,0))
     }
 }
 

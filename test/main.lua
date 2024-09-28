@@ -144,19 +144,19 @@ verilua "appendTasks" {
       dut.cycles:dump()
       print("write_csr:op began")
       write_csr_op(csr_addr_eidelivery, 0xc0, op_csrrs)
-      dut.u_TLIMSICWrapper.imsic.mIntFile.meidelivery:expect(0xc1)
+      dut.u_TLIMSICWrapper.imsic.mIntFile.eidelivery:expect(0xc1)
       write_csr_op(csr_addr_eidelivery, 0xc0, op_csrrc)
-      dut.u_TLIMSICWrapper.imsic.mIntFile.meidelivery:expect(0x1)
+      dut.u_TLIMSICWrapper.imsic.mIntFile.eidelivery:expect(0x1)
       print("write_csr:op passed")
     end
 
     do
       dut.cycles:dump()
-      print("write_csr:meidelivery began")
+      print("write_csr:eidelivery began")
       write_csr(csr_addr_eidelivery, 0)
       dut.toCSR_meipB:expect(0)
       write_csr(csr_addr_eidelivery, 1)
-      print("write_csr:meidelivery passed")
+      print("write_csr:eidelivery passed")
     end
 
     do
@@ -195,7 +195,7 @@ verilua "appendTasks" {
       dut.cycles:dump()
       print("read_csr:eie began")
       read_csr(csr_addr_eie0)
-      dut.toCSR_rdata_bits_data:expect(dut.u_TLIMSICWrapper.imsic.mIntFile.meies_0:get())
+      dut.toCSR_rdata_bits_data:expect(dut.u_TLIMSICWrapper.imsic.mIntFile.eies_0:get())
       print("read_csr:eie passed")
     end
 
