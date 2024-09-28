@@ -89,9 +89,7 @@ class CSRToIMSICBundle extends Bundle {
     val data = UInt(64.W)
   })
 
-  val mClaim = Bool()
-  val sClaim = Bool()
-  // val vsClaim = Bool()
+  val claims = Vec(2, Bool()) // m, s, TODO: vs
 }
 class IMSICToCSRBundle extends Bundle {
   // private val NumVSIRFiles = 63
@@ -100,13 +98,9 @@ class IMSICToCSRBundle extends Bundle {
     // TODO:
     // val illegal = Bool()
   })
-  val meipB    = Bool()
-  val seipB    = Bool()
-  // val vseipB   = UInt(NumVSIRFiles.W)
+  val pendings = Vec(2, Bool()) // TODO: NumVSIRFiles.W
   // 11 bits: 32*64 = 2048 interrupt sources
-  val mtopei  = UInt(11.W)
-  val stopei  = UInt(11.W)
-  // val vstopei = UInt(11.W)
+  val topeis  = Vec(2, UInt(11.W)) // m, s, TODO: vs
 }
 
 
@@ -134,7 +128,7 @@ class IntFile extends Module {
       // TODO:
       // val illegal = Bool()
     })
-    val eipB = Bool()
+    val pending = Bool()
     // 11 bits: 32*64 = 2048 interrupt sources
     val topei  = UInt(11.W)
   }))
@@ -229,7 +223,7 @@ class IntFile extends Module {
         )
       )
     }
-    toCSR.eipB := toCSR.topei =/= 0.U
+    toCSR.pending := toCSR.topei =/= 0.U
 
     when(fromCSR.claim) {
       // clear the pending bit indexed by xtopei in xeip
@@ -251,7 +245,7 @@ class TLIMSIC(
   val device: SimpleDevice = new SimpleDevice(
     "interrupt-controller",
     Seq(f"riscv,imsic.${groupID}%d.${memberID}%d")
-  ) {}
+  )
 
 
   // addr for the machine-level interrupt file: g*2^E + A + h*2^C
@@ -267,65 +261,38 @@ class TLIMSIC(
   println(f"mAddr:  [0x${mAddr.base }%x, 0x${mAddr.max }%x]")
   println(f"sgAddr: [0x${sgAddr.base}%x, 0x${sgAddr.max}%x]")
 
-  val mTLNode = TLRegisterNode(
-    address = Seq(mAddr),
+  val Seq(mTLNode, sgTLNode) = Seq(mAddr, sgAddr).map( addr => TLRegisterNode(
+    address = Seq(addr),
     device = device,
     beatBytes = beatBytes,
     undefZero = true,
     concurrency = 1
-  )
-  val sgTLNode = TLRegisterNode(
-    address = Seq(sgAddr),
-    device = device,
-    beatBytes = beatBytes,
-    undefZero = true,
-    concurrency = 1
-  )
+  ))
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
     val toCSR = IO(Output(new IMSICToCSRBundle))
     val fromCSR = IO(Input(new CSRToIMSICBundle))
 
-
-    // TODO: directly access TL protocol, instead of use the regmap
-    val mseteipnum = RegInit(0.U(32.W))
-    val mseteipnumRF = RegField(32, mseteipnum)
-    mTLNode.regmap(
-      0 -> Seq(mseteipnumRF)
-    )
-    when (mseteipnum =/= 0.U) {
-      mseteipnum := 0.U
-    }
-    val mIntFile = Module(new IntFile)
-    mIntFile.fromCSR.seteipnum.valid      := mseteipnum =/= 0.U
-    mIntFile.fromCSR.seteipnum.bits.value := mseteipnum
-    mIntFile.fromCSR.addr.valid           := fromCSR.addr.valid
-    mIntFile.fromCSR.addr.bits.addr       := fromCSR.addr.bits.addr
-    mIntFile.fromCSR.wdata                := fromCSR.wdata
-    mIntFile.fromCSR.claim                := fromCSR.mClaim
-    toCSR.rdata  := mIntFile.toCSR.rdata
-    toCSR.meipB  := mIntFile.toCSR.eipB
-    toCSR.mtopei := mIntFile.toCSR.topei
-
-    val sseteipnum = RegInit(0.U(32.W))
-    val sseteipnumRF = RegField(32, sseteipnum)
-    sgTLNode.regmap(
-      0 -> Seq(sseteipnumRF)
-    )
-    when (sseteipnum =/= 0.U) {
-      sseteipnum := 0.U
-    }
-    val sIntFile = Module(new IntFile)
-    sIntFile.fromCSR.seteipnum.valid      := sseteipnum =/= 0.U
-    sIntFile.fromCSR.seteipnum.bits.value := sseteipnum
-    sIntFile.fromCSR.addr.valid           := fromCSR.addr.valid
-    sIntFile.fromCSR.addr.bits.addr       := fromCSR.addr.bits.addr
-    sIntFile.fromCSR.wdata                := fromCSR.wdata
-    sIntFile.fromCSR.claim                := fromCSR.sClaim
-    toCSR.rdata  := sIntFile.toCSR.rdata
-    toCSR.seipB  := sIntFile.toCSR.eipB
-    toCSR.stopei := sIntFile.toCSR.topei
+    Seq(mTLNode, sgTLNode).zipWithIndex.map { case (tlNode, i) => {
+      // TODO: directly access TL protocol, instead of use the regmap
+      val seteipnum = RegInit(0.U(32.W))
+      val seteipnumRF = RegField(32, seteipnum)
+      tlNode.regmap(
+        0 -> Seq(seteipnumRF)
+      )
+      when (seteipnum =/= 0.U) {seteipnum := 0.U}
+      val intFile = Module(new IntFile)
+      intFile.fromCSR.seteipnum.valid      := seteipnum =/= 0.U
+      intFile.fromCSR.seteipnum.bits.value := seteipnum
+      intFile.fromCSR.addr.valid           := fromCSR.addr.valid
+      intFile.fromCSR.addr.bits.addr       := fromCSR.addr.bits.addr
+      intFile.fromCSR.wdata                := fromCSR.wdata
+      intFile.fromCSR.claim                := fromCSR.claims(i)
+      toCSR.rdata       := intFile.toCSR.rdata
+      toCSR.pendings(i) := intFile.toCSR.pending
+      toCSR.topeis(i)   := intFile.toCSR.topei
+    }}
   }
 }
 
