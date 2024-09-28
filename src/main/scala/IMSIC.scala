@@ -110,49 +110,36 @@ class IMSICToCSRBundle extends Bundle {
 }
 
 
-class TLIMSIC(
-  intFileParams: IntFileParams,
-  groupID: Int = 0, // g
-  memberID: Int = 1, // h
-  beatBytes: Int = 8,
-)(implicit p: Parameters) extends LazyModule {
-  require(groupID < intFileParams.groupsNum,    f"groupID ${groupID} should less than groupsNum ${intFileParams.groupsNum}")
-  require(memberID < intFileParams.membersNum,  f"memberID ${memberID} should less than membersNum ${intFileParams.membersNum}")
-  println(f"groupID:  0x${groupID }%x")
-  println(f"memberID: 0x${memberID}%x")
+class IntFile extends Module {
+  // TODO: unify this parameterization with CSRToIMSICBundle's
+  private final val AddrWidth = 12
 
-  val device: SimpleDevice = new SimpleDevice(
-    "interrupt-controller",
-    Seq(f"riscv,imsic.${groupID}%d.${memberID}%d")
-  ) {}
+  val fromCSR = IO(Input(new Bundle {
+    val seteipnum = ValidIO(new Bundle {
+      val value = UInt(32.W)
+    })
+    val addr = ValidIO(new Bundle {
+      val addr = UInt(AddrWidth.W)
+    })
+    val wdata = ValidIO(new Bundle {
+      val op = OpType()
+      val data = UInt(64.W)
+    })
+    val claim = Bool()
+  }))
 
+  val toCSR = IO(Output(new Bundle {
+    val rdata = ValidIO(new Bundle {
+      val data = UInt(64.W)
+      // TODO:
+      // val illegal = Bool()
+    })
+    val eipB = Bool()
+    // 11 bits: 32*64 = 2048 interrupt sources
+    val topei  = UInt(11.W)
+  }))
 
-  // addr for the machine-level interrupt file: g*2^E + A + h*2^C
-  val mIntFileAddr = AddressSet(
-    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.mBaseAddr + memberID * pow2(intFileParams.mStrideBits),
-    pow2(intFileParams.intFileWidth) - 1
-  )
-  // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D
-  val sgIntFileAddr = AddressSet(
-    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.sgBaseAddr + memberID * pow2(intFileParams.sgStrideBits),
-    pow2(intFileParams.intFileWidth) * (1+intFileParams.geilen) - 1
-  )
-  println(f"mIntFileAddr:  [0x${mIntFileAddr.base }%x, 0x${mIntFileAddr.max }%x]")
-  println(f"sgIntFileAddr: [0x${sgIntFileAddr.base}%x, 0x${sgIntFileAddr.max}%x]")
-
-  val mIntFileNode: TLRegisterNode = TLRegisterNode(
-    address = Seq(mIntFileAddr),
-    device = device,
-    beatBytes = beatBytes,
-    undefZero = true,
-    concurrency = 1
-  )
-
-  lazy val module = new Imp
-  class Imp extends LazyModuleImp(this) {
-    val toCSR = IO(Output(new IMSICToCSRBundle))
-    val fromCSR = IO(Input(new CSRToIMSICBundle))
-
+  // TODO: LazyModule?
     // TODO: Add a struct for these CSRs in a interrupt file
     /// indirect CSRs
     val meidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
@@ -205,20 +192,14 @@ class TLIMSIC(
     } // end of scope for xiselect CSR reg map
     // TODO: End of the CSRs for a interrupt file
 
-    // TODO: directly access TL protocol, instead of use the regmap
-    val mseteipnum = RegInit(0.U(32.W))
-    val mseteipnumRF = RegField(32, mseteipnum)
-    mIntFileNode.regmap(
-      0 -> Seq(mseteipnumRF)
-    )
     // TODO: parameterization
+    // TODO: locally: shorter name fromCSR.seteipnum.bits.value
     when (
-      mseteipnum =/= 0.U
-      & meies(mseteipnum(10,6))(mseteipnum(5,0))
+      fromCSR.seteipnum.valid
+      & meies(fromCSR.seteipnum.bits.value(10,6))(fromCSR.seteipnum.bits.value(5,0))
     ) {
       // set meips bit
-      meips(mseteipnum(10,6)) := meips(mseteipnum(10,6)) | (1.U << (mseteipnum(5,0)))
-      mseteipnum := 0.U
+      meips(fromCSR.seteipnum.bits.value(10,6)) := meips(fromCSR.seteipnum.bits.value(10,6)) | (1.U << (fromCSR.seteipnum.bits.value(5,0)))
     }
 
     locally { // scope for xtopei
@@ -238,7 +219,7 @@ class TLIMSIC(
         // } <=> interrupts, when i <= (meithreshold -1), are enabled
         Mux(tmp_xtopei <= (xeithreshold-1.U), tmp_xtopei, 0.U)
       }
-      toCSR.mtopei := xtopei_filter(
+      toCSR.topei := xtopei_filter(
         meidelivery,
         meithreshold,
         ParallelPriorityMux(
@@ -248,12 +229,77 @@ class TLIMSIC(
         )
       )
     }
-    toCSR.meipB := toCSR.mtopei =/= 0.U
+    toCSR.eipB := toCSR.topei =/= 0.U
 
-    when(fromCSR.mClaim) {
+    when(fromCSR.claim) {
       // clear the pending bit indexed by xtopei in xeip
-      meips(toCSR.mtopei(10,6)) := meips(toCSR.mtopei(10,6)) & ~(1.U << toCSR.mtopei(5,0))
+      meips(toCSR.topei(10,6)) := meips(toCSR.topei(10,6)) & ~(1.U << toCSR.topei(5,0))
     }
+}
+
+class TLIMSIC(
+  intFileParams: IntFileParams,
+  groupID: Int = 0, // g
+  memberID: Int = 1, // h
+  beatBytes: Int = 8,
+)(implicit p: Parameters) extends LazyModule {
+  require(groupID < intFileParams.groupsNum,    f"groupID ${groupID} should less than groupsNum ${intFileParams.groupsNum}")
+  require(memberID < intFileParams.membersNum,  f"memberID ${memberID} should less than membersNum ${intFileParams.membersNum}")
+  println(f"groupID:  0x${groupID }%x")
+  println(f"memberID: 0x${memberID}%x")
+
+  val device: SimpleDevice = new SimpleDevice(
+    "interrupt-controller",
+    Seq(f"riscv,imsic.${groupID}%d.${memberID}%d")
+  ) {}
+
+
+  // addr for the machine-level interrupt file: g*2^E + A + h*2^C
+  val mIntFileAddr = AddressSet(
+    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.mBaseAddr + memberID * pow2(intFileParams.mStrideBits),
+    pow2(intFileParams.intFileWidth) - 1
+  )
+  // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D
+  val sgIntFileAddr = AddressSet(
+    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.sgBaseAddr + memberID * pow2(intFileParams.sgStrideBits),
+    pow2(intFileParams.intFileWidth) * (1+intFileParams.geilen) - 1
+  )
+  println(f"mIntFileAddr:  [0x${mIntFileAddr.base }%x, 0x${mIntFileAddr.max }%x]")
+  println(f"sgIntFileAddr: [0x${sgIntFileAddr.base}%x, 0x${sgIntFileAddr.max}%x]")
+
+  val mIntFileNode: TLRegisterNode = TLRegisterNode(
+    address = Seq(mIntFileAddr),
+    device = device,
+    beatBytes = beatBytes,
+    undefZero = true,
+    concurrency = 1
+  )
+
+  lazy val module = new Imp
+  class Imp extends LazyModuleImp(this) {
+    val toCSR = IO(Output(new IMSICToCSRBundle))
+    val fromCSR = IO(Input(new CSRToIMSICBundle))
+
+
+    // TODO: directly access TL protocol, instead of use the regmap
+    val mseteipnum = RegInit(0.U(32.W))
+    val mseteipnumRF = RegField(32, mseteipnum)
+    mIntFileNode.regmap(
+      0 -> Seq(mseteipnumRF)
+    )
+    when (mseteipnum =/= 0.U) {
+      mseteipnum := 0.U
+    }
+    val mIntFile = Module(new IntFile)
+    mIntFile.fromCSR.seteipnum.valid      := mseteipnum =/= 0.U
+    mIntFile.fromCSR.seteipnum.bits.value := mseteipnum
+    mIntFile.fromCSR.addr.valid           := fromCSR.addr.valid
+    mIntFile.fromCSR.addr.bits.addr       := fromCSR.addr.bits.addr
+    mIntFile.fromCSR.wdata                := fromCSR.wdata
+    mIntFile.fromCSR.claim                := fromCSR.mClaim
+    toCSR.rdata  := mIntFile.toCSR.rdata
+    toCSR.meipB  := mIntFile.toCSR.eipB
+    toCSR.mtopei := mIntFile.toCSR.topei
   }
 }
 
