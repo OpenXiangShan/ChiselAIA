@@ -95,7 +95,7 @@ local op_csrrc = 3
 local write_csr_op = function(miselect, data, op)
   dut.clock:negedge(1)
   dut.fromCSR_addr_valid:set(1)
-  dut.fromCSR_addr_bits_addr:set(miselect)
+  dut.fromCSR_addr_bits:set(miselect)
   dut.fromCSR_wdata_valid:set(1)
   dut.fromCSR_wdata_bits_op:set(op)
   dut.fromCSR_wdata_bits_data:chdl():set(data, true)
@@ -109,7 +109,7 @@ end
 local read_csr = function(miselect)
   dut.clock:negedge(1)
   dut.fromCSR_addr_valid:set(1)
-  dut.fromCSR_addr_bits_addr:set(miselect)
+  dut.fromCSR_addr_bits:set(miselect)
   dut.clock:negedge(1)
   dut.fromCSR_addr_valid:set(0)
 end
@@ -219,7 +219,7 @@ verilua "appendTasks" {
       dut.cycles:dump()
       print("read_csr:eie began")
       read_csr(csr_addr_eie0)
-      dut.toCSR_rdata_bits_data:expect(dut.u_TLIMSICWrapper.imsic.intFile.eies_0:get())
+      dut.toCSR_rdata_bits:expect(dut.u_TLIMSICWrapper.imsic.intFile.eies_0:get())
       print("read_csr:eie passed")
     end
 

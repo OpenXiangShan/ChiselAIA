@@ -75,9 +75,7 @@ object OpType extends ChiselEnum {
 class CSRToIMSICBundle extends Bundle {
   private final val AddrWidth = 12
 
-  val addr = ValidIO(new Bundle {
-    val addr = UInt(AddrWidth.W)
-  })
+  val addr = ValidIO(UInt(AddrWidth.W))
   // val virt = Bool()
   val priv = UInt(2.W) // U, S, M
 
@@ -93,11 +91,9 @@ class CSRToIMSICBundle extends Bundle {
 }
 class IMSICToCSRBundle extends Bundle {
   // private val NumVSIRFiles = 63
-  val rdata = ValidIO(new Bundle {
-    val data = UInt(64.W)
-    // TODO:
-    // val illegal = Bool()
-  })
+  val rdata = ValidIO(UInt(64.W))
+  // TODO:
+  // val illegal = Bool()
   val pendings = Vec(2, Bool()) // TODO: NumVSIRFiles.W
   // 11 bits: 32*64 = 2048 interrupt sources
   val topeis  = Vec(2, UInt(11.W)) // m, s, TODO: vs
@@ -109,12 +105,8 @@ class IntFile extends Module {
   private final val AddrWidth = 12
 
   val fromCSR = IO(Input(new Bundle {
-    val seteipnum = ValidIO(new Bundle {
-      val value = UInt(32.W)
-    })
-    val addr = ValidIO(new Bundle {
-      val addr = UInt(AddrWidth.W)
-    })
+    val seteipnum = ValidIO(UInt(32.W))
+    val addr = ValidIO(UInt(AddrWidth.W))
     val wdata = ValidIO(new Bundle {
       val op = OpType()
       val data = UInt(64.W)
@@ -123,11 +115,9 @@ class IntFile extends Module {
   }))
 
   val toCSR = IO(Output(new Bundle {
-    val rdata = ValidIO(new Bundle {
-      val data = UInt(64.W)
-      // TODO:
-      // val illegal = Bool()
-    })
+    val rdata = ValidIO(UInt(64.W))
+    // TODO:
+    // val illegal = Bool()
     val pending = Bool()
     // 11 bits: 32*64 = 2048 interrupt sources
     val topei  = UInt(11.W)
@@ -175,9 +165,9 @@ class IntFile extends Module {
         }.toMap ++ eies.zipWithIndex.map { case (eie: UInt, i: Int) =>
           RegMap(0xC0+i*2, eie)
         },
-        /*raddr*/ fromCSR.addr.bits.addr,
-        /*rdata*/ toCSR.rdata.bits.data,
-        /*waddr*/ fromCSR.addr.bits.addr,
+        /*raddr*/ fromCSR.addr.bits,
+        /*rdata*/ toCSR.rdata.bits,
+        /*waddr*/ fromCSR.addr.bits,
         /*wen  */ fromCSR.wdata.valid,
         /*wdata*/ wdata,
         /*wmask*/ wmask,
@@ -190,10 +180,10 @@ class IntFile extends Module {
     // TODO: locally: shorter name fromCSR.seteipnum.bits.value
     when (
       fromCSR.seteipnum.valid
-      & eies(fromCSR.seteipnum.bits.value(10,6))(fromCSR.seteipnum.bits.value(5,0))
+      & eies(fromCSR.seteipnum.bits(10,6))(fromCSR.seteipnum.bits(5,0))
     ) {
       // set eips bit
-      eips(fromCSR.seteipnum.bits.value(10,6)) := eips(fromCSR.seteipnum.bits.value(10,6)) | (1.U << (fromCSR.seteipnum.bits.value(5,0)))
+      eips(fromCSR.seteipnum.bits(10,6)) := eips(fromCSR.seteipnum.bits(10,6)) | (1.U << (fromCSR.seteipnum.bits(5,0)))
     }
 
     locally { // scope for xtopei
@@ -299,11 +289,11 @@ class TLIMSIC(
         new_
       }
       val intFile = Module(new IntFile)
-      intFile.fromCSR.seteipnum.valid      := seteipnum =/= 0.U
-      intFile.fromCSR.seteipnum.bits.value := seteipnum
-      intFile.fromCSR.addr                 := sel(fromCSR.addr)
-      intFile.fromCSR.wdata                := sel(fromCSR.wdata)
-      intFile.fromCSR.claim                := fromCSR.claims(i) & intFilesSelOH(i)
+      intFile.fromCSR.seteipnum.valid := seteipnum =/= 0.U
+      intFile.fromCSR.seteipnum.bits  := seteipnum
+      intFile.fromCSR.addr            := sel(fromCSR.addr)
+      intFile.fromCSR.wdata           := sel(fromCSR.wdata)
+      intFile.fromCSR.claim           := fromCSR.claims(i) & intFilesSelOH(i)
       toCSR.rdata       := intFile.toCSR.rdata
       toCSR.pendings(i) := intFile.toCSR.pending
       toCSR.topeis(i)   := intFile.toCSR.topei
