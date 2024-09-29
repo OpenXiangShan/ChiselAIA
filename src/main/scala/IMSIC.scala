@@ -40,9 +40,11 @@ case class IMSICParams(
 ) {
   // # IMSICParams Arguments
   require(xlen == 64, "currently only support xlen = 64")
-  require(intSrcWidth <= 11, f"intSrcWidth=${intSrcWidth}, must less than log2(2048)=11, as there are at most 2048 eip/eie bits")
+  val xlenWidth = log2Ceil(xlen)
+  require(intSrcWidth <= 11, f"intSrcWidth=${intSrcWidth}, must not greater than log2(2048)=11, as there are at most 2048 eip/eie bits")
   val privNum     : Int  = 3            // number of privilege modes: machine, supervisor, virtualized supervisor
   val intFilesNum : Int  = 2 + geilen   // number of interrupt files, m, s, vs0, vs1, ...
+  val eixNum      : Int  = pow2(intSrcWidth).toInt / xlen // number of eip/eie registers
 
   // ## Arguments for interrupt file's memory region
   val intFileMemWidth: Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
@@ -143,41 +145,34 @@ class TLIMSIC(
     val topeis  = Vec(params.privNum, UInt(params.intSrcWidth.W))
   }
   class IntFile extends Module {
-    // TODO: unify this parameterization with CSRToIMSICBundle's
-    private final val AddrWidth = 12
-  
     val fromCSR = IO(Input(new Bundle {
       val seteipnum = ValidIO(UInt(32.W))
-      val addr = ValidIO(UInt(AddrWidth.W))
+      val addr = ValidIO(UInt(params.iselectWidth.W))
       val wdata = ValidIO(new Bundle {
         val op = OpType()
-        val data = UInt(64.W)
+        val data = UInt(params.xlen.W)
       })
       val claim = Bool()
     }))
-  
     val toCSR = IO(Output(new Bundle {
-      val rdata = ValidIO(UInt(64.W))
+      val rdata = ValidIO(UInt(params.xlen.W))
       // TODO:
       // val illegal = Bool()
       val pending = Bool()
-      // 11 bits: 32*64 = 2048 interrupt sources
-      val topei  = UInt(11.W)
+      val topei  = UInt(params.intSrcWidth.W)
     }))
-  
-    // TODO: Add a struct for these CSRs in a interrupt file
+
     /// indirect CSRs
-    val eidelivery = RegInit(1.U(64.W)) // TODO: default: disable it
-    val eithreshold = RegInit(0.U(64.W))
+    val eidelivery = RegInit(1.U(params.xlen.W)) // TODO: default: disable it
+    val eithreshold = RegInit(0.U(params.xlen.W))
     // TODO: eips(0)(0) is read-only false.B
-    val eips = RegInit(VecInit.fill(32){0.U(64.W)})
+    val eips = RegInit(VecInit.fill(params.eixNum){0.U(params.xlen.W)})
     // TODO: eies(0)(0) is read-only false.B
-    val eies = RegInit(VecInit.fill(32){Fill(64, 1.U)}) // TODO: default: disable all
-    dontTouch(eips)
+    val eies = RegInit(VecInit.fill(params.eixNum){Fill(params.xlen, 1.U)}) // TODO: default: disable all
 
     locally { // scope for xiselect CSR reg map
-      val wdata = WireDefault(0.U(64.W))
-      val wmask = WireDefault(0.U(64.W))
+      val wdata = WireDefault(0.U(params.xlen.W))
+      val wmask = WireDefault(0.U(params.xlen.W))
       when(fromCSR.wdata.valid) {
         switch(fromCSR.wdata.bits.op) {
           is(OpType.ILLEGAL) {
@@ -185,10 +180,10 @@ class TLIMSIC(
           }
           is(OpType.CSRRW) {
             wdata := fromCSR.wdata.bits.data
-            wmask := Fill(64, 1.U)
+            wmask := Fill(params.xlen, 1.U)
           }
           is(OpType.CSRRS) {
-            wdata := Fill(64, 1.U)
+            wdata := Fill(params.xlen, 1.U)
             wmask := fromCSR.wdata.bits.data
           }
           is(OpType.CSRRC) {
@@ -215,16 +210,14 @@ class TLIMSIC(
       )
       toCSR.rdata.valid := RegNext(fromCSR.addr.valid)
     } // end of scope for xiselect CSR reg map
-    // TODO: End of the CSRs for a interrupt file
 
-    // TODO: parameterization
-    // TODO: locally: shorter name fromCSR.seteipnum.bits.value
-    when (
-      fromCSR.seteipnum.valid
-      & eies(fromCSR.seteipnum.bits(10,6))(fromCSR.seteipnum.bits(5,0))
-    ) {
-      // set eips bit
-      eips(fromCSR.seteipnum.bits(10,6)) := eips(fromCSR.seteipnum.bits(10,6)) | (1.U << (fromCSR.seteipnum.bits(5,0)))
+    locally {
+      val index  = fromCSR.seteipnum.bits(params.intSrcWidth-1, params.xlenWidth)
+      val offset = fromCSR.seteipnum.bits(params.xlenWidth-1, 0)
+      when ( fromCSR.seteipnum.valid & eies(index)(offset) ) {
+        // set eips bit
+        eips(index) := eips(index) | UIntToOH(offset)
+      }
     }
 
     locally { // scope for xtopei
@@ -232,8 +225,8 @@ class TLIMSIC(
       //  Append true.B to handle the cornor case, where all bits in eip and eie are disabled.
       //  If do not append true.B, then we need to check whether the eip & eie are empty,
       //  otherwise, the returned topei will become the max index, that is 2048-1
-      // TODO: require the support max interrupt sources number must be 2^N
-      //              [0,                2^N-1] :+ 2^N
+      // Noted: the support max interrupt sources number = 2^intSrcWidth
+      //              [0,     2^intSrcWidth-1] :+ 2^intSrcWidth
       val eipBools = Cat(eips.reverse).asBools :+ true.B
       val eieBools = Cat(eies.reverse).asBools :+ true.B
       def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
@@ -253,12 +246,14 @@ class TLIMSIC(
           }
         )
       )
-    }
+    } // end of scope for xtopei
     toCSR.pending := toCSR.topei =/= 0.U
 
     when(fromCSR.claim) {
+      val index  = toCSR.topei(params.intSrcWidth-1, params.xlenWidth)
+      val offset = toCSR.topei(params.xlenWidth-1, 0)
       // clear the pending bit indexed by xtopei in xeip
-      eips(toCSR.topei(10,6)) := eips(toCSR.topei(10,6)) & ~(1.U << toCSR.topei(5,0))
+      eips(index) := eips(index) & ~UIntToOH(offset)
     }
   }
 
