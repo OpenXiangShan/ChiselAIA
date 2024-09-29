@@ -136,6 +136,11 @@ local select_vs_intfile = function(vgein)
   dut.fromCSR_vgein:set(vgein)
   dut.fromCSR_virt:set(1)
 end
+local wrap_topei = function(in_)
+  local extract = bit.band(0x7ff, in_)
+  local out = bit.bor(extract, bit.lshift(extract, 16))
+  return out
+end
 
 verilua "appendTasks" {
   main_task = function ()
@@ -156,7 +161,7 @@ verilua "appendTasks" {
       dut.cycles:dump()
       print("mseteipnum began")
       m_int(1996)
-      dut.toCSR_topeis_0:expect(1996)
+      dut.toCSR_topeis_0:expect(wrap_topei(1996))
       dut.toCSR_pendings_0:expect(1)
       print("mseteipnum passed")
     end
@@ -165,7 +170,7 @@ verilua "appendTasks" {
       dut.cycles:dump()
       print("mclaim began")
       claim()
-      dut.toCSR_topeis_0:expect(0)
+      dut.toCSR_topeis_0:expect(wrap_topei(0))
       print("mclaim passed")
     end
 
@@ -173,11 +178,11 @@ verilua "appendTasks" {
       dut.cycles:dump()
       print("2_mseteipnum_1_mclaim began")
       m_int(12)
-      dut.toCSR_topeis_0:expect(12)
+      dut.toCSR_topeis_0:expect(wrap_topei(12))
       m_int(8)
-      dut.toCSR_topeis_0:expect(8)
+      dut.toCSR_topeis_0:expect(wrap_topei(8))
       claim()
-      dut.toCSR_topeis_0:expect(12)
+      dut.toCSR_topeis_0:expect(wrap_topei(12))
       print("2_mseteipnum_1_mclaim passed")
     end
 
@@ -204,8 +209,8 @@ verilua "appendTasks" {
       dut.cycles:dump()
       print("write_csr:meithreshold began")
       local mtopei = dut.toCSR_topeis_0:get()
-      write_csr(csr_addr_eithreshold, mtopei)
-      assert(dut.toCSR_topeis_0:get() < mtopei)
+      write_csr(csr_addr_eithreshold, bit.band(0x7ff,mtopei))
+      assert(dut.toCSR_topeis_0:get() ~= wrap_topei(mtopei))
       write_csr(csr_addr_eithreshold, mtopei+1)
       dut.toCSR_topeis_0:expect(mtopei)
       write_csr(csr_addr_eithreshold, 0)
@@ -216,7 +221,7 @@ verilua "appendTasks" {
       dut.cycles:dump()
       print("write_csr:eip began")
       write_csr(csr_addr_eip0, 0xc)
-      dut.toCSR_topeis_0:expect(2)
+      dut.toCSR_topeis_0:expect(wrap_topei(2))
       print("write_csr:eip end")
     end
 
@@ -224,7 +229,7 @@ verilua "appendTasks" {
       dut.cycles:dump()
       print("write_csr:eie began")
       local mtopei = dut.toCSR_topeis_0:get()
-      local mask = bit.lshift(1, mtopei)
+      local mask = bit.lshift(1, bit.band(mtopei, 0x7ff))
       write_csr_op(csr_addr_eie0, mask, op_csrrc)
       assert(dut.toCSR_topeis_0:get() ~= mtopei)
       write_csr_op(csr_addr_eie0, mask, op_csrrs)
@@ -242,11 +247,11 @@ verilua "appendTasks" {
 
     do
       dut.cycles:dump()
-      dut.toCSR_topeis_1:expect(0)
+      dut.toCSR_topeis_1:expect(wrap_topei(0))
       select_s_intfile()
       print("simple_supervisor_level began")
       s_int(1234)
-      dut.toCSR_topeis_1:expect(1234)
+      dut.toCSR_topeis_1:expect(wrap_topei(1234))
       dut.toCSR_pendings_1:expect(1)
       select_m_intfile()
       print("simple_supervisor_level end")
@@ -255,13 +260,13 @@ verilua "appendTasks" {
     do
       dut.cycles:dump()
       select_vs_intfile(2)
-      dut.toCSR_topeis_2:expect(0)
+      dut.toCSR_topeis_2:expect(wrap_topei(0))
       print("simple_virtualized_supervisor_level:vgein2 began")
       v_int_vgein2(137)
-      dut.toCSR_topeis_2:expect(137)
+      dut.toCSR_topeis_2:expect(wrap_topei(137))
       dut.toCSR_pendings_4:expect(1)
       select_m_intfile()
-      dut.toCSR_topeis_2:expect(137)
+      dut.toCSR_topeis_2:expect(wrap_topei(137))
       dut.toCSR_pendings_4:expect(1)
       print("simple_virtualized_supervisor_level:vgein2 end")
     end

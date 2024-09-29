@@ -142,7 +142,7 @@ class TLIMSIC(
     // TODO:
     // val illegal = Bool()
     val pendings = Vec(params.intFilesNum, Bool())
-    val topeis  = Vec(params.privNum, UInt(params.intSrcWidth.W))
+    val topeis  = Vec(params.privNum, UInt(32.W))
   }
   class IntFile extends Module {
     val fromCSR = IO(Input(new Bundle {
@@ -303,12 +303,25 @@ class TLIMSIC(
       }}
       tlNode.regmap((maps): _*)
     }}
-    toCSR.topeis(0) := topeis_forEachIntFiles(0) // m
-    toCSR.topeis(1) := topeis_forEachIntFiles(1) // s
-    toCSR.topeis(2) := ParallelMux(
-      UIntToOH(fromCSR.vgein, params.geilen).asBools,
-      topeis_forEachIntFiles.drop(2)
-    ) // vs
+
+    locally {
+      // Format of *topei:
+      // * bits 26:16 Interrupt identity
+      // * bits 10:0 Interrupt priority (same as identity)
+      // * All other bit positions are zeros.
+      // For detailed explainations of these memory region arguments,
+      // please refer to the manual *The RISC-V Advanced Interrupt Architeture*: 3.9. Top external interrupt CSRs
+      def wrap(topei: UInt): UInt = {
+        val zeros = 0.U((16-params.intSrcWidth).W)
+        Cat(zeros, topei, zeros, topei)
+      }
+      toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
+      toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
+      toCSR.topeis(2) := wrap(ParallelMux(
+        UIntToOH(fromCSR.vgein, params.geilen).asBools,
+        topeis_forEachIntFiles.drop(2)
+      )) // vs
+    }
   }
 }
 
