@@ -16,6 +16,21 @@ import _root_.circt.stage.ChiselStage
 object pow2 {
   def apply(n: Int): Long = 1L << n
 }
+// TODO: add RegMapDefault to xs-utils
+object RegMapDefault {
+  def Unwritable = null
+  def apply(addr: Int, reg: UInt, wfn: UInt => UInt = (x => x)) = (addr, (reg, wfn))
+  def generate(default: UInt, mapping: Map[Int, (UInt, UInt => UInt)], raddr: UInt, rdata: UInt,
+    waddr: UInt, wen: Bool, wdata: UInt, wmask: UInt):Unit = {
+    val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
+    rdata := LookupTreeDefault(raddr, default, chiselMapping.map { case (a, r, w) => (a, r) })
+    chiselMapping.map { case (a, r, w) =>
+      if (w != null) when (wen && waddr === a) { r := w(MaskData(r, wdata, wmask)) }
+    }
+  }
+  def generate(default: UInt, mapping: Map[Int, (UInt, UInt => UInt)], addr: UInt, rdata: UInt,
+    wen: Bool, wdata: UInt, wmask: UInt):Unit = generate(default, mapping, addr, rdata, addr, wen, wdata, wmask)
+}
 
 case class IMSICParams(
   // # IMSICParams Arguments
@@ -192,7 +207,8 @@ class TLIMSIC(
           }
         }
       }
-      RegMap.generate(
+      RegMapDefault.generate(
+        0.U,
         Map(
           RegMap(0x70, eidelivery),
           RegMap(0x72, eithreshold),
