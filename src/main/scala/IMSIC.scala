@@ -262,20 +262,15 @@ class TLIMSIC(
     val toCSR = IO(Output(new IMSICToCSRBundle))
     val fromCSR = IO(Input(new CSRToIMSICBundle))
 
-    // TODO: parameterization
-    // TODO: use a more compact way to generate onehot
-    val intFilesSel = WireDefault(0.U(log2Ceil(6).W)) // TODO: parameterization
-    when (fromCSR.priv === PrivType.M) {
-      intFilesSel := 0.U
-    }.elsewhen (fromCSR.priv === PrivType.S) {
-      when (!fromCSR.virt) {
-        intFilesSel := 1.U
-      }.otherwise {
-        intFilesSel := 2.U + fromCSR.vgein
-      }
+    val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
+    locally {
+      val pv = Cat(fromCSR.priv.asUInt, fromCSR.virt)
+      when (pv === Cat(PrivType.M.asUInt, false.B)) { intFilesSelOH := UIntToOH(0.U) }
+      when (pv === Cat(PrivType.S.asUInt, false.B)) { intFilesSelOH := UIntToOH(1.U) }
+      when (pv === Cat(PrivType.S.asUInt,  true.B)) { intFilesSelOH := UIntToOH(2.U + fromCSR.vgein) }
+      .otherwise {/* TODO: ILLEGAL */}
     }
-    val intFilesSelOH = UIntToOH(intFilesSel, 2 + 4) // TODO: parameterization
-    val tmp_topeis = Wire(Vec(2 + 4, UInt(11.W))) // m, s, vs0, vs1, ...
+    val topeis_forEachIntFiles = Wire(Vec(params.intFilesNum, UInt(params.intSrcWidth.W)))
 
     Seq((mTLNode,1), (sgTLNode,1+params.geilen)).zipWithIndex.map {
       case ((tlNode: TLRegisterNode, thisNodeintFilesNum: Int), nodei: Int)
@@ -301,18 +296,18 @@ class TLIMSIC(
         intFile.fromCSR.addr            := sel(fromCSR.addr)
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(ii)
-        toCSR.rdata        := intFile.toCSR.rdata
-        toCSR.pendings(ii) := intFile.toCSR.pending
-        tmp_topeis(ii)     := intFile.toCSR.topei
+        toCSR.rdata                     := intFile.toCSR.rdata
+        toCSR.pendings(ii)              := intFile.toCSR.pending
+        topeis_forEachIntFiles(ii)      := intFile.toCSR.topei
         (thisNode_ii * pow2(params.intFileMemWidth).toInt -> Seq(RegField(32, seteipnum)))
       }}
       tlNode.regmap((maps): _*)
     }}
-    toCSR.topeis(0) := tmp_topeis(0) // m
-    toCSR.topeis(1) := tmp_topeis(1) // s
+    toCSR.topeis(0) := topeis_forEachIntFiles(0) // m
+    toCSR.topeis(1) := topeis_forEachIntFiles(1) // s
     toCSR.topeis(2) := ParallelMux(
-      UIntToOH(fromCSR.vgein, 4).asBools, // TODO: parameterization
-      tmp_topeis.drop(2)
+      UIntToOH(fromCSR.vgein, params.geilen).asBools,
+      topeis_forEachIntFiles.drop(2)
     ) // vs
   }
 }
