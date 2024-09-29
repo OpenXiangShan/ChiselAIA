@@ -19,40 +19,57 @@ object pow2 {
 
 case class IMSICParams(
   // # IMSICParams Arguments
+  xlen            : Int  = 64          ,
+  intSrcWidth     : Int  = 11          ,// log2(number of interrupt sources)
   // ## Arguments for interrupt file's memory region
   // For detailed explainations of these memory region arguments,
   // please refer to the manual *The RISC-V Advanced Interrupt Architeture*: 3.6. Arrangement of the memory regions of multiple interrupt files
+  // TODO: reduce arguments, to release the burden of users
   membersNum      : Int  = 2           ,// h_max: members number with in a group
   mBaseAddr       : Long = 0x61000000L ,// A: base addr for machine-level interrupt files
   mStrideBits     : Int  = 12          ,// C: stride between each machine-level interrupt files
   sgBaseAddr      : Long = 0x82900000L ,// B: base addr for supervisor- and guest-level interrupt files
-  sgStrideBits    : Int  = 15          ,// D: stride between each supervisor- and guest-level interrupt files
+  sgStrideWidth   : Int  = 15          ,// D: stride between each supervisor- and guest-level interrupt files
   geilen          : Int  = 4           ,// number of guest interrupt files
   groupsNum       : Int  = 1           ,// g_max: groups number
-  groupStrideBits : Int  = 16          ,// E: stride between each interrupt file groups
+  groupStrideWidth: Int  = 16          ,// E: stride between each interrupt file groups
+  // ## Arguments for CSRs
+  vgeinWidth      : Int  = 6           ,
+  // ### Arguments for indirect accessed CSRs, aka, CSRs accessed by *iselect and *ireg
+  iselectWidth    : Int  = 12          ,
 ) {
-  println("# IMSICParams: Parameters for IMSIC")
-  println("## Parameters for interrupt file's memory region")
+  // # IMSICParams Arguments
+  require(xlen == 64, "currently only support xlen = 64")
+  require(intSrcWidth <= 11, f"intSrcWidth=${intSrcWidth}, must less than log2(2048)=11, as there are at most 2048 eip/eie bits")
+  val privNum     : Int  = 3            // number of privilege modes: machine, supervisor, virtualized supervisor
+  val intFilesNum : Int  = 2 + geilen   // number of interrupt files, m, s, vs0, vs1, ...
+
+  // ## Arguments for interrupt file's memory region
   val intFileMemWidth: Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
   val k: Int = log2Ceil(membersNum)
   println(f"IMSICParams.k: ${k}%d")
   require((mBaseAddr & (pow2(k + mStrideBits) -1)) == 0, "mBaseAddr should be aligned to a 2^(k+C)")
-  require(mStrideBits >= 12)
-  require(sgStrideBits >= log2Ceil(geilen+1)+12)
-  require(groupStrideBits >= k + math.max(mStrideBits, sgStrideBits))
+  require(mStrideBits >= intFileMemWidth)
+  require(sgStrideWidth >= log2Ceil(geilen+1) + intFileMemWidth)
+  require(groupStrideWidth >= k + math.max(mStrideBits, sgStrideWidth))
   val j: Int = log2Ceil(groupsNum + 1)
   println(f"IMSICParams.j: ${j}%d")
-  require((sgBaseAddr & (pow2(k + sgStrideBits) - 1)) == 0, "sgBaseAddr should be aligned to a 2^(k+D)")
-  require(( ((pow2(j)-1) * pow2(groupStrideBits)) & mBaseAddr ) == 0)
-  require(( ((pow2(j)-1) * pow2(groupStrideBits)) & sgBaseAddr) == 0)
+  require((sgBaseAddr & (pow2(k + sgStrideWidth) - 1)) == 0, "sgBaseAddr should be aligned to a 2^(k+D)")
+  require(( ((pow2(j)-1) * pow2(groupStrideWidth)) & mBaseAddr ) == 0)
+  require(( ((pow2(j)-1) * pow2(groupStrideWidth)) & sgBaseAddr) == 0)
   println(f"IMSICParams.membersNum:        ${membersNum     }%d")
   println(f"IMSICParams.mBaseAddr:       0x${mBaseAddr      }%x")
   println(f"IMSICParams.mStrideBits:       ${mStrideBits    }%d")
   println(f"IMSICParams.sgBaseAddr:      0x${sgBaseAddr     }%x")
-  println(f"IMSICParams.sgStrideBits:      ${sgStrideBits   }%d")
+  println(f"IMSICParams.sgStrideWidth:     ${sgStrideWidth   }%d")
   println(f"IMSICParams.geilen:            ${geilen         }%d")
   println(f"IMSICParams.groupsNum:         ${groupsNum      }%d")
-  println(f"IMSICParams.groupStrideBits:   ${groupStrideBits}%d")
+  println(f"IMSICParams.groupStrideWidth:  ${groupStrideWidth}%d")
+
+  // ## Arguments for CSRs
+  require(vgeinWidth >= log2Ceil(geilen))
+  // ### Arguments for indirect accessed CSRs, aka, CSRs accessed by *iselect and *ireg
+  require(iselectWidth >=8, f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63")
 }
 
 
@@ -75,12 +92,12 @@ class TLIMSIC(
 
   // addr for the machine-level interrupt file: g*2^E + A + h*2^C
   val mAddr = AddressSet(
-    groupID * pow2(params.groupStrideBits) + params.mBaseAddr + memberID * pow2(params.mStrideBits),
+    groupID * pow2(params.groupStrideWidth) + params.mBaseAddr + memberID * pow2(params.mStrideBits),
     pow2(params.intFileMemWidth) - 1
   )
   // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D
   val sgAddr = AddressSet(
-    groupID * pow2(params.groupStrideBits) + params.sgBaseAddr + memberID * pow2(params.sgStrideBits),
+    groupID * pow2(params.groupStrideWidth) + params.sgBaseAddr + memberID * pow2(params.sgStrideWidth),
     pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1
   )
   println(f"mAddr:  [0x${mAddr.base }%x, 0x${mAddr.max }%x]")
@@ -108,30 +125,22 @@ class TLIMSIC(
     val M = Value(3.U)
   }
   class CSRToIMSICBundle extends Bundle {
-    private final val AddrWidth = 12
-  
-    val addr = ValidIO(UInt(AddrWidth.W))
+    val addr = ValidIO(UInt(params.iselectWidth.W))
     val virt = Bool()
     val priv = PrivType()
-  
-    val VGEINWidth = 6
-    val vgein = UInt(VGEINWidth.W)
-  
+    val vgein = UInt(params.vgeinWidth.W)
     val wdata = ValidIO(new Bundle {
       val op = OpType()
-      val data = UInt(64.W)
+      val data = UInt(params.xlen.W)
     })
-  
-    val claims = Vec(3, Bool()) // m, s, TODO: vs
+    val claims = Vec(params.privNum, Bool())
   }
   class IMSICToCSRBundle extends Bundle {
-    // private val NumVSIRFiles = 63
-    val rdata = ValidIO(UInt(64.W))
+    val rdata = ValidIO(UInt(params.xlen.W))
     // TODO:
     // val illegal = Bool()
-    val pendings = Vec(2 + 4, Bool()) // TODO: NumVSIRFiles.W
-    // 11 bits: 32*64 = 2048 interrupt sources
-    val topeis  = Vec(3, UInt(11.W)) // m, s, TODO: vs
+    val pendings = Vec(params.intFilesNum, Bool())
+    val topeis  = Vec(params.privNum, UInt(params.intSrcWidth.W))
   }
   class IntFile extends Module {
     // TODO: unify this parameterization with CSRToIMSICBundle's
