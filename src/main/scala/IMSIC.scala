@@ -17,62 +17,53 @@ object pow2 {
   def apply(n: Int): Long = 1L << n
 }
 
-case class IntFileParams(
+case class IMSICParams(
+  // # IMSICParams Arguments
+  // ## Arguments for interrupt file's memory region
+  // For detailed explainations of these memory region arguments,
+  // please refer to the manual *The RISC-V Advanced Interrupt Architeture*: 3.6. Arrangement of the memory regions of multiple interrupt files
   membersNum      : Int  = 2           ,// h_max: members number with in a group
-
   mBaseAddr       : Long = 0x61000000L ,// A: base addr for machine-level interrupt files
   mStrideBits     : Int  = 12          ,// C: stride between each machine-level interrupt files
-
   sgBaseAddr      : Long = 0x82900000L ,// B: base addr for supervisor- and guest-level interrupt files
   sgStrideBits    : Int  = 15          ,// D: stride between each supervisor- and guest-level interrupt files
   geilen          : Int  = 4           ,// number of guest interrupt files
-
   groupsNum       : Int  = 1           ,// g_max: groups number
   groupStrideBits : Int  = 16          ,// E: stride between each interrupt file groups
 ) {
-  val intFileWidth: Int  = 12           // interrupt file width: 12-bit width => 4KB size
-
+  println("# IMSICParams: Parameters for IMSIC")
+  println("## Parameters for interrupt file's memory region")
+  val intFileMemWidth: Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
   val k: Int = log2Ceil(membersNum)
-  println(f"IntFileParams.k: ${k}%d")
+  println(f"IMSICParams.k: ${k}%d")
   require((mBaseAddr & (pow2(k + mStrideBits) -1)) == 0, "mBaseAddr should be aligned to a 2^(k+C)")
   require(mStrideBits >= 12)
-
   require(sgStrideBits >= log2Ceil(geilen+1)+12)
-
   require(groupStrideBits >= k + math.max(mStrideBits, sgStrideBits))
-
   val j: Int = log2Ceil(groupsNum + 1)
-  println(f"IntFileParams.j: ${j}%d")
+  println(f"IMSICParams.j: ${j}%d")
   require((sgBaseAddr & (pow2(k + sgStrideBits) - 1)) == 0, "sgBaseAddr should be aligned to a 2^(k+D)")
-
-  require((
-    ((pow2(j)-1) * pow2(groupStrideBits))
-    & mBaseAddr
-  ) == 0)
-  require((
-    ((pow2(j)-1) * pow2(groupStrideBits))
-    & sgBaseAddr
-  ) == 0)
-
-  println(f"IntFileParams.membersNum:        ${membersNum     }%d")
-  println(f"IntFileParams.mBaseAddr:       0x${mBaseAddr      }%x")
-  println(f"IntFileParams.mStrideBits:       ${mStrideBits    }%d")
-  println(f"IntFileParams.sgBaseAddr:      0x${sgBaseAddr     }%x")
-  println(f"IntFileParams.sgStrideBits:      ${sgStrideBits   }%d")
-  println(f"IntFileParams.geilen:            ${geilen         }%d")
-  println(f"IntFileParams.groupsNum:         ${groupsNum      }%d")
-  println(f"IntFileParams.groupStrideBits:   ${groupStrideBits}%d")
+  require(( ((pow2(j)-1) * pow2(groupStrideBits)) & mBaseAddr ) == 0)
+  require(( ((pow2(j)-1) * pow2(groupStrideBits)) & sgBaseAddr) == 0)
+  println(f"IMSICParams.membersNum:        ${membersNum     }%d")
+  println(f"IMSICParams.mBaseAddr:       0x${mBaseAddr      }%x")
+  println(f"IMSICParams.mStrideBits:       ${mStrideBits    }%d")
+  println(f"IMSICParams.sgBaseAddr:      0x${sgBaseAddr     }%x")
+  println(f"IMSICParams.sgStrideBits:      ${sgStrideBits   }%d")
+  println(f"IMSICParams.geilen:            ${geilen         }%d")
+  println(f"IMSICParams.groupsNum:         ${groupsNum      }%d")
+  println(f"IMSICParams.groupStrideBits:   ${groupStrideBits}%d")
 }
 
 
 class TLIMSIC(
-  intFileParams: IntFileParams,
+  params: IMSICParams,
   groupID: Int = 0, // g
   memberID: Int = 1, // h
   beatBytes: Int = 8,
 )(implicit p: Parameters) extends LazyModule {
-  require(groupID < intFileParams.groupsNum,    f"groupID ${groupID} should less than groupsNum ${intFileParams.groupsNum}")
-  require(memberID < intFileParams.membersNum,  f"memberID ${memberID} should less than membersNum ${intFileParams.membersNum}")
+  require(groupID < params.groupsNum,    f"groupID ${groupID} should less than groupsNum ${params.groupsNum}")
+  require(memberID < params.membersNum,  f"memberID ${memberID} should less than membersNum ${params.membersNum}")
   println(f"groupID:  0x${groupID }%x")
   println(f"memberID: 0x${memberID}%x")
 
@@ -84,13 +75,13 @@ class TLIMSIC(
 
   // addr for the machine-level interrupt file: g*2^E + A + h*2^C
   val mAddr = AddressSet(
-    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.mBaseAddr + memberID * pow2(intFileParams.mStrideBits),
-    pow2(intFileParams.intFileWidth) - 1
+    groupID * pow2(params.groupStrideBits) + params.mBaseAddr + memberID * pow2(params.mStrideBits),
+    pow2(params.intFileMemWidth) - 1
   )
   // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D
   val sgAddr = AddressSet(
-    groupID * pow2(intFileParams.groupStrideBits) + intFileParams.sgBaseAddr + memberID * pow2(intFileParams.sgStrideBits),
-    pow2(intFileParams.intFileWidth) * pow2(log2Ceil(1+intFileParams.geilen)) - 1
+    groupID * pow2(params.groupStrideBits) + params.sgBaseAddr + memberID * pow2(params.sgStrideBits),
+    pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1
   )
   println(f"mAddr:  [0x${mAddr.base }%x, 0x${mAddr.max }%x]")
   println(f"sgAddr: [0x${sgAddr.base}%x, 0x${sgAddr.max}%x]")
@@ -282,7 +273,7 @@ class TLIMSIC(
     val intFilesSelOH = UIntToOH(intFilesSel, 2 + 4) // TODO: parameterization
     val tmp_topeis = Wire(Vec(2 + 4, UInt(11.W))) // m, s, vs0, vs1, ...
 
-    Seq((mTLNode,1), (sgTLNode,1+intFileParams.geilen)).zipWithIndex.map {
+    Seq((mTLNode,1), (sgTLNode,1+params.geilen)).zipWithIndex.map {
       case ((tlNode: TLRegisterNode, thisNodeintFilesNum: Int), nodei: Int)
     => {
       // TODO: directly access TL protocol, instead of use the regmap
@@ -309,7 +300,7 @@ class TLIMSIC(
         toCSR.rdata        := intFile.toCSR.rdata
         toCSR.pendings(ii) := intFile.toCSR.pending
         tmp_topeis(ii)     := intFile.toCSR.topei
-        (thisNode_ii * pow2(intFileParams.intFileWidth).toInt -> Seq(RegField(32, seteipnum)))
+        (thisNode_ii * pow2(params.intFileMemWidth).toInt -> Seq(RegField(32, seteipnum)))
       }}
       tlNode.regmap((maps): _*)
     }}
@@ -332,7 +323,7 @@ class TLIMSICWrapper()(implicit p: Parameters) extends LazyModule {
       Seq(TLMasterParameters.v1("sg_tl", IdRange(0, 16)))
   )))
 
-  val imsic = LazyModule(new TLIMSIC(IntFileParams())(Parameters.empty))
+  val imsic = LazyModule(new TLIMSIC(IMSICParams())(Parameters.empty))
   imsic.mTLNode := mTLCNode
   imsic.sgTLNode := sgTLCNode
 
