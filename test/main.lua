@@ -271,6 +271,14 @@ verilua "appendTasks" {
       print("simple_virtualized_supervisor_level:vgein2 end")
     end
 
+    do
+      dut.cycles:dump()
+      print("illegal:iselect began")
+      write_csr_op(0x71, 0xc0, op_csrrs)
+      dut.toCSR_illegal:expect(1)
+      print("illegal:iselect passed")
+    end
+
     dut.cycles:dump()
     dut.clock:posedge(1000)
     dut.cycles:dump()

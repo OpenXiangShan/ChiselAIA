@@ -131,7 +131,6 @@ class TLIMSIC(
     concurrency = 1
   ))
 
-  // TODO: implement all signals in the belowing two bundles
   // Based on Xiangshan NewCSR
   object OpType extends ChiselEnum {
     val ILLEGAL = Value(0.U)
@@ -157,8 +156,7 @@ class TLIMSIC(
   }
   class IMSICToCSRBundle extends Bundle {
     val rdata = ValidIO(UInt(params.xlen.W))
-    // TODO:
-    // val illegal = Bool()
+    val illegal = Bool()
     val pendings = Vec(params.intFilesNum, Bool())
     val topeis  = Vec(params.privNum, UInt(32.W))
   }
@@ -174,8 +172,7 @@ class TLIMSIC(
     }))
     val toCSR = IO(Output(new Bundle {
       val rdata = ValidIO(UInt(params.xlen.W))
-      // TODO:
-      // val illegal = Bool()
+      val illegal = Bool()
       val pending = Bool()
       val topei  = UInt(params.intSrcWidth.W)
     }))
@@ -228,6 +225,7 @@ class TLIMSIC(
         /*wdata*/ wdata,
         /*wmask*/ wmask,
       )
+      toCSR.illegal := RegNext(fromCSR.addr.valid) & ~toCSR.rdata.valid
     } // end of scope for xiselect CSR reg map
 
     locally {
@@ -290,6 +288,7 @@ class TLIMSIC(
       .otherwise {/* TODO: ILLEGAL */}
     }
     val topeis_forEachIntFiles = Wire(Vec(params.intFilesNum, UInt(params.intSrcWidth.W)))
+    val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
 
     Seq((mTLNode,1), (sgTLNode,1+params.geilen)).zipWithIndex.map {
       case ((tlNode: TLRegisterNode, thisNodeintFilesNum: Int), nodei: Int)
@@ -318,6 +317,7 @@ class TLIMSIC(
         toCSR.rdata                     := intFile.toCSR.rdata
         toCSR.pendings(ii)              := intFile.toCSR.pending
         topeis_forEachIntFiles(ii)      := intFile.toCSR.topei
+        illegals_forEachIntFiles(ii)    := intFile.toCSR.illegal
         (thisNode_ii * pow2(params.intFileMemWidth).toInt -> Seq(RegField(32, seteipnum)))
       }}
       tlNode.regmap((maps): _*)
@@ -341,6 +341,7 @@ class TLIMSIC(
         topeis_forEachIntFiles.drop(2)
       )) // vs
     }
+    toCSR.illegal := illegals_forEachIntFiles.reduce(_|_)
   }
 }
 
