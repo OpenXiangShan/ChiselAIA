@@ -17,19 +17,22 @@ object pow2 {
   def apply(n: Int): Long = 1L << n
 }
 // TODO: add RegMapDefault to xs-utils
-object RegMapDefault {
+object RegMapDefaultValid {
   def Unwritable = null
   def apply(addr: Int, reg: UInt, wfn: UInt => UInt = (x => x)) = (addr, (reg, wfn))
-  def generate(default: UInt, mapping: Map[Int, (UInt, UInt => UInt)], raddr: UInt, rdata: UInt,
+  def generate(default: UInt, mapping: Map[Int, (UInt, UInt => UInt)], raddr: UInt, rdata: UInt, rvalid: Bool,
     waddr: UInt, wen: Bool, wdata: UInt, wmask: UInt):Unit = {
     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
-    rdata := LookupTreeDefault(raddr, default, chiselMapping.map { case (a, r, w) => (a, r) })
+    val rdata_valid = WireDefault(0.U((rdata.getWidth+1).W))
+    rdata_valid := LookupTreeDefault(raddr, Cat(default,false.B), chiselMapping.map { case (a, r, w) => (a, Cat(r,true.B)) })
+    rdata := rdata_valid(rdata.getWidth, 1)
+    rvalid := rdata_valid(0)
     chiselMapping.map { case (a, r, w) =>
       if (w != null) when (wen && waddr === a) { r := w(MaskData(r, wdata, wmask)) }
     }
   }
-  def generate(default: UInt, mapping: Map[Int, (UInt, UInt => UInt)], addr: UInt, rdata: UInt,
-    wen: Bool, wdata: UInt, wmask: UInt):Unit = generate(default, mapping, addr, rdata, addr, wen, wdata, wmask)
+  def generate(default: UInt, mapping: Map[Int, (UInt, UInt => UInt)], addr: UInt, rdata: UInt, rvalid: Bool,
+    wen: Bool, wdata: UInt, wmask: UInt):Unit = generate(default, mapping, addr, rdata, rvalid, addr, wen, wdata, wmask)
 }
 
 case class IMSICParams(
@@ -207,7 +210,7 @@ class TLIMSIC(
           }
         }
       }
-      RegMapDefault.generate(
+      RegMapDefaultValid.generate(
         0.U,
         Map(
           RegMap(0x70, eidelivery),
@@ -219,12 +222,12 @@ class TLIMSIC(
         },
         /*raddr*/ fromCSR.addr.bits,
         /*rdata*/ toCSR.rdata.bits,
+        /*rdata*/ toCSR.rdata.valid,
         /*waddr*/ fromCSR.addr.bits,
         /*wen  */ fromCSR.wdata.valid,
         /*wdata*/ wdata,
         /*wmask*/ wmask,
       )
-      toCSR.rdata.valid := RegNext(fromCSR.addr.valid)
     } // end of scope for xiselect CSR reg map
 
     locally {
