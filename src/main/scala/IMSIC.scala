@@ -42,15 +42,11 @@ case class IMSICParams(
   // ## Arguments for interrupt file's memory region
   // For detailed explainations of these memory region arguments,
   // please refer to the manual *The RISC-V Advanced Interrupt Architeture*: 3.6. Arrangement of the memory regions of multiple interrupt files
-  // TODO: reduce arguments, to release the burden of users
   membersNum      : Int  = 2           ,// h_max: members number with in a group
   mBaseAddr       : Long = 0x61000000L ,// A: base addr for machine-level interrupt files
-  mStrideBits     : Int  = 12          ,// C: stride between each machine-level interrupt files
   sgBaseAddr      : Long = 0x82900000L ,// B: base addr for supervisor- and guest-level interrupt files
-  sgStrideWidth   : Int  = 15          ,// D: stride between each supervisor- and guest-level interrupt files
   geilen          : Int  = 4           ,// number of guest interrupt files
   groupsNum       : Int  = 1           ,// g_max: groups number
-  groupStrideWidth: Int  = 16          ,// E: stride between each interrupt file groups
   // ## Arguments for CSRs
   vgeinWidth      : Int  = 6           ,
   // ### Arguments for indirect accessed CSRs, aka, CSRs accessed by *iselect and *ireg
@@ -65,25 +61,29 @@ case class IMSICParams(
   val eixNum      : Int  = pow2(intSrcWidth).toInt / xlen // number of eip/eie registers
 
   // ## Arguments for interrupt file's memory region
-  val intFileMemWidth: Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
-  val k: Int = log2Ceil(membersNum)
-  println(f"IMSICParams.k: ${k}%d")
+  val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
+  val k               : Int = log2Ceil(membersNum)
+  // require(mStrideBits >= intFileMemWidth)
+  val mStrideBits     : Int  = intFileMemWidth // C: stride between each machine-level interrupt files
   require((mBaseAddr & (pow2(k + mStrideBits) -1)) == 0, "mBaseAddr should be aligned to a 2^(k+C)")
-  require(mStrideBits >= intFileMemWidth)
-  require(sgStrideWidth >= log2Ceil(geilen+1) + intFileMemWidth)
-  require(groupStrideWidth >= k + math.max(mStrideBits, sgStrideWidth))
-  val j: Int = log2Ceil(groupsNum + 1)
-  println(f"IMSICParams.j: ${j}%d")
+  // require(sgStrideWidth >= log2Ceil(geilen+1) + intFileMemWidth)
+  val sgStrideWidth   : Int = log2Ceil(geilen+1) + intFileMemWidth // D: stride between each supervisor- and guest-level interrupt files
+  // require(groupStrideWidth >= k + math.max(mStrideBits, sgStrideWidth))
+  val groupStrideWidth: Int = k + math.max(mStrideBits, sgStrideWidth) // E: stride between each interrupt file groups
+  val j               : Int = log2Ceil(groupsNum + 1)
   require((sgBaseAddr & (pow2(k + sgStrideWidth) - 1)) == 0, "sgBaseAddr should be aligned to a 2^(k+D)")
   require(( ((pow2(j)-1) * pow2(groupStrideWidth)) & mBaseAddr ) == 0)
   require(( ((pow2(j)-1) * pow2(groupStrideWidth)) & sgBaseAddr) == 0)
-  println(f"IMSICParams.membersNum:        ${membersNum     }%d")
-  println(f"IMSICParams.mBaseAddr:       0x${mBaseAddr      }%x")
-  println(f"IMSICParams.mStrideBits:       ${mStrideBits    }%d")
-  println(f"IMSICParams.sgBaseAddr:      0x${sgBaseAddr     }%x")
+
+  println(f"IMSICParams.k:                 ${k               }%d")
+  println(f"IMSICParams.j:                 ${j               }%d")
+  println(f"IMSICParams.membersNum:        ${membersNum      }%d")
+  println(f"IMSICParams.mBaseAddr:       0x${mBaseAddr       }%x")
+  println(f"IMSICParams.mStrideBits:       ${mStrideBits     }%d")
+  println(f"IMSICParams.sgBaseAddr:      0x${sgBaseAddr      }%x")
   println(f"IMSICParams.sgStrideWidth:     ${sgStrideWidth   }%d")
-  println(f"IMSICParams.geilen:            ${geilen         }%d")
-  println(f"IMSICParams.groupsNum:         ${groupsNum      }%d")
+  println(f"IMSICParams.geilen:            ${geilen          }%d")
+  println(f"IMSICParams.groupsNum:         ${groupsNum       }%d")
   println(f"IMSICParams.groupStrideWidth:  ${groupStrideWidth}%d")
 
   // ## Arguments for CSRs
