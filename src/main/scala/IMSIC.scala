@@ -283,13 +283,14 @@ class TLIMSIC(
     val toCSR = IO(Output(new IMSICToCSRBundle))
     val fromCSR = IO(Input(new CSRToIMSICBundle))
 
+    val illegal_priv = WireDefault(false.B)
     val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
     locally {
       val pv = Cat(fromCSR.priv.asUInt, fromCSR.virt)
       when (pv === Cat(PrivType.M.asUInt, false.B)) { intFilesSelOH := UIntToOH(0.U) }
       when (pv === Cat(PrivType.S.asUInt, false.B)) { intFilesSelOH := UIntToOH(1.U) }
       when (pv === Cat(PrivType.S.asUInt,  true.B)) { intFilesSelOH := UIntToOH(2.U + fromCSR.vgein) }
-      .otherwise {/* TODO: ILLEGAL */}
+      .otherwise { illegal_priv := true.B }
     }
     val topeis_forEachIntFiles = Wire(Vec(params.intFilesNum, UInt(params.intSrcWidth.W)))
     val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
@@ -348,6 +349,7 @@ class TLIMSIC(
     toCSR.illegal := RegNext(fromCSR.addr.valid) & Seq(
       illegals_forEachIntFiles.reduce(_|_),
       fromCSR.vgein >= params.geilen.asUInt,
+      illegal_priv,
     ).reduce(_|_)
   }
 }

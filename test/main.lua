@@ -302,6 +302,19 @@ verilua "appendTasks" {
       print("illegal:iselect:wdata_op passed")
     end
 
+    do
+      dut.cycles:dump()
+      print("illegal:priv began")
+      dut.clock:negedge(2)
+      dut.toCSR_illegal:expect(0)
+      dut.fromCSR_priv:set(3)
+      dut.fromCSR_virt:set(1)
+      write_csr(csr_addr_eidelivery, 0xfa)
+      dut.toCSR_illegal:expect(1)
+      select_m_intfile()
+      print("illegal:priv passed")
+    end
+
     dut.cycles:dump()
     dut.clock:posedge(1000)
     dut.cycles:dump()
