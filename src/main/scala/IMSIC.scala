@@ -185,13 +185,14 @@ class TLIMSIC(
     // TODO: eies(0)(0) is read-only false.B
     val eies = RegInit(VecInit.fill(params.eixNum){Fill(params.xlen, 1.U)}) // TODO: default: disable all
 
+    val illegal_wdata_op = WireDefault(false.B)
     locally { // scope for xiselect CSR reg map
       val wdata = WireDefault(0.U(params.xlen.W))
       val wmask = WireDefault(0.U(params.xlen.W))
       when(fromCSR.wdata.valid) {
         switch(fromCSR.wdata.bits.op) {
           is(OpType.ILLEGAL) {
-            // TODO
+            illegal_wdata_op := true.B
           }
           is(OpType.CSRRW) {
             wdata := fromCSR.wdata.bits.data
@@ -225,7 +226,10 @@ class TLIMSIC(
         /*wdata*/ wdata,
         /*wmask*/ wmask,
       )
-      toCSR.illegal := RegNext(fromCSR.addr.valid) & ~toCSR.rdata.valid
+      toCSR.illegal := RegNext(fromCSR.addr.valid) & Seq(
+        ~toCSR.rdata.valid,
+        illegal_wdata_op,
+      ).reduce(_|_)
     } // end of scope for xiselect CSR reg map
 
     locally {

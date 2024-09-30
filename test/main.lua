@@ -96,6 +96,7 @@ local claim = function()
     dut.clock:negedge(1)
     dut.fromCSR_claims_0:set(0)
 end
+local op_illegal = 0
 local op_csrrw = 1
 local op_csrrs = 2
 local op_csrrc = 3
@@ -291,6 +292,15 @@ verilua "appendTasks" {
       print("illegal:vgein end")
     end
 
+    do
+      dut.cycles:dump()
+      print("illegal:iselect:wdata_op began")
+      dut.clock:negedge(2)
+      dut.toCSR_illegal:expect(0)
+      write_csr_op(csr_addr_eidelivery, 0xc0, op_illegal)
+      dut.toCSR_illegal:expect(1)
+      print("illegal:iselect:wdata_op passed")
+    end
 
     dut.cycles:dump()
     dut.clock:posedge(1000)
