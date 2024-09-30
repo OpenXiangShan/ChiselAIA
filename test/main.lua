@@ -279,6 +279,19 @@ verilua "appendTasks" {
       print("illegal:iselect passed")
     end
 
+    do
+      dut.cycles:dump()
+      print("illegal:vgein began")
+      dut.clock:negedge(2)
+      dut.toCSR_illegal:expect(0)
+      select_vs_intfile(4)
+      write_csr(csr_addr_eidelivery, 1)
+      dut.toCSR_illegal:expect(1)
+      select_m_intfile()
+      print("illegal:vgein end")
+    end
+
+
     dut.cycles:dump()
     dut.clock:posedge(1000)
     dut.cycles:dump()

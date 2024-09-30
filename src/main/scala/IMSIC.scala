@@ -341,7 +341,10 @@ class TLIMSIC(
         topeis_forEachIntFiles.drop(2)
       )) // vs
     }
-    toCSR.illegal := illegals_forEachIntFiles.reduce(_|_)
+    toCSR.illegal := RegNext(fromCSR.addr.valid) & Seq(
+      illegals_forEachIntFiles.reduce(_|_),
+      fromCSR.vgein >= params.geilen.asUInt,
+    ).reduce(_|_)
   }
 }
 
