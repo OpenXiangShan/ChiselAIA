@@ -16,8 +16,8 @@ import _root_.circt.stage.ChiselStage
 object pow2 {
   def apply(n: Int): Long = 1L << n
 }
-// TODO: add RegMapDefault to xs-utils
-object RegMapDefaultValid {
+// RegMap that supports Default and Valid
+object RegMapDV {
   def Unwritable = null
   def apply(addr: Int, reg: UInt, wfn: UInt => UInt = (x => x)) = (addr, (reg, wfn))
   def generate(default: UInt, mapping: Map[Int, (UInt, UInt => UInt)], raddr: UInt, rdata: UInt, rvalid: Bool,
@@ -180,9 +180,7 @@ class TLIMSIC(
     /// indirect CSRs
     val eidelivery = RegInit(0.U(params.xlen.W))
     val eithreshold = RegInit(0.U(params.xlen.W))
-    // TODO: eips(0)(0) is read-only false.B
     val eips = RegInit(VecInit.fill(params.eixNum){0.U(params.xlen.W)})
-    // TODO: eies(0)(0) is read-only false.B
     val eies = RegInit(VecInit.fill(params.eixNum){0.U(params.xlen.W)})
 
     val illegal_wdata_op = WireDefault(false.B)
@@ -208,15 +206,18 @@ class TLIMSIC(
           }
         }
       }
-      RegMapDefaultValid.generate(
+      def bit0ReadOnlyZero(x: UInt): UInt = { x & ~1.U(x.getWidth.W) }
+      RegMapDV.generate(
         0.U,
         Map(
-          RegMap(0x70, eidelivery),
-          RegMap(0x72, eithreshold),
-        ) ++ eips.zipWithIndex.map { case (eip: UInt, i: Int) =>
-          RegMap(0x80+i*2, eip)
-        }.toMap ++ eies.zipWithIndex.map { case (eie: UInt, i: Int) =>
-          RegMap(0xC0+i*2, eie)
+          RegMapDV(0x70, eidelivery),
+          RegMapDV(0x72, eithreshold),
+          RegMapDV(0x80, eips(0), bit0ReadOnlyZero),
+          RegMapDV(0xC0, eies(0), bit0ReadOnlyZero),
+        ) ++ eips.drop(1).zipWithIndex.map { case (eip: UInt, i: Int) =>
+          RegMapDV(0x82+i*2, eip)
+        } ++ eies.drop(1).zipWithIndex.map { case (eie: UInt, i: Int) =>
+          RegMapDV(0xC2+i*2, eie)
         },
         /*raddr*/ fromCSR.addr.bits,
         /*rdata*/ toCSR.rdata.bits,

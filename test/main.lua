@@ -336,6 +336,28 @@ verilua "appendTasks" {
       print("illegal:priv passed")
     end
 
+    do
+      dut.cycles:dump()
+      print("eip0[0]_readonly_0:write_csr began")
+      write_csr(csr_addr_eip0, 0x1)
+      read_csr(csr_addr_eip0)
+      dut.clock:posedge_until(10, function ()
+        return dut.toCSR_rdata_valid:get() == 1
+      end)
+      dut.toCSR_rdata_bits:expect(0)
+      print("eip0[0]_readonly_0:write_csr passed")
+
+      dut.cycles:dump()
+      print("eip0[0]_readonly_0:seteipnum began")
+      m_int(0)
+      read_csr(csr_addr_eip0)
+      dut.clock:posedge_until(10, function ()
+        return dut.toCSR_rdata_valid:get() == 1
+      end)
+      dut.toCSR_rdata_bits:expect(0)
+      print("eip0[0]_readonly_0:seteipnum passed")
+    end
+
     dut.cycles:dump()
     dut.clock:posedge(1000)
     dut.cycles:dump()
