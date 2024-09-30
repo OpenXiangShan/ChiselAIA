@@ -178,12 +178,12 @@ class TLIMSIC(
     }))
 
     /// indirect CSRs
-    val eidelivery = RegInit(1.U(params.xlen.W)) // TODO: default: disable it
+    val eidelivery = RegInit(0.U(params.xlen.W))
     val eithreshold = RegInit(0.U(params.xlen.W))
     // TODO: eips(0)(0) is read-only false.B
     val eips = RegInit(VecInit.fill(params.eixNum){0.U(params.xlen.W)})
     // TODO: eies(0)(0) is read-only false.B
-    val eies = RegInit(VecInit.fill(params.eixNum){Fill(params.xlen, 1.U)}) // TODO: default: disable all
+    val eies = RegInit(VecInit.fill(params.eixNum){0.U(params.xlen.W)})
 
     val illegal_wdata_op = WireDefault(false.B)
     locally { // scope for xiselect CSR reg map

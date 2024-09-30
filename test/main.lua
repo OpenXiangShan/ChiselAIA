@@ -142,6 +142,25 @@ local wrap_topei = function(in_)
   local out = bit.bor(extract, bit.lshift(extract, 16))
   return out
 end
+local init_imsic = function()
+  select_m_intfile()
+  write_csr(csr_addr_eidelivery, 1)
+  for e = 0,31,1 do
+    write_csr(csr_addr_eie0 + 2*e, -1ULL)
+  end
+  select_s_intfile()
+  write_csr(csr_addr_eidelivery, 1)
+  for e = 0,31,1 do
+    write_csr(csr_addr_eie0 + 2*e, -1ULL)
+  end
+  for i = 0,3,1 do
+    select_vs_intfile(i)
+    write_csr(csr_addr_eidelivery, 1)
+    for e = 0,31,1 do
+      write_csr(csr_addr_eie0 + 2*e, -1ULL)
+    end
+  end
+end
 
 verilua "appendTasks" {
   main_task = function ()
@@ -154,6 +173,8 @@ verilua "appendTasks" {
     sg_d.ready:set(1)
 
     dut.clock:posedge(10)
+
+    init_imsic()
 
     dut.toCSR_pendings_0:expect(0)
     select_m_intfile()
