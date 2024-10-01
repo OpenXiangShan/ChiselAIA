@@ -4,10 +4,6 @@
 out
 .bloop
 
-# for verilua
-.xmake
-build
-
 # for chisel generated files
 gen
 
