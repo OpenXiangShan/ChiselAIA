@@ -256,6 +256,7 @@ async def main_test(dut):
   cocotb.log.info("write_csr:op began")
   await write_csr_op(dut, csr_addr_eidelivery, 0xc0, op_csrrs)
   assert dut.imsic.intFile.eidelivery.value == 0xc1
+  assert dut.toCSR_illegal == 0
   await write_csr_op(dut, csr_addr_eidelivery, 0xc0, op_csrrc)
   assert dut.imsic.intFile.eidelivery.value == 0x1
   cocotb.log.info("write_csr:op passed")
