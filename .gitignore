@@ -1,7 +1,21 @@
 .direnv
+# for scala build system
 .metals
 out
 .bloop
+
+# for verilua
 .xmake
 build
+
+# for chisel generated files
 gen
+
+# for cocotb
+__pycache__
+*.xml
+sim_build
+
+# for gtkwave
+*.fst
+*.gtkw
