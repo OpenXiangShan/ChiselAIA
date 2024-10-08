@@ -10,7 +10,7 @@ let
     * Show this help: `h`
     * Enter nix-shell: `nix-shell` (`direnv` recommanded!)
     * Generate verilog: `mill OpenAIA`
-    * Run unit tests: `make -C test`
+    * Run unit tests: `make -j -C test`
   '';
   _h_ = pkgs.writeShellScriptBin "h" ''
     ${pkgs.glow}/bin/glow ${h_content}
