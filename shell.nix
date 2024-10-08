@@ -9,6 +9,8 @@ let
 
     * Show this help: `h`
     * Enter nix-shell: `nix-shell` (`direnv` recommanded!)
+    * Before generating verilog, make sure git submodules have been updated.
+      * E.g. `git submodule update --init --recursive`
     * Generate verilog: `mill OpenAIA`
     * Run unit tests: `make -j -C test`
   '';
