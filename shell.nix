@@ -1,6 +1,10 @@
 let
   name = "OpenAIA.scala";
-  pkgs = import <nixpkgs> {};
+  # pin nixpkgs to latest nixos-24.05
+  pkgs = import (fetchTarball {
+    url = "https://github.com/NixOS/nixpkgs/archive/ecbc1ca8ffd6aea8372ad16be9ebbb39889e55b6.tar.gz";
+    sha256 = "0yfaybsa30zx4bm900hgn3hz92javlf4d47ahdaxj9fai00ddc1x";
+  }) {};
   my-python3 = pkgs.python3.withPackages (python-pkgs: [
     python-pkgs.cocotb
   ]);
