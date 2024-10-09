@@ -204,7 +204,7 @@ async def init_imsic(dut):
 
 # Main test
 @cocotb.test()
-async def main_test(dut):
+async def imsic_test(dut):
   """Main test converted from main.lua."""
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
