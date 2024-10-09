@@ -25,9 +25,6 @@ import freechips.rocketchip.prci.{ClockSinkDomain}
 import freechips.rocketchip.util._
 import xs.utils._
 
-// _root_ disambiguates from package chisel3.util.circt if user imports chisel3.util._
-import _root_.circt.stage.ChiselStage
-
 object pow2 {
   def apply(n: Int): Long = 1L << n
 }
@@ -368,53 +365,4 @@ class TLIMSIC(
       illegal_priv,
     ).reduce(_|_)
   }
-}
-
-class TLIMSICWrapper()(implicit p: Parameters) extends LazyModule {
-  val mTLCNode = TLClientNode(
-    Seq(TLMasterPortParameters.v1(
-      Seq(TLMasterParameters.v1("m_tl", IdRange(0, 16)))
-  )))
-  val sgTLCNode = TLClientNode(
-    Seq(TLMasterPortParameters.v1(
-      Seq(TLMasterParameters.v1("sg_tl", IdRange(0, 16)))
-  )))
-
-  val imsic = LazyModule(new TLIMSIC(IMSICParams())(Parameters.empty))
-  imsic.mTLNode := mTLCNode
-  imsic.sgTLNode := sgTLCNode
-
-  lazy val module = new LazyModuleImp(this) {
-    mTLCNode.makeIOs()(ValName("m"))
-    sgTLCNode.makeIOs()(ValName("sg"))
-    val toCSR = IO(Output(chiselTypeOf(imsic.module.toCSR)))
-    val fromCSR = IO(Input(chiselTypeOf(imsic.module.fromCSR)))
-    toCSR   <> imsic.module.toCSR
-    fromCSR <> imsic.module.fromCSR
-
-    dontTouch(imsic.module.toCSR)
-    dontTouch(imsic.module.fromCSR)
-  }
-}
-
-/**
- * Generate Verilog sources
- */
-object TLIMSIC extends App {
-  val top = DisableMonitors(p => LazyModule(
-    new TLIMSICWrapper()(Parameters.empty))
-  )(Parameters.empty)
-
-  ChiselStage.emitSystemVerilog(
-    top.module,
-    // more opts see: $CHISEL_FIRTOOL_PATH/firtool -h
-    firtoolOpts = Array(
-      "-disable-all-randomization",
-      "-strip-debug-info",
-      // without this, firtool will exit with error: Unhandled annotation
-      "--disable-annotation-unknown",
-      "--lowering-options=explicitBitcast,disallowLocalVariables,disallowPortDeclSharing,locationInfoStyle=none",
-      "--split-verilog", "-o=gen",
-    )
-  )
 }
