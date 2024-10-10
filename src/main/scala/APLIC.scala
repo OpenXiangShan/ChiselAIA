@@ -21,6 +21,7 @@ import freechips.rocketchip.diplomacy._
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.regmapper._
+import xs.utils._
 
 class TLAPLIC()(implicit p: Parameters) extends LazyModule {
   val node = TLRegisterNode(
@@ -36,7 +37,16 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
-    val domaincfg    = RegInit(0x80000004L.U(32.W)) // only support MSI delivery mode
+    val domaincfg = new Bundle {
+      val high = 0x80.U(8.W)
+      val IE   = RegInit(false.B)
+      val DM   = true.B // only support MSI delivery mode
+      val BE   = false.B // only support little endian
+      val r = RegReadFn( high<<24 | IE<<8 | DM<<2 | BE )
+      val w = RegWriteFn((valid, data) => {
+        when (valid) { IE := data(8) }; true.B
+      })
+    }
     val sourcecfgs   = RegInit(VecInit.fill(1023){0.U(32.W)}) // TODO: parameterization
     val mmsiaddrcfg  = RegInit(0.U(32.W))
     val mmsiaddrcfgh = RegInit(0.U(32.W))
@@ -55,7 +65,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
     val genmsi       = RegInit(0.U(32.W))
     val targets      = RegInit(VecInit.fill(1023){0.U(32.W)}) // TODO: parameterization
     node.regmap(
-      0x0000            -> Seq(RegField(32, domaincfg)),
+      0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
       0x0004/*~0x0FFC*/ -> sourcecfgs.map(RegField(32, _)),
       0x1BC0            -> Seq(RegField(32, mmsiaddrcfg)),
       0x1BC4            -> Seq(RegField(32, mmsiaddrcfgh)),

@@ -100,7 +100,7 @@ async def aplic_simple_write_read_test(dut):
     await write_read_check_2(dut, addr, data, data)
 
   # TODO: utilize random number
-  await write_read_check_1(dut, base_addr+offset_domaincfg, 0xfedcba98)
+  await write_read_check_2(dut, base_addr+offset_domaincfg, 0xfedcab98, 0x80000104)
   for i in [0,3]: # TODO: random
     await write_read_check_1(dut, base_addr+offset_sourcecfg+i*4, offset_sourcecfg+i*4)
   await write_read_check_1(dut, base_addr+offset_mmsiaddrcfg, offset_mmsiaddrcfg)
