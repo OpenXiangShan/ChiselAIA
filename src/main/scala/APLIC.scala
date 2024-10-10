@@ -47,7 +47,25 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
         when (valid) { IE := data(8) }; true.B
       })
     }
-    val sourcecfgs   = RegInit(VecInit.fill(1023){0.U(32.W)}) // TODO: parameterization
+    class Sourcecfg extends Bundle {
+      val D = RegInit(false.B)
+      val ChildIndex = RegInit(0.U(10.W))
+      val SM        = RegInit(0.U(3.W))
+      val List(inactive, detached, reserved2, reserved3, edge1, edge0, level1, level0) = Enum(8)
+      val r = RegReadFn( D<<10 | Mux(D, ChildIndex, SM) )
+      val w = RegWriteFn((valid, data) => {
+        val i_D=data(10); val i_ChildIndex=data(9,0); val i_SM=data(2,0)
+        when (valid) {
+          D := i_D
+          when (i_D) {
+            ChildIndex := i_ChildIndex
+          }.otherwise {
+            SM := Mux(i_SM===reserved2 || i_SM===reserved3, inactive, i_SM)
+          }
+        }; true.B
+      })
+    }
+    val sourcecfgs   = (0 until 1023).map {_=>new Sourcecfg} // TODO: parameterization
     val mmsiaddrcfg  = RegInit(0.U(32.W))
     val mmsiaddrcfgh = RegInit(0.U(32.W))
     val smsiaddrcfg  = RegInit(0.U(32.W))
@@ -66,7 +84,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
     val targets      = RegInit(VecInit.fill(1023){0.U(32.W)}) // TODO: parameterization
     node.regmap(
       0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
-      0x0004/*~0x0FFC*/ -> sourcecfgs.map(RegField(32, _)),
+      0x0004/*~0x0FFC*/ -> sourcecfgs.map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
       0x1BC0            -> Seq(RegField(32, mmsiaddrcfg)),
       0x1BC4            -> Seq(RegField(32, mmsiaddrcfgh)),
       0x1BC8            -> Seq(RegField(32, smsiaddrcfg)),
