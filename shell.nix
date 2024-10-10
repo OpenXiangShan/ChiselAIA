@@ -44,6 +44,8 @@ in pkgs.mkShell {
   in ''
     export CHISEL_FIRTOOL_PATH=${circt_1_62_0}/bin/
     export PYTHONPATH+=${my-python3}/lib/${my-python3.libPrefix}/site-packages
+    # verilator consumes large size of stack
+    ulimit -s 211487
     h
   '';
 }

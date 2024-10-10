@@ -17,33 +17,71 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge
 
-async def a_put_full32(dut, addr, data):
+op_put_full = 0
+op_get = 4
+op_access_ack = 0
+op_access_ack_data = 1
+async def a_op(dut, addr, data, op, mask, size) -> None:
   await FallingEdge(dut.clock)
   while not dut.domain_0_a_ready:
-    await RisingEdge(dut.clock)
-
+    await FallingEdge(dut.clock)
   dut.domain_0_a_valid.value = 1
-  dut.domain_0_a_bits_opcode.value = 0
+  dut.domain_0_a_bits_opcode.value = op
   dut.domain_0_a_bits_address.value = addr
-  dut.domain_0_a_bits_mask.value = 0xf
-  dut.domain_0_a_bits_size.value = 2
+  dut.domain_0_a_bits_mask.value = mask
+  dut.domain_0_a_bits_size.value = size
   dut.domain_0_a_bits_data.value = data
   await FallingEdge(dut.clock)
   dut.domain_0_a_valid.value = 0
-
-offset_domaincfg = 0
-async def write_mapped_reg(dut, base, offset, data):
-  await a_put_full32(dut, base + offset, data)
+async def a_op32(dut, addr, data, op) -> None:
+  await a_op(
+    dut, addr,
+    data if addr%8==0 else data<<32,
+    op,
+    0x0f if addr%8==0 else 0xf0,
+    2,
+  )
+async def a_put_full32(dut, addr, data) -> None:
+  await a_op32(dut, addr, data, op_put_full)
   for _ in range(10):
     await RisingEdge(dut.clock)
-    if dut.aplic.domaincfg == data:
+    if dut.domain_0_d_bits_opcode == op_access_ack and dut.domain_0_d_valid == 1:
       break
   else:
-    assert False, f"Timeout waiting for domaincfg == 0x${data}%x"
-  await RisingEdge(dut.clock)
+    assert False, f"Timeout waiting for op_access_ack"
+async def a_get32(dut, addr) -> int:
+  await a_op32(dut, addr, 0, op_get)
+  for _ in range(10):
+    await RisingEdge(dut.clock)
+    if dut.domain_0_d_bits_opcode == op_access_ack_data and dut.domain_0_d_valid == 1:
+      break
+  else:
+    assert False, f"Timeout waiting for op_access_ack_data"
+  odata = int(dut.domain_0_d_bits_data)
+  return odata if addr%8==0 else odata>>32
+
+base_addr           = 0x19960000
+offset_domaincfg    = 0
+offset_sourcecfg    = 0x0004
+offset_mmsiaddrcfg  = 0x1BC0
+offset_mmsiaddrcfgh = 0x1BC4
+offset_smsiaddrcfg  = 0x1BC8
+offset_smsiaddrcfgh = 0x1BCC
+offset_setips       = 0x1C00
+offset_setipnum     = 0x1CDC
+offset_in_clrips    = 0x1D00
+offset_clripnum     = 0x1DDC
+offset_seties       = 0x1E00
+offset_setienum     = 0x1EDC
+offset_clries       = 0x1F00
+offset_clrienum     = 0x1FDC
+offset_setipnum_le  = 0x2000
+offset_setipnum_be  = 0x2004
+offset_genmsi       = 0x3000
+offset_targets      = 0x3004
 
 @cocotb.test()
-async def aplic_test(dut):
+async def aplic_simple_write_read_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
   # Apply reset
@@ -55,4 +93,34 @@ async def aplic_test(dut):
   dut.domain_0_d_ready.value = 1
   await RisingEdge(dut.clock)
 
-  await write_mapped_reg(dut, 0x19960000, offset_domaincfg, 0x137)
+  async def write_read_check_2(dut, addr, idata, odata):
+    await a_put_full32  (dut, addr, idata)
+    assert await a_get32(dut, addr)==odata
+  async def write_read_check_1(dut, addr, data):
+    await write_read_check_2(dut, addr, data, data)
+
+  # TODO: utilize random number
+  await write_read_check_1(dut, base_addr+offset_domaincfg, 0xfedcba98)
+  for i in [0,3]: # TODO: random
+    await write_read_check_1(dut, base_addr+offset_sourcecfg+i*4, offset_sourcecfg+i*4)
+  await write_read_check_1(dut, base_addr+offset_mmsiaddrcfg, offset_mmsiaddrcfg)
+  await write_read_check_1(dut, base_addr+offset_mmsiaddrcfgh, offset_mmsiaddrcfgh)
+  await write_read_check_1(dut, base_addr+offset_smsiaddrcfg, offset_smsiaddrcfg)
+  await write_read_check_1(dut, base_addr+offset_smsiaddrcfgh, offset_smsiaddrcfgh)
+  for i in [0,3]: # TODO: random
+    await write_read_check_1(dut, base_addr+offset_setips+i*4, offset_setips+i*4)
+  await write_read_check_1(dut, base_addr+offset_setipnum, offset_setipnum)
+  for i in [0,3]: # TODO: random
+    await write_read_check_1(dut, base_addr+offset_in_clrips+i*4, offset_in_clrips+i*4)
+  await write_read_check_1(dut, base_addr+offset_clripnum, offset_clripnum)
+  for i in [0,3]: # TODO: random
+    await write_read_check_1(dut, base_addr+offset_seties+i*4, offset_seties+i*4)
+  await write_read_check_1(dut, base_addr+offset_setienum, offset_setienum)
+  for i in [0,3]: # TODO: random
+    await write_read_check_1(dut, base_addr+offset_clries+i*4, offset_clries+i*4)
+  await write_read_check_1(dut, base_addr+offset_clrienum, offset_clrienum)
+  await write_read_check_1(dut, base_addr+offset_setipnum_le, offset_setipnum_le)
+  await write_read_check_1(dut, base_addr+offset_setipnum_be, offset_setipnum_be)
+  await write_read_check_1(dut, base_addr+offset_genmsi, offset_genmsi)
+  for i in [0,3]: # TODO: random
+    await write_read_check_1(dut, base_addr+offset_targets+i*4, offset_targets+i*4)
