@@ -66,30 +66,46 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       })
     }
     val sourcecfgs   = (0 until 1023).map {_=>new Sourcecfg} // TODO: parameterization
-    val mmsiaddrcfg  = new Bundle {
-      val Low_Base_PPN  = RegInit(0.U(32.W))
+    val msiaddrcfg  = new Bundle {
       val L             = RegInit(false.B)
-      val HHXS          = RegInit(0.U(5.W))
-      val LHXS          = RegInit(0.U(3.W))
-      val HHXW          = RegInit(0.U(3.W))
-      val LHXW          = RegInit(0.U(4.W))
-      val High_Base_PPN = RegInit(0.U(12.W))
-      val rl = RegReadFn(Low_Base_PPN)
-      val wl = RegWriteFn((valid, data) => { when (valid && ~L) { Low_Base_PPN := data}; true.B })
-      val rh = RegReadFn( L<<31 | HHXS<<24 | LHXS<<20 | HHXW<<16 | LHXW<<12 | High_Base_PPN )
-      val wh = RegWriteFn((valid, data) => {
-        when (valid && ~L) {
-          L             := data(31)
-          HHXS          := data(28,24)
-          LHXS          := data(22,20)
-          HHXW          := data(18,16)
-          LHXW          := data(15,12)
-          High_Base_PPN := data(11,0)
-        }; true.B
-      })
+      val m = new Bundle {
+        val Low_Base_PPN  = RegInit(0.U(32.W))
+        val HHXS          = RegInit(0.U(5.W))
+        val LHXS          = RegInit(0.U(3.W))
+        val HHXW          = RegInit(0.U(3.W))
+        val LHXW          = RegInit(0.U(4.W))
+        val High_Base_PPN = RegInit(0.U(12.W))
+        val lr = RegReadFn(Low_Base_PPN)
+        val lw = RegWriteFn((valid, data) => { when (valid && ~L) { Low_Base_PPN := data}; true.B })
+        val hr = RegReadFn( L<<31 | HHXS<<24 | LHXS<<20 | HHXW<<16 | LHXW<<12 | High_Base_PPN )
+        val hw = RegWriteFn((valid, data) => {
+          when (valid) {
+            L := data(31)
+            when (~L) {
+              HHXS          := data(28,24)
+              LHXS          := data(22,20)
+              HHXW          := data(18,16)
+              LHXW          := data(15,12)
+              High_Base_PPN := data(11,0)
+            }
+          }; true.B
+        })
+      }
+      val s = new Bundle {
+        val Low_Base_PPN  = RegInit(0.U(32.W))
+        val LHXS          = RegInit(0.U(3.W))
+        val High_Base_PPN = RegInit(0.U(12.W))
+        val lr = RegReadFn(Low_Base_PPN)
+        val lw = RegWriteFn((valid, data) => { when (valid && ~L) { Low_Base_PPN := data}; true.B })
+        val hr = RegReadFn( LHXS<<20 | High_Base_PPN )
+        val hw = RegWriteFn((valid, data) => {
+          when (valid && ~L) {
+            LHXS          := data(22,20)
+            High_Base_PPN := data(11,0)
+          }; true.B
+        })
+      }
     }
-    val smsiaddrcfg  = RegInit(0.U(32.W))
-    val smsiaddrcfgh = RegInit(0.U(32.W))
     val setips       = RegInit(VecInit.fill(32){0.U(32.W)}) // TODO: parameterization
     val setipnum     = RegInit(0.U(32.W))
     val in_clrips    = RegInit(VecInit.fill(32){0.U(32.W)}) // TODO: parameterization
@@ -105,10 +121,10 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
     node.regmap(
       0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
       0x0004/*~0x0FFC*/ -> sourcecfgs.map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
-      0x1BC0            -> Seq(RegField(32, mmsiaddrcfg.rl, mmsiaddrcfg.wl)),
-      0x1BC4            -> Seq(RegField(32, mmsiaddrcfg.rh, mmsiaddrcfg.wh)),
-      0x1BC8            -> Seq(RegField(32, smsiaddrcfg)),
-      0x1BCC            -> Seq(RegField(32, smsiaddrcfgh)),
+      0x1BC0            -> Seq(RegField(32, msiaddrcfg.m.lr, msiaddrcfg.m.lw)),
+      0x1BC4            -> Seq(RegField(32, msiaddrcfg.m.hr, msiaddrcfg.m.hw)),
+      0x1BC8            -> Seq(RegField(32, msiaddrcfg.s.lr, msiaddrcfg.s.lw)),
+      0x1BCC            -> Seq(RegField(32, msiaddrcfg.s.hr, msiaddrcfg.s.hw)),
       0x1C00/*~0x1C7C*/ -> setips.map(RegField(32, _)),
       0x1CDC            -> Seq(RegField(32, setipnum)),
       0x1D00/*~0x1D7C*/ -> in_clrips.map(RegField(32, _)),

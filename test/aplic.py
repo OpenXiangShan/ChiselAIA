@@ -108,13 +108,18 @@ async def aplic_simple_write_read_test(dut):
   await write_read_check_1(dut, base_addr+offset_sourcecfg+3*4, 0x1)
   await write_read_check_1(dut, base_addr+offset_sourcecfg+3*4, 0x407)
   # Lock offset_mmsiaddrcfg
-  await write_read_check_1(dut, base_addr+offset_mmsiaddrcfg, 1<<31 | offset_mmsiaddrcfg)
+  await write_read_check_1(dut, base_addr+offset_mmsiaddrcfg, offset_mmsiaddrcfg)
   await write_read_check_1(dut, base_addr+offset_mmsiaddrcfgh, 1<<31 | offset_mmsiaddrcfgh)
-  # WARL offset_mmsiaddrcfg
-  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfg, 0xdead, 1<<31 |offset_mmsiaddrcfg)
-  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfgh, 0xbeef, 1<<31 | offset_mmsiaddrcfgh)
-  await write_read_check_1(dut, base_addr+offset_smsiaddrcfg, offset_smsiaddrcfg)
-  await write_read_check_1(dut, base_addr+offset_smsiaddrcfgh, offset_smsiaddrcfgh)
+  # WARL locked offset_mmsiaddrcfg
+  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfg, 0xdead, offset_mmsiaddrcfg)
+  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfgh, 0xdeadbeef, 1<<31 | offset_mmsiaddrcfgh)
+  # WARL locked offset_smsiaddrcfg
+  await write_read_check_2(dut, base_addr+offset_smsiaddrcfg, 0xabcd, 0)
+  await write_read_check_2(dut, base_addr+offset_smsiaddrcfgh, 0x1234, 0)
+  # Unlock offset_mmsiaddrcfgh
+  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfgh, 0, offset_mmsiaddrcfgh)
+  # WARL unlocked offset_smsiaddrcfg
+  await write_read_check_2(dut, base_addr+offset_smsiaddrcfgh, 0xffffffff, 0x700fff)
   for i in [0,3]: # TODO: random
     await write_read_check_1(dut, base_addr+offset_setips+i*4, offset_setips+i*4)
   await write_read_check_1(dut, base_addr+offset_setipnum, offset_setipnum)
