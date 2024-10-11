@@ -58,7 +58,8 @@ async def a_get32(dut, addr) -> int:
   else:
     assert False, f"Timeout waiting for op_access_ack_data"
   odata = int(dut.domain_0_d_bits_data)
-  return odata if addr%8==0 else odata>>32
+  res = odata if addr%8==0 else odata>>32
+  return res & 0xffffffff
 
 base_addr           = 0x19960000
 offset_domaincfg    = 0
@@ -95,17 +96,23 @@ async def aplic_simple_write_read_test(dut):
 
   async def write_read_check_2(dut, addr, idata, odata):
     await a_put_full32  (dut, addr, idata)
-    assert await a_get32(dut, addr)==odata
+    gdata = await a_get32(dut, addr)
+    assert gdata==odata
   async def write_read_check_1(dut, addr, data):
     await write_read_check_2(dut, addr, data, data)
 
   # TODO: utilize random number
   await write_read_check_2(dut, base_addr+offset_domaincfg, 0xfedcab98, 0x80000104)
+  # WARL offset_sourcecfg
   await write_read_check_2(dut, base_addr+offset_sourcecfg+3*4, 0x2, 0x0)
   await write_read_check_1(dut, base_addr+offset_sourcecfg+3*4, 0x1)
   await write_read_check_1(dut, base_addr+offset_sourcecfg+3*4, 0x407)
-  await write_read_check_1(dut, base_addr+offset_mmsiaddrcfg, offset_mmsiaddrcfg)
-  await write_read_check_1(dut, base_addr+offset_mmsiaddrcfgh, offset_mmsiaddrcfgh)
+  # Lock offset_mmsiaddrcfg
+  await write_read_check_1(dut, base_addr+offset_mmsiaddrcfg, 1<<31 | offset_mmsiaddrcfg)
+  await write_read_check_1(dut, base_addr+offset_mmsiaddrcfgh, 1<<31 | offset_mmsiaddrcfgh)
+  # WARL offset_mmsiaddrcfg
+  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfg, 0xdead, 1<<31 |offset_mmsiaddrcfg)
+  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfgh, 0xbeef, 1<<31 | offset_mmsiaddrcfgh)
   await write_read_check_1(dut, base_addr+offset_smsiaddrcfg, offset_smsiaddrcfg)
   await write_read_check_1(dut, base_addr+offset_smsiaddrcfgh, offset_smsiaddrcfgh)
   for i in [0,3]: # TODO: random
