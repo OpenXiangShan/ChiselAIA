@@ -120,8 +120,8 @@ async def aplic_simple_write_read_test(dut):
   await write_read_check_2(dut, base_addr+offset_mmsiaddrcfgh, 0, offset_mmsiaddrcfgh)
   # WARL unlocked offset_smsiaddrcfg
   await write_read_check_2(dut, base_addr+offset_smsiaddrcfgh, 0xffffffff, 0x700fff)
-  for i in [0,3]: # TODO: random
-    await write_read_check_1(dut, base_addr+offset_setips+i*4, offset_setips+i*4)
+  await write_read_check_2(dut, base_addr+offset_setips+0*4, 0xf, 0xe) # bit0 is readonly zero
+  await write_read_check_2(dut, base_addr+offset_setips+1*4, 0xf, 0xf) # bit0 is readonly zero
   await write_read_check_1(dut, base_addr+offset_setipnum, offset_setipnum)
   for i in [0,3]: # TODO: random
     await write_read_check_1(dut, base_addr+offset_in_clrips+i*4, offset_in_clrips+i*4)

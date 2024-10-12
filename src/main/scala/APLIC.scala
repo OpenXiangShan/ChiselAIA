@@ -118,25 +118,29 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
     val setipnum_be  = RegInit(0.U(32.W))
     val genmsi       = RegInit(0.U(32.W))
     val targets      = RegInit(VecInit.fill(1023){0.U(32.W)}) // TODO: parameterization
-    node.regmap(
-      0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
-      0x0004/*~0x0FFC*/ -> sourcecfgs.map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
-      0x1BC0            -> Seq(RegField(32, msiaddrcfg.m.lr, msiaddrcfg.m.lw)),
-      0x1BC4            -> Seq(RegField(32, msiaddrcfg.m.hr, msiaddrcfg.m.hw)),
-      0x1BC8            -> Seq(RegField(32, msiaddrcfg.s.lr, msiaddrcfg.s.lw)),
-      0x1BCC            -> Seq(RegField(32, msiaddrcfg.s.hr, msiaddrcfg.s.hw)),
-      0x1C00/*~0x1C7C*/ -> setips.map(RegField(32, _)),
-      0x1CDC            -> Seq(RegField(32, setipnum)),
-      0x1D00/*~0x1D7C*/ -> in_clrips.map(RegField(32, _)),
-      0x1DDC            -> Seq(RegField(32, clripnum)),
-      0x1E00/*~0x1F7C*/ -> seties.map(RegField(32, _)),
-      0x1EDC            -> Seq(RegField(32, setienum)),
-      0x1F00/*~0x1F7C*/ -> clries.map(RegField(32, _)),
-      0x1FDC            -> Seq(RegField(32, clrienum)),
-      0x2000            -> Seq(RegField(32, setipnum_le)),
-      0x2004            -> Seq(RegField(32, setipnum_be)),
-      0x3000            -> Seq(RegField(32, genmsi)),
-      0x3004/*~0x3FFC*/ -> targets.map(RegField(32, _)),
-    )
+
+    locally {
+      def bit0ReadOnlyZero(reg: UInt) = RegWriteFn((valid, data) => { when (valid) {reg := data & ~1.U(reg.getWidth.W)}; true.B })
+      node.regmap(
+        0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
+        0x0004/*~0x0FFC*/ -> sourcecfgs.map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
+        0x1BC0            -> Seq(RegField(32, msiaddrcfg.m.lr, msiaddrcfg.m.lw)),
+        0x1BC4            -> Seq(RegField(32, msiaddrcfg.m.hr, msiaddrcfg.m.hw)),
+        0x1BC8            -> Seq(RegField(32, msiaddrcfg.s.lr, msiaddrcfg.s.lw)),
+        0x1BCC            -> Seq(RegField(32, msiaddrcfg.s.hr, msiaddrcfg.s.hw)),
+        0x1C00/*~0x1C7C*/ -> ( RegField(32, setips(0), bit0ReadOnlyZero(setips(0))) +: setips.drop(1).map(RegField(32, _)) ),
+        0x1CDC            -> Seq(RegField(32, setipnum)),
+        0x1D00/*~0x1D7C*/ -> in_clrips.map(RegField(32, _)),
+        0x1DDC            -> Seq(RegField(32, clripnum)),
+        0x1E00/*~0x1F7C*/ -> seties.map(RegField(32, _)),
+        0x1EDC            -> Seq(RegField(32, setienum)),
+        0x1F00/*~0x1F7C*/ -> clries.map(RegField(32, _)),
+        0x1FDC            -> Seq(RegField(32, clrienum)),
+        0x2000            -> Seq(RegField(32, setipnum_le)),
+        0x2004            -> Seq(RegField(32, setipnum_be)),
+        0x3000            -> Seq(RegField(32, genmsi)),
+        0x3004/*~0x3FFC*/ -> targets.map(RegField(32, _)),
+      )
+    }
   }
 }
