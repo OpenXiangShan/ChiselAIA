@@ -48,17 +48,17 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       })
     }
     val sourcecfgs = new Bundle {
-      private val _regs = RegInit(VecInit.fill(1023){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)}) // TODO: parameterization
-      class Sourcecfg(_reg: UInt) {
-        val D          = _reg(10)
-        val ChildIndex = _reg(9,0)
-        val SM         = _reg(2,0)
+      private val regs = RegInit(VecInit.fill(1023){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)}) // TODO: parameterization
+      class Sourcecfg(reg: UInt) {
+        val D          = reg(10)
+        val ChildIndex = reg(9,0)
+        val SM         = reg(2,0)
         val List(inactive, detached, reserved2, reserved3, edge1, edge0, level1, level0) = Enum(8)
         val r = RegReadFn( D<<10 | Mux(D, ChildIndex, SM) )
         val w = RegWriteFn((valid, data) => {
           val i_D=data(10); val i_ChildIndex=data(9,0); val i_SM=data(2,0)
           when (valid) {
-            _reg := i_D<<10 | Mux(
+            reg := i_D<<10 | Mux(
               i_D,
               i_ChildIndex,
               Mux(i_SM===reserved2 || i_SM===reserved3, inactive, i_SM),
@@ -67,8 +67,8 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
         })
         def is_active(): Bool = D || (D && SM=/=inactive)
       }
-      def apply(i: UInt) = new Sourcecfg(_regs(i-1.U))
-      def toSeq = _regs.map (new Sourcecfg(_))
+      def apply(i: UInt) = new Sourcecfg(regs(i-1.U))
+      def toSeq = regs.map (new Sourcecfg(_))
     }
     val msiaddrcfg = new Bundle {
       val L             = RegInit(false.B)
