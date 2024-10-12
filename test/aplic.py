@@ -89,7 +89,7 @@ sourcecfg_sm_level0   = 7
 
 
 @cocotb.test()
-async def aplic_simple_write_read_test(dut):
+async def aplic_write_read_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
   # Apply reset
@@ -132,7 +132,7 @@ async def aplic_simple_write_read_test(dut):
   await write_read_check_2(dut, base_addr+offset_smsiaddrcfgh, 0xffffffff, 0x700fff)
   await write_read_check_2(dut, base_addr+offset_setips+0*4, 0xf, 0xe) # bit0 is readonly zero
   await write_read_check_2(dut, base_addr+offset_setips+1*4, 0xf, 0xf) # bit0 is readonly zero
-  await write_read_check_1(dut, base_addr+offset_setipnum, offset_setipnum)
+  # TODO: move to aplic_set_clr_test
   for i in [0,3]: # TODO: random
     await write_read_check_1(dut, base_addr+offset_in_clrips+i*4, offset_in_clrips+i*4)
   await write_read_check_1(dut, base_addr+offset_clripnum, offset_clripnum)
@@ -147,3 +147,23 @@ async def aplic_simple_write_read_test(dut):
   await write_read_check_1(dut, base_addr+offset_genmsi, offset_genmsi)
   for i in [0,3]: # TODO: random
     await write_read_check_1(dut, base_addr+offset_targets+i*4, offset_targets+i*4)
+
+@cocotb.test()
+async def aplic_set_clr_test(dut):
+  # Start the clock
+  cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
+
+  # setipnum 0, which should be ignored
+  ip0 = await a_get32(dut, base_addr+offset_setips)
+  await a_put_full32(dut, base_addr+offset_setipnum, 0)
+  ip0_ignore0 = await a_get32(dut, base_addr+offset_setips)
+  assert ip0==ip0_ignore0
+  # setipnum ip0
+  await a_put_full32(dut, base_addr+offset_setipnum, 27)
+  ip0_set = await a_get32(dut, base_addr+offset_setips)
+  assert ip0|(1<<27)==ip0_set
+  # setipnum ip1
+  ip1 = await a_get32(dut, base_addr+offset_setips+1*4)
+  await a_put_full32(dut, base_addr+offset_setipnum, 63)
+  ip1_set1 = await a_get32(dut, base_addr+offset_setips+1*4)
+  assert ip1==ip1_set1
