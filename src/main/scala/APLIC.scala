@@ -47,25 +47,29 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
         when (valid) { IE := data(8) }; true.B
       })
     }
-    class Sourcecfg {
-      val D = RegInit(false.B)
-      val ChildIndex = RegInit(0.U(10.W))
-      val SM        = RegInit(0.U(3.W))
-      val List(inactive, detached, reserved2, reserved3, edge1, edge0, level1, level0) = Enum(8)
-      val r = RegReadFn( D<<10 | Mux(D, ChildIndex, SM) )
-      val w = RegWriteFn((valid, data) => {
-        val i_D=data(10); val i_ChildIndex=data(9,0); val i_SM=data(2,0)
-        when (valid) {
-          D := i_D
-          when (i_D) {
-            ChildIndex := i_ChildIndex
-          }.otherwise {
-            SM := Mux(i_SM===reserved2 || i_SM===reserved3, inactive, i_SM)
-          }
-        }; true.B
-      })
+    object sourcecfgs {
+      private val _regs = RegInit(VecInit.fill(1023){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)}) // TODO: parameterization
+      class Sourcecfg(_reg: UInt) {
+        val D          = _reg(10)
+        val ChildIndex = _reg(9,0)
+        val SM         = _reg(2,0)
+        val List(inactive, detached, reserved2, reserved3, edge1, edge0, level1, level0) = Enum(8)
+        val r = RegReadFn( D<<10 | Mux(D, ChildIndex, SM) )
+        val w = RegWriteFn((valid, data) => {
+          val i_D=data(10); val i_ChildIndex=data(9,0); val i_SM=data(2,0)
+          when (valid) {
+            _reg := i_D<<10 | Mux(
+              i_D,
+              i_ChildIndex,
+              Mux(i_SM===reserved2 || i_SM===reserved3, inactive, i_SM),
+            )
+          }; true.B
+        })
+        def is_active(): Bool = D || (D && SM=/=inactive)
+      }
+      def apply(i: UInt) = new Sourcecfg(_regs(i-1.U))
+      def toSeq = _regs.map (new Sourcecfg(_))
     }
-    val sourcecfgs   = (0 until 1023).map {_=>new Sourcecfg} // TODO: parameterization
     object msiaddrcfg {
       val L             = RegInit(false.B)
       object m {
@@ -123,7 +127,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       def bit0ReadOnlyZero(reg: UInt) = RegWriteFn((valid, data) => { when (valid) {reg := data & ~1.U(reg.getWidth.W)}; true.B })
       node.regmap(
         0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
-        0x0004/*~0x0FFC*/ -> sourcecfgs.map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
+        0x0004/*~0x0FFC*/ -> sourcecfgs.toSeq.map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
         0x1BC0            -> Seq(RegField(32, msiaddrcfg.m.lr, msiaddrcfg.m.lw)),
         0x1BC4            -> Seq(RegField(32, msiaddrcfg.m.hr, msiaddrcfg.m.hw)),
         0x1BC8            -> Seq(RegField(32, msiaddrcfg.s.lr, msiaddrcfg.s.lw)),
