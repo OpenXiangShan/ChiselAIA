@@ -49,7 +49,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
     }
     val sourcecfgs = new Bundle {
       private val regs = RegInit(VecInit.fill(1023){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)}) // TODO: parameterization
-      class Sourcecfg(reg: UInt) {
+      class SourcecfgMeta(reg: UInt) {
         val D          = reg(10)
         val ChildIndex = reg(9,0)
         val SM         = reg(2,0)
@@ -67,8 +67,8 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
         })
         def is_active(): Bool = D || (~D && SM=/=inactive)
       }
-      def apply(i: UInt) = new Sourcecfg(regs(i-1.U))
-      def toSeq = regs.map (new Sourcecfg(_))
+      def apply(i: UInt) = new SourcecfgMeta(regs(i-1.U))
+      def toSeq = regs.map (new SourcecfgMeta(_))
       val actives = Wire(Vec(32, UInt(32.W)))
       dontTouch(actives) // TODO: remove: for debug
       locally {
@@ -132,12 +132,12 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       def toSeq = regs.zipWithIndex.map { case (reg:UInt, i:Int) => new IpMeta(reg, sourcecfgs.actives(i), i==0) }
     }
     object setips {
-      class Setip(ip: ips.IpMeta) {
+      class SetipMeta(ip: ips.IpMeta) {
         val r = RegReadFn(ip.r32())
         val w = RegWriteFn((valid, data) => { when(valid) {ip.w32(data)}; true.B })
       }
-      def apply(i: UInt) = new Setip(ips(i))
-      def toSeq = ips.toSeq.map( ip => new Setip(ip) )
+      def apply(i: UInt) = new SetipMeta(ips(i))
+      def toSeq = ips.toSeq.map( ip => new SetipMeta(ip) )
     }
     val setipnum     = RegInit(0.U(32.W))
     val in_clrips    = RegInit(VecInit.fill(32){0.U(32.W)}) // TODO: parameterization
