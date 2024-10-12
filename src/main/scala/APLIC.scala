@@ -37,7 +37,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
-    object domaincfg {
+    val domaincfg = new Bundle {
       val high = 0x80.U(8.W)
       val IE   = RegInit(false.B)
       val DM   = true.B // only support MSI delivery mode
@@ -47,7 +47,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
         when (valid) { IE := data(8) }; true.B
       })
     }
-    object sourcecfgs {
+    val sourcecfgs = new Bundle {
       private val _regs = RegInit(VecInit.fill(1023){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)}) // TODO: parameterization
       class Sourcecfg(_reg: UInt) {
         val D          = _reg(10)
@@ -70,9 +70,9 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       def apply(i: UInt) = new Sourcecfg(_regs(i-1.U))
       def toSeq = _regs.map (new Sourcecfg(_))
     }
-    object msiaddrcfg {
+    val msiaddrcfg = new Bundle {
       val L             = RegInit(false.B)
-      object m {
+      val m = new Bundle {
         val Low_Base_PPN  = RegInit(0.U(32.W))
         val HHXS          = RegInit(0.U(5.W))
         val LHXS          = RegInit(0.U(3.W))
@@ -95,7 +95,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
           }; true.B
         })
       }
-      object s {
+      val s = new Bundle {
         val Low_Base_PPN  = RegInit(0.U(32.W))
         val LHXS          = RegInit(0.U(3.W))
         val High_Base_PPN = RegInit(0.U(12.W))
