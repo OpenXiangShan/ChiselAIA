@@ -80,6 +80,13 @@ offset_setipnum_le  = 0x2000
 offset_setipnum_be  = 0x2004
 offset_genmsi       = 0x3000
 offset_targets      = 0x3004
+sourcecfg_sm_inactive = 0
+sourcecfg_sm_detached = 1
+sourcecfg_sm_edge1    = 4
+sourcecfg_sm_edge0    = 5
+sourcecfg_sm_level1   = 6
+sourcecfg_sm_level0   = 7
+
 
 @cocotb.test()
 async def aplic_simple_write_read_test(dut):
@@ -107,6 +114,9 @@ async def aplic_simple_write_read_test(dut):
   await write_read_check_2(dut, base_addr+offset_sourcecfg+3*4, 0x2, 0x0)
   await write_read_check_1(dut, base_addr+offset_sourcecfg+3*4, 0x1)
   await write_read_check_1(dut, base_addr+offset_sourcecfg+3*4, 0x407)
+  ## enable offset_sourcecfg1 ~ offset_sourcecfg63
+  for i in range(0,63):
+    await write_read_check_1(dut, base_addr+offset_sourcecfg+i*4, sourcecfg_sm_edge1)
   # Lock offset_mmsiaddrcfg
   await write_read_check_1(dut, base_addr+offset_mmsiaddrcfg, offset_mmsiaddrcfg)
   await write_read_check_1(dut, base_addr+offset_mmsiaddrcfgh, 1<<31 | offset_mmsiaddrcfgh)

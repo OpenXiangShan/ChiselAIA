@@ -65,10 +65,18 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
             )
           }; true.B
         })
-        def is_active(): Bool = D || (D && SM=/=inactive)
+        def is_active(): Bool = D || (~D && SM=/=inactive)
       }
       def apply(i: UInt) = new Sourcecfg(regs(i-1.U))
       def toSeq = regs.map (new Sourcecfg(_))
+      val actives = Wire(Vec(32, UInt(32.W)))
+      dontTouch(actives) // TODO: remove: for debug
+      locally {
+        val activeBools = false.B +: toSeq.map(_.is_active())
+        actives.zipWithIndex.map{ case (active: UInt, i: Int) => {
+          active := Cat(activeBools.slice(i*32, (i+1)*32).reverse)
+        }}
+      }
     }
     val msiaddrcfg = new Bundle {
       val L             = RegInit(false.B)
@@ -110,7 +118,29 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
         })
       }
     }
-    val setips       = RegInit(VecInit.fill(32){0.U(32.W)}) // TODO: parameterization
+    val ips = new Bundle { // internal regs
+      // TODO: parameterization
+      private val regs = RegInit(VecInit.fill(32){0.U(32.W)})
+      class IpMeta(reg: UInt, active: UInt, bit0ReadOnlyZero: Boolean) {
+        def r32() = reg
+        def w32(d32: UInt) = {
+          if (bit0ReadOnlyZero)
+            reg := d32 & active & ~1.U(reg.getWidth.W)
+          else
+            reg := d32 & active
+        }
+      }
+      def apply(i: UInt) = new IpMeta(regs(i), sourcecfgs.actives(i), i==0)
+      def toSeq = regs.zipWithIndex.map { case (reg:UInt, i:Int) => new IpMeta(reg, sourcecfgs.actives(i), i==0) }
+    }
+    object setips {
+      class Setip(ip: ips.IpMeta) {
+        val r = RegReadFn(ip.r32())
+        val w = RegWriteFn((valid, data) => { when(valid) {ip.w32(data)}; true.B })
+      }
+      def apply(i: UInt) = new Setip(ips(i))
+      def toSeq = ips.toSeq.map( ip => new Setip(ip) )
+    }
     val setipnum     = RegInit(0.U(32.W))
     val in_clrips    = RegInit(VecInit.fill(32){0.U(32.W)}) // TODO: parameterization
     val clripnum     = RegInit(0.U(32.W))
@@ -132,7 +162,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
         0x1BC4            -> Seq(RegField(32, msiaddrcfg.m.hr, msiaddrcfg.m.hw)),
         0x1BC8            -> Seq(RegField(32, msiaddrcfg.s.lr, msiaddrcfg.s.lw)),
         0x1BCC            -> Seq(RegField(32, msiaddrcfg.s.hr, msiaddrcfg.s.hw)),
-        0x1C00/*~0x1C7C*/ -> ( RegField(32, setips(0), bit0ReadOnlyZero(setips(0))) +: setips.drop(1).map(RegField(32, _)) ),
+        0x1C00/*~0x1C7C*/ -> setips.toSeq.map ( setip => RegField(32, setip.r, setip.w) ),
         0x1CDC            -> Seq(RegField(32, setipnum)),
         0x1D00/*~0x1D7C*/ -> in_clrips.map(RegField(32, _)),
         0x1DDC            -> Seq(RegField(32, clripnum)),
