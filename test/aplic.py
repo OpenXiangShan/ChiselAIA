@@ -133,8 +133,6 @@ async def aplic_write_read_test(dut):
   await write_read_check_2(dut, base_addr+offset_setips+0*4, 0xf, 0xe) # bit0 is readonly zero
   await write_read_check_2(dut, base_addr+offset_setips+1*4, 0xf, 0xf) # bit0 is readonly zero
   # TODO: move to aplic_set_clr_test
-  for i in [0,3]: # TODO: random
-    await write_read_check_1(dut, base_addr+offset_in_clrips+i*4, offset_in_clrips+i*4)
   await write_read_check_1(dut, base_addr+offset_clripnum, offset_clripnum)
   for i in [0,3]: # TODO: random
     await write_read_check_1(dut, base_addr+offset_seties+i*4, offset_seties+i*4)
@@ -167,3 +165,8 @@ async def aplic_set_clr_test(dut):
   await a_put_full32(dut, base_addr+offset_setipnum, 63)
   ip1_set1 = await a_get32(dut, base_addr+offset_setips+1*4)
   assert ip1==ip1_set1
+
+  # in_clrip0 clear all
+  await a_put_full32(dut, base_addr+offset_in_clrips+0*4, 0xffffffff)
+  ip0_clear_all = await a_get32(dut, base_addr+offset_setips)
+  assert ip0_clear_all==0
