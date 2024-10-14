@@ -143,7 +143,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       val r = RegReadFn(0.U(32.W)) // read zeros
       val w = RegWriteFn((valid, data) => {
         when (valid && data =/= 0.U && data <= 1023.U) { // TODO: parameterization
-          val index = data(10,6); val offset = data(5,0); val ip = ips(index)
+          val index = data(9,5); val offset = data(4,0); val ip = ips(index)
           ip.w32(ip.r32() | UIntToOH(offset))
         }; true.B
       })

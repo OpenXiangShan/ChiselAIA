@@ -164,7 +164,7 @@ async def aplic_set_clr_test(dut):
   ip1 = await a_get32(dut, base_addr+offset_setips+1*4)
   await a_put_full32(dut, base_addr+offset_setipnum, 63)
   ip1_set1 = await a_get32(dut, base_addr+offset_setips+1*4)
-  assert ip1==ip1_set1
+  assert ip1|(1<<31)==ip1_set1
 
   # in_clrip0 clear all
   await a_put_full32(dut, base_addr+offset_in_clrips+0*4, 0xffffffff)
