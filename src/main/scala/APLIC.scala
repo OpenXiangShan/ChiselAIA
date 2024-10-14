@@ -161,15 +161,16 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       def apply(i: UInt) = new In_clripMeta(ips(i))
       def toSeq = ips.toSeq.map ( ip => new In_clripMeta(ip) )
     }
-    object clripnum {
+    class Clrixnum(ixs: IXs) {
       val r = RegReadFn(0.U(32.W)) // read zeros
       val w = RegWriteFn((valid, data) => {
         when (valid && data =/= 0.U && data <= 1023.U) { // TODO: parameterization
-          val index = data(9,5); val offset = data(4,0); val ip = ips(index)
-          ip.w32(ip.r32() & ~UIntToOH(offset))
+          val index = data(9,5); val offset = data(4,0); val ix = ixs(index)
+          ix.w32(ix.r32() & ~UIntToOH(offset))
         }; true.B
       })
     }
+    val clripnum = new Clrixnum(ips)
     val ies = new IXs // internal regs
     val seties = new Setixs(ies)
     val setienum = new Setixnum(ies)
