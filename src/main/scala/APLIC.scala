@@ -185,8 +185,21 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       def toSeq = ies.toSeq.map ( ie => new ClrieMeta(ie) )
     }
     val clrienum = new Clrixnum(ies)
-    val genmsi       = RegInit(0.U(32.W))
-    val targets      = RegInit(VecInit.fill(1023){0.U(32.W)}) // TODO: parameterization
+    val genmsi       = RegInit(0.U(32.W)) // TODO: implement
+    // TODO: parameterization
+    val targets = new Bundle {
+      private val regs = RegInit(VecInit.fill(1023){0.U(32.W)})
+      class TargetMeta(reg: UInt) {
+        val HartIndex  = reg(31,18)
+        val GuestIndex = reg(17,12)
+        val EIID       = reg(10,0)
+        // TODO: For a machine-level domain, Guest Index is read-only zeros
+        val r = RegReadFn(reg)
+        val w = RegWriteFn(reg)
+      }
+      def apply(i: UInt) = new TargetMeta(regs(i-1.U))
+      def toSeq = regs.map (new TargetMeta(_))
+    }
 
     node.regmap(
       0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
@@ -206,7 +219,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       0x2000            -> Seq(RegField(32, setipnum.r ,setipnum.w)),
       0x2004            -> Seq(RegField(32, 0.U(32.W), RegWriteFn(():Unit))), // setipnum_be not implemented
       0x3000            -> Seq(RegField(32, genmsi)),
-      0x3004/*~0x3FFC*/ -> targets.map(RegField(32, _)),
+      0x3004/*~0x3FFC*/ -> targets.toSeq.map( target => RegField(32, target.r, target.w)),
     )
   }
 }
