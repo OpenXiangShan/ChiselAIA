@@ -135,7 +135,6 @@ async def aplic_write_read_test(dut):
   await write_read_check_2(dut, base_addr+offset_seties+0*4, 0xf, 0xe) # bit0 is readonly zero
   await write_read_check_2(dut, base_addr+offset_seties+1*4, 0xf, 0xf) # bit0 is readonly zero
   # TODO: move to aplic_set_clr_test
-  await write_read_check_1(dut, base_addr+offset_setienum, offset_setienum)
   for i in [0,3]: # TODO: random
     await write_read_check_1(dut, base_addr+offset_clries+i*4, offset_clries+i*4)
   await write_read_check_1(dut, base_addr+offset_clrienum, offset_clrienum)
@@ -175,3 +174,29 @@ async def aplic_set_clr_test(dut):
   await a_put_full32(dut, base_addr+offset_clripnum, setipnum_1)
   ip1_clr1 = await a_get32(dut, base_addr+offset_setips+1*4)
   assert ip1==ip1_clr1
+
+  # setienum 0, which should be ignored
+  ie0 = await a_get32(dut, base_addr+offset_seties)
+  await a_put_full32(dut, base_addr+offset_setienum, 0)
+  ie0_ignore0 = await a_get32(dut, base_addr+offset_seties)
+  assert ie0==ie0_ignore0
+
+  # setienum ie0
+  await a_put_full32(dut, base_addr+offset_setienum, 27)
+  ie0_set = await a_get32(dut, base_addr+offset_seties)
+  assert ie0|(1<<27)==ie0_set
+  # # in_clrie0 clear all ie0
+  # await a_put_full32(dut, base_addr+offset_clries+0*4, 0xffffffff)
+  # ie0_clear_all = await a_get32(dut, base_addr+offset_seties)
+  # assert ie0_clear_all==0
+
+  # setienum ie1
+  ie1 = await a_get32(dut, base_addr+offset_seties+1*4)
+  setienum_1 = 63
+  await a_put_full32(dut, base_addr+offset_setienum, setienum_1)
+  ie1_set1 = await a_get32(dut, base_addr+offset_seties+1*4)
+  assert ie1|(1<<(setienum_1-32))==ie1_set1
+  # # clrienum ie1
+  # await a_put_full32(dut, base_addr+offset_clrienum, setienum_1)
+  # ie1_clr1 = await a_get32(dut, base_addr+offset_seties+1*4)
+  # assert ie1==ie1_clr1
