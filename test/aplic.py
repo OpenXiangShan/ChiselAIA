@@ -206,3 +206,39 @@ async def aplic_set_clr_test(dut):
   assert ip1|(1<<(setipnum_1-32))==ip1_set1
   # setipnum_be readonly zeros
   assert 0==await a_get32(dut, base_addr+offset_setipnum_be)
+
+  # int sources
+  async def expect_intSrcsRectified_1(dut, value):
+    for _ in range(10):
+      await RisingEdge(dut.clock)
+      if dut.aplic.intSrcsRectified_1 == value:
+        break
+    else:
+      assert False, f"Timeout waiting for dut.aplic.intSrcsRectified_1"
+
+  ## edge1
+  await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_edge1)
+  await FallingEdge(dut.clock)
+  dut.intSrcs_1.value = 0
+  assert dut.aplic.intSrcsRectified_1 == 0
+  await FallingEdge(dut.clock)
+  dut.intSrcs_1.value = 1
+  await expect_intSrcsRectified_1(dut, 1)
+  ## edge0
+  await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_edge0)
+  await expect_intSrcsRectified_1(dut, 0)
+  await FallingEdge(dut.clock)
+  dut.intSrcs_1.value = 0
+  await expect_intSrcsRectified_1(dut, 1)
+  ## level1
+  await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_level1)
+  await expect_intSrcsRectified_1(dut, 0)
+  await FallingEdge(dut.clock)
+  dut.intSrcs_1.value = 1
+  await expect_intSrcsRectified_1(dut, 1)
+  ## level0
+  await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_level0)
+  await expect_intSrcsRectified_1(dut, 0)
+  await FallingEdge(dut.clock)
+  dut.intSrcs_1.value = 0
+  await expect_intSrcsRectified_1(dut, 1)

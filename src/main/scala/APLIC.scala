@@ -249,5 +249,24 @@ class TLAPLIC(
       0x3000            -> Seq(RegField(32, genmsi)),
       0x3004/*~0x3FFC*/ -> targets.toSeq.map( target => RegField(32, target.r, target.w)),
     )
+
+    val intSrcsSynced = RegNextN(intSrcs, 3)
+    val intSrcsRectified = Wire(Vec(params.aplicIntSrcNum, Bool()))
+    (intSrcsRectified zip (intSrcsSynced zip sourcecfgs.toSeq)).map {
+      case (rect, (intSrc, sourcecfg)) => {
+        when      (sourcecfg.SM === sourcecfg.edge1) {
+          rect := intSrc && !RegNext(intSrc)
+        }.elsewhen(sourcecfg.SM === sourcecfg.edge0) {
+          rect := !intSrc && RegNext(intSrc)
+        }.elsewhen(sourcecfg.SM === sourcecfg.level1) {
+          rect := intSrc
+        }.elsewhen(sourcecfg.SM === sourcecfg.level0) {
+          rect := !intSrc
+        }.otherwise {
+          rect := false.B
+        }
+      }
+    }
+    dontTouch(intSrcsRectified) // TODO: remove: for debug
   }
 }
