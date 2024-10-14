@@ -158,7 +158,15 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       def apply(i: UInt) = new In_clripMeta(ips(i))
       def toSeq = ips.toSeq.map ( ip => new In_clripMeta(ip) )
     }
-    val clripnum     = RegInit(0.U(32.W))
+    object clripnum {
+      val r = RegReadFn(0.U(32.W)) // read zeros
+      val w = RegWriteFn((valid, data) => {
+        when (valid && data =/= 0.U && data <= 1023.U) { // TODO: parameterization
+          val index = data(9,5); val offset = data(4,0); val ip = ips(index)
+          ip.w32(ip.r32() & ~UIntToOH(offset))
+        }; true.B
+      })
+    }
     val seties       = RegInit(VecInit.fill(32){0.U(32.W)}) // TODO: parameterization
     val setienum     = RegInit(0.U(32.W))
     val clries       = RegInit(VecInit.fill(32){0.U(32.W)}) // TODO: parameterization
@@ -178,7 +186,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       0x1C00/*~0x1C7C*/ -> setips.toSeq.map ( setip => RegField(32, setip.r, setip.w) ),
       0x1CDC            -> Seq(RegField(32, setipnum.r, setipnum.w)),
       0x1D00/*~0x1D7C*/ -> in_clrips.toSeq.map(in_clrip => RegField(32, in_clrip.r, in_clrip.w)),
-      0x1DDC            -> Seq(RegField(32, clripnum)),
+      0x1DDC            -> Seq(RegField(32, clripnum.r, clripnum.w)),
       0x1E00/*~0x1F7C*/ -> seties.map(RegField(32, _)),
       0x1EDC            -> Seq(RegField(32, setienum)),
       0x1F00/*~0x1F7C*/ -> clries.map(RegField(32, _)),

@@ -133,7 +133,6 @@ async def aplic_write_read_test(dut):
   await write_read_check_2(dut, base_addr+offset_setips+0*4, 0xf, 0xe) # bit0 is readonly zero
   await write_read_check_2(dut, base_addr+offset_setips+1*4, 0xf, 0xf) # bit0 is readonly zero
   # TODO: move to aplic_set_clr_test
-  await write_read_check_1(dut, base_addr+offset_clripnum, offset_clripnum)
   for i in [0,3]: # TODO: random
     await write_read_check_1(dut, base_addr+offset_seties+i*4, offset_seties+i*4)
   await write_read_check_1(dut, base_addr+offset_setienum, offset_setienum)
@@ -156,17 +155,23 @@ async def aplic_set_clr_test(dut):
   await a_put_full32(dut, base_addr+offset_setipnum, 0)
   ip0_ignore0 = await a_get32(dut, base_addr+offset_setips)
   assert ip0==ip0_ignore0
+
   # setipnum ip0
   await a_put_full32(dut, base_addr+offset_setipnum, 27)
   ip0_set = await a_get32(dut, base_addr+offset_setips)
   assert ip0|(1<<27)==ip0_set
-  # setipnum ip1
-  ip1 = await a_get32(dut, base_addr+offset_setips+1*4)
-  await a_put_full32(dut, base_addr+offset_setipnum, 63)
-  ip1_set1 = await a_get32(dut, base_addr+offset_setips+1*4)
-  assert ip1|(1<<31)==ip1_set1
-
-  # in_clrip0 clear all
+  # in_clrip0 clear all ip0
   await a_put_full32(dut, base_addr+offset_in_clrips+0*4, 0xffffffff)
   ip0_clear_all = await a_get32(dut, base_addr+offset_setips)
   assert ip0_clear_all==0
+
+  # setipnum ip1
+  ip1 = await a_get32(dut, base_addr+offset_setips+1*4)
+  setipnum_1 = 63
+  await a_put_full32(dut, base_addr+offset_setipnum, setipnum_1)
+  ip1_set1 = await a_get32(dut, base_addr+offset_setips+1*4)
+  assert ip1|(1<<(setipnum_1-32))==ip1_set1
+  # clripnum ip1
+  await a_put_full32(dut, base_addr+offset_clripnum, setipnum_1)
+  ip1_clr1 = await a_get32(dut, base_addr+offset_setips+1*4)
+  assert ip1==ip1_clr1
