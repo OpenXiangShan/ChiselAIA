@@ -169,7 +169,8 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
         }; true.B
       })
     }
-    val seties       = RegInit(VecInit.fill(32){0.U(32.W)}) // TODO: parameterization
+    val ies = new IXs // internal regs
+    val seties = new Setixs(ies)
     val setienum     = RegInit(0.U(32.W))
     val clries       = RegInit(VecInit.fill(32){0.U(32.W)}) // TODO: parameterization
     val clrienum     = RegInit(0.U(32.W))
@@ -189,7 +190,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       0x1CDC            -> Seq(RegField(32, setipnum.r, setipnum.w)),
       0x1D00/*~0x1D7C*/ -> in_clrips.toSeq.map(in_clrip => RegField(32, in_clrip.r, in_clrip.w)),
       0x1DDC            -> Seq(RegField(32, clripnum.r, clripnum.w)),
-      0x1E00/*~0x1F7C*/ -> seties.map(RegField(32, _)),
+      0x1E00/*~0x1F7C*/ -> seties.toSeq.map( setie => RegField(32, setie.r, setie.w) ),
       0x1EDC            -> Seq(RegField(32, setienum)),
       0x1F00/*~0x1F7C*/ -> clries.map(RegField(32, _)),
       0x1FDC            -> Seq(RegField(32, clrienum)),
