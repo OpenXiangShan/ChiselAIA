@@ -118,27 +118,29 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
         })
       }
     }
-    val ips = new Bundle { // internal regs
+    class IXs extends Bundle {
       // TODO: parameterization
       private val regs = RegInit(VecInit.fill(32){0.U(32.W)})
-      class IpMeta(reg: UInt, active: UInt, bit0ReadOnlyZero: Boolean) {
+      class IxMeta(reg: UInt, active: UInt, bit0ReadOnlyZero: Boolean) {
         def r32() = reg
         def w32(d32: UInt) = {
           if (bit0ReadOnlyZero) reg := d32 & active & ~1.U(reg.getWidth.W)
           else                  reg := d32 & active
         }
       }
-      def apply(i: UInt) = new IpMeta(regs(i), sourcecfgs.actives(i), i==0)
-      def toSeq = regs.zipWithIndex.map { case (reg:UInt, i:Int) => new IpMeta(reg, sourcecfgs.actives(i), i==0) }
+      def apply(i: UInt) = new IxMeta(regs(i), sourcecfgs.actives(i), i==0)
+      def toSeq = regs.zipWithIndex.map { case (reg:UInt, i:Int) => new IxMeta(reg, sourcecfgs.actives(i), i==0) }
     }
-    object setips {
-      class SetipMeta(ip: ips.IpMeta) {
-        val r = RegReadFn(ip.r32())
-        val w = RegWriteFn((valid, data) => { when(valid) {ip.w32(data)}; true.B })
+    class Setixs(ixs: IXs) {
+      class SetixMeta(ix: ixs.IxMeta) {
+        val r = RegReadFn(ix.r32())
+        val w = RegWriteFn((valid, data) => { when(valid) {ix.w32(data)}; true.B })
       }
-      def apply(i: UInt) = new SetipMeta(ips(i))
-      def toSeq = ips.toSeq.map( ip => new SetipMeta(ip) )
+      def apply(i: UInt) = new SetixMeta(ixs(i))
+      def toSeq = ixs.toSeq.map( ix => new SetixMeta(ix) )
     }
+    val ips = new IXs // internal regs
+    val setips = new Setixs(ips)
     object setipnum {
       val r = RegReadFn(0.U(32.W)) // read zeros
       val w = RegWriteFn((valid, data) => {
@@ -149,7 +151,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       })
     }
     object in_clrips {
-      class In_clripMeta(ip: ips.IpMeta) {
+      class In_clripMeta(ip: ips.IxMeta) {
         val r = RegReadFn(0.U(32.W)) // TODO: returns the rectified input
         val w = RegWriteFn((valid, data) => {
           when (valid) { ip.w32( ip.r32() & ~data ) }; true.B
