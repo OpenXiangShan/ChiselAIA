@@ -68,6 +68,9 @@ class TLAPLIC(
         val SM         = reg(2,0)
         val List(inactive, detached, reserved2, reserved3, edge1, edge0, level1, level0) = Enum(8)
         val r = RegReadFn( D<<10 | Mux(D, ChildIndex, SM) )
+        // TODO: setting sourcecfg inactive will clear corresponding ip and ie
+        // * If source is changed from inactive to an active mode, the interrupt source’s pending and enable bits remain zeros, unless set automatically for a reason specified later in this section or in Section 4.7.
+        // * A write to a sourcecfg register will not by itself cause a pending bit to be cleared except when the source is made inactive.
         val w = RegWriteFn((valid, data) => {
           val i_D=data(10); val i_ChildIndex=data(9,0); val i_SM=data(2,0)
           when (valid) {
