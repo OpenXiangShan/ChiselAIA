@@ -140,6 +140,9 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       def toSeq = ixs.toSeq.map( ix => new SetixMeta(ix) )
     }
     val ips = new IXs // internal regs
+    // TODO: The pending
+    // bit may also be set by a relevant write to a setip or setipnum register when the rectified input
+    // value is high, but not when the rectified input value is low.
     val setips = new Setixs(ips)
     class Setixnum(ixs: IXs) {
       val r = RegReadFn(0.U(32.W)) // read zeros
