@@ -136,8 +136,10 @@ async def aplic_write_read_test(dut):
   await write_read_check_2(dut, base_addr+offset_seties+1*4, 0xf, 0xf) # bit0 is readonly zero
   # TODO: move to aplic_set_clr_test
   await write_read_check_1(dut, base_addr+offset_genmsi, offset_genmsi)
-  for i in [0,3]: # TODO: random
-    await write_read_check_1(dut, base_addr+offset_targets+i*4, offset_targets+i*4)
+  await write_read_check_1(dut, base_addr+offset_targets+0*4, offset_targets+0*4)
+  await write_read_check_1(dut, base_addr+offset_targets+3*4, offset_targets+3*4)
+  # TODO: inactive target readonly zeros
+  await write_read_check_2(dut, base_addr+offset_targets+64*4, offset_targets+64*4, 0)
 
 @cocotb.test()
 async def aplic_set_clr_test(dut):

@@ -83,11 +83,16 @@ class TLAPLIC(
       def apply(i: UInt) = new SourcecfgMeta(regs(i-1.U))
       def toSeq = regs.map (new SourcecfgMeta(_))
       val actives = Wire(Vec(params.ixNum, UInt(32.W)))
+      val activeBools = Wire(Vec(params.aplicIntSrcNum, Bool()))
       dontTouch(actives) // TODO: remove: for debug
       locally {
-        val activeBools = false.B +: toSeq.map(_.is_active())
+        val activeBoolsSeq = toSeq.map(_.is_active())
+        activeBools.zipWithIndex.map { case (activeBool: Bool, i: Int) => {
+          activeBool := activeBoolsSeq(i)
+        }}
+        val activeBoolsSeq1 = false.B +: activeBoolsSeq
         actives.zipWithIndex.map{ case (active: UInt, i: Int) => {
-          active := Cat(activeBools.slice(i*32, (i+1)*32).reverse)
+          active := Cat(activeBoolsSeq1.slice(i*32, (i+1)*32).reverse)
         }}
       }
     }
@@ -134,7 +139,7 @@ class TLAPLIC(
     class IXs extends Bundle {
       private val regs = RegInit(VecInit.fill(params.ixNum){0.U(32.W)})
       class IxMeta(reg: UInt, active: UInt, bit0ReadOnlyZero: Boolean) {
-        def r32() = reg
+        def r32() = reg & active
         def w32(d32: UInt) = {
           if (bit0ReadOnlyZero) reg := d32 & active & ~1.U(reg.getWidth.W)
           else                  reg := d32 & active
@@ -203,16 +208,20 @@ class TLAPLIC(
     val genmsi       = RegInit(0.U(32.W)) // TODO: implement
     val targets = new Bundle {
       private val regs = RegInit(VecInit.fill(params.aplicIntSrcNum){0.U(32.W)})
-      class TargetMeta(reg: UInt) {
+      class TargetMeta(reg: UInt, active: Bool) {
         val HartIndex  = reg(31,18)
         val GuestIndex = reg(17,12)
         val EIID       = reg(10,0)
         // TODO: For a machine-level domain, Guest Index is read-only zeros
-        val r = RegReadFn(reg)
-        val w = RegWriteFn(reg)
+        val r = RegReadFn(Mux(active, reg, 0.U))
+        val w = RegWriteFn((valid, data) => {
+          when (valid && active) { reg := data }; true.B
+        })
       }
-      def apply(i: UInt) = new TargetMeta(regs(i-1.U))
-      def toSeq = regs.map (new TargetMeta(_))
+      def apply(i: UInt) = new TargetMeta(regs(i-1.U), sourcecfgs.activeBools(i-1.U))
+      def toSeq = (regs zip sourcecfgs.activeBools).map {
+        case (reg:UInt, activeBool:UInt) => new TargetMeta(reg, activeBool)
+      }
     }
 
     node.regmap(
