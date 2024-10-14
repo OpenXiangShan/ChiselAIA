@@ -184,7 +184,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       def apply(i: UInt) = new ClrieMeta(ies(i))
       def toSeq = ies.toSeq.map ( ie => new ClrieMeta(ie) )
     }
-    val clrienum     = RegInit(0.U(32.W))
+    val clrienum = new Clrixnum(ies)
     val setipnum_le  = RegInit(0.U(32.W))
     val setipnum_be  = RegInit(0.U(32.W))
     val genmsi       = RegInit(0.U(32.W))
@@ -204,7 +204,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       0x1E00/*~0x1F7C*/ -> seties.toSeq.map( setie => RegField(32, setie.r, setie.w) ),
       0x1EDC            -> Seq(RegField(32, setienum.r, setienum.w)),
       0x1F00/*~0x1F7C*/ -> clries.toSeq.map( clrie => RegField(32, clrie.r, clrie.w)),
-      0x1FDC            -> Seq(RegField(32, clrienum)),
+      0x1FDC            -> Seq(RegField(32, clrienum.r, clrienum.w)),
       0x2000            -> Seq(RegField(32, setipnum_le)),
       0x2004            -> Seq(RegField(32, setipnum_be)),
       0x3000            -> Seq(RegField(32, genmsi)),

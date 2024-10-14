@@ -135,7 +135,6 @@ async def aplic_write_read_test(dut):
   await write_read_check_2(dut, base_addr+offset_seties+0*4, 0xf, 0xe) # bit0 is readonly zero
   await write_read_check_2(dut, base_addr+offset_seties+1*4, 0xf, 0xf) # bit0 is readonly zero
   # TODO: move to aplic_set_clr_test
-  await write_read_check_1(dut, base_addr+offset_clrienum, offset_clrienum)
   await write_read_check_1(dut, base_addr+offset_setipnum_le, offset_setipnum_le)
   await write_read_check_1(dut, base_addr+offset_setipnum_be, offset_setipnum_be)
   await write_read_check_1(dut, base_addr+offset_genmsi, offset_genmsi)
@@ -194,7 +193,7 @@ async def aplic_set_clr_test(dut):
   await a_put_full32(dut, base_addr+offset_setienum, setienum_1)
   ie1_set1 = await a_get32(dut, base_addr+offset_seties+1*4)
   assert ie1|(1<<(setienum_1-32))==ie1_set1
-  # # clrienum ie1
-  # await a_put_full32(dut, base_addr+offset_clrienum, setienum_1)
-  # ie1_clr1 = await a_get32(dut, base_addr+offset_seties+1*4)
-  # assert ie1==ie1_clr1
+  # clrienum ie1
+  await a_put_full32(dut, base_addr+offset_clrienum, setienum_1)
+  ie1_clr1 = await a_get32(dut, base_addr+offset_seties+1*4)
+  assert ie1==ie1_clr1
