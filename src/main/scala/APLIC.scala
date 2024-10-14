@@ -173,7 +173,16 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
     val ies = new IXs // internal regs
     val seties = new Setixs(ies)
     val setienum = new Setixnum(ies)
-    val clries       = RegInit(VecInit.fill(32){0.U(32.W)}) // TODO: parameterization
+    object clries {
+      class ClrieMeta(ie: ies.IxMeta) {
+        val r = RegReadFn(0.U(32.W))
+        val w = RegWriteFn((valid, data) => {
+          when (valid) { ie.w32( ie.r32() & ~data ) }; true.B
+        })
+      }
+      def apply(i: UInt) = new ClrieMeta(ies(i))
+      def toSeq = ies.toSeq.map ( ie => new ClrieMeta(ie) )
+    }
     val clrienum     = RegInit(0.U(32.W))
     val setipnum_le  = RegInit(0.U(32.W))
     val setipnum_be  = RegInit(0.U(32.W))
@@ -193,7 +202,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       0x1DDC            -> Seq(RegField(32, clripnum.r, clripnum.w)),
       0x1E00/*~0x1F7C*/ -> seties.toSeq.map( setie => RegField(32, setie.r, setie.w) ),
       0x1EDC            -> Seq(RegField(32, setienum.r, setienum.w)),
-      0x1F00/*~0x1F7C*/ -> clries.map(RegField(32, _)),
+      0x1F00/*~0x1F7C*/ -> clries.toSeq.map( clrie => RegField(32, clrie.r, clrie.w)),
       0x1FDC            -> Seq(RegField(32, clrienum)),
       0x2000            -> Seq(RegField(32, setipnum_le)),
       0x2004            -> Seq(RegField(32, setipnum_be)),
