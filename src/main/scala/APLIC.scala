@@ -50,6 +50,8 @@ class TLAPLIC(
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
+    val intSrcs = IO(Input(Vec(params.aplicIntSrcNum, Bool())))
+
     val domaincfg = new Bundle {
       val high = 0x80.U(8.W)
       val IE   = RegInit(false.B)

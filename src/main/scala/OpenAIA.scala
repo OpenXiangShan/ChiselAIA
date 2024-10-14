@@ -56,6 +56,9 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
     dontTouch(imsic.module.fromCSR)
 
     aplicTLCNode.makeIOs()(ValName("domain"))
+    val intSrcs = IO(Input(chiselTypeOf(aplic.module.intSrcs)))
+    intSrcs <> aplic.module.intSrcs
+    dontTouch(aplic.module.intSrcs)
   }
 }
 
