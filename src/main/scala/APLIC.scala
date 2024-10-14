@@ -23,14 +23,27 @@ import freechips.rocketchip.tilelink._
 import freechips.rocketchip.regmapper._
 import xs.utils._
 
-class TLAPLIC()(implicit p: Parameters) extends LazyModule {
+case class APLICParams(
+  // TODO: combine common part with IMSICParams, and remove prefix of "aplic"
+  aplicIntSrcWidth: Int = 10,
+  aplicBaseAddr: Long = 0x19960000L,
+) {
+  require(aplicIntSrcWidth <= 10, f"aplicIntSrcWidth=${aplicIntSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")
+  val aplicIntSrcNum: Int = pow2(aplicIntSrcWidth).toInt - 1
+  val ixNum: Int = pow2(aplicIntSrcWidth).toInt / 32
+}
+
+class TLAPLIC(
+  params: APLICParams,
+  beatBytes: Int = 8, // TODO: remove? and IMSIC's beatBytes
+)(implicit p: Parameters) extends LazyModule {
   val node = TLRegisterNode(
-    address = Seq(AddressSet(0x19960000L, 0x4000-1)), // TODO: parameterization
+    address = Seq(AddressSet(params.aplicBaseAddr, 0x4000-1)),
     device = new SimpleDevice(
       "interrupt-controller",
       Seq(f"riscv,aplic")
     ),
-    beatBytes = 8, // TODO: parameterization
+    beatBytes = beatBytes,
     undefZero = true,
     concurrency = 1,
   )
@@ -48,7 +61,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       })
     }
     val sourcecfgs = new Bundle {
-      private val regs = RegInit(VecInit.fill(1023){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)}) // TODO: parameterization
+      private val regs = RegInit(VecInit.fill(params.aplicIntSrcNum){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)})
       class SourcecfgMeta(reg: UInt) {
         val D          = reg(10)
         val ChildIndex = reg(9,0)
@@ -69,7 +82,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       }
       def apply(i: UInt) = new SourcecfgMeta(regs(i-1.U))
       def toSeq = regs.map (new SourcecfgMeta(_))
-      val actives = Wire(Vec(32, UInt(32.W)))
+      val actives = Wire(Vec(params.ixNum, UInt(32.W)))
       dontTouch(actives) // TODO: remove: for debug
       locally {
         val activeBools = false.B +: toSeq.map(_.is_active())
@@ -119,8 +132,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
       }
     }
     class IXs extends Bundle {
-      // TODO: parameterization
-      private val regs = RegInit(VecInit.fill(32){0.U(32.W)})
+      private val regs = RegInit(VecInit.fill(params.ixNum){0.U(32.W)})
       class IxMeta(reg: UInt, active: UInt, bit0ReadOnlyZero: Boolean) {
         def r32() = reg
         def w32(d32: UInt) = {
@@ -147,7 +159,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
     class Setixnum(ixs: IXs) {
       val r = RegReadFn(0.U(32.W)) // read zeros
       val w = RegWriteFn((valid, data) => {
-        when (valid && data =/= 0.U && data <= 1023.U) { // TODO: parameterization
+        when (valid && data =/= 0.U && data <= params.aplicIntSrcNum.U) {
           val index = data(9,5); val offset = data(4,0); val ix = ixs(index)
           ix.w32(ix.r32() | UIntToOH(offset))
         }; true.B
@@ -167,7 +179,7 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
     class Clrixnum(ixs: IXs) {
       val r = RegReadFn(0.U(32.W)) // read zeros
       val w = RegWriteFn((valid, data) => {
-        when (valid && data =/= 0.U && data <= 1023.U) { // TODO: parameterization
+        when (valid && data =/= 0.U && data <= params.aplicIntSrcNum.U) {
           val index = data(9,5); val offset = data(4,0); val ix = ixs(index)
           ix.w32(ix.r32() & ~UIntToOH(offset))
         }; true.B
@@ -189,9 +201,8 @@ class TLAPLIC()(implicit p: Parameters) extends LazyModule {
     }
     val clrienum = new Clrixnum(ies)
     val genmsi       = RegInit(0.U(32.W)) // TODO: implement
-    // TODO: parameterization
     val targets = new Bundle {
-      private val regs = RegInit(VecInit.fill(1023){0.U(32.W)})
+      private val regs = RegInit(VecInit.fill(params.aplicIntSrcNum){0.U(32.W)})
       class TargetMeta(reg: UInt) {
         val HartIndex  = reg(31,18)
         val GuestIndex = reg(17,12)

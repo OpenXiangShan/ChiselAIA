@@ -41,7 +41,7 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
     Seq(TLMasterPortParameters.v1(
       Seq(TLMasterParameters.v1("aplic_tl", IdRange(0, 16)))
   )))
-  val aplic = LazyModule(new TLAPLIC()(Parameters.empty))
+  val aplic = LazyModule(new TLAPLIC(APLICParams())(Parameters.empty))
   aplic.node := aplicTLCNode
 
   lazy val module = new LazyModuleImp(this) {
