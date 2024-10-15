@@ -46,10 +46,12 @@ object RegMapDV {
 
 class TLIMSIC(
   params: IMSICParams,
-  groupID: Int = 0, // g
-  memberID: Int = 1, // h
+  // According AIA manual:
+  // This hart index may or may not related to the unique hart identifiers ("hart IDs") that the RISC-V Privileged Architecture assigns to harts.
+  hartIndex: Int = 1,
   beatBytes: Int = 8,
 )(implicit p: Parameters) extends LazyModule {
+  val (groupID, memberID) = params.hartIndex_to_gh(hartIndex)
   require(groupID < params.groupsNum,    f"groupID ${groupID} should less than groupsNum ${params.groupsNum}")
   require(memberID < params.membersNum,  f"memberID ${memberID} should less than membersNum ${params.membersNum}")
   println(f"groupID:  0x${groupID }%x")
