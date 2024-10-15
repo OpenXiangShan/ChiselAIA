@@ -37,6 +37,7 @@ class TLAPLIC(
   params: APLICParams,
   beatBytes: Int = 8, // TODO: remove? and IMSIC's beatBytes
 )(implicit p: Parameters) extends LazyModule {
+  // TODO: rename node for better readability
   val node = TLRegisterNode(
     address = Seq(AddressSet(params.aplicBaseAddr, 0x4000-1)),
     device = new SimpleDevice(
@@ -47,6 +48,9 @@ class TLAPLIC(
     undefZero = true,
     concurrency = 1,
   )
+  val toIMSIC = TLClientNode(Seq(TLMasterPortParameters.v1(
+    Seq(TLMasterParameters.v1("toimsic", IdRange(0,16))),
+  )))
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {

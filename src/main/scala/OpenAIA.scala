@@ -41,8 +41,17 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
     Seq(TLMasterPortParameters.v1(
       Seq(TLMasterParameters.v1("aplic_tl", IdRange(0, 16)))
   )))
+  val aplicTLMNode = TLManagerNode(Seq(TLSlavePortParameters.v1(
+    Seq(TLSlaveParameters.v1(
+      // TODO: parameterization
+      address = Seq(AddressSet(0x61000000L, 0x1000-1)), // TODO
+      supportsPutFull = TransferSizes(1, 8),
+    )),
+    beatBytes = 8
+  )))
   val aplic = LazyModule(new TLAPLIC(APLICParams())(Parameters.empty))
   aplic.node := aplicTLCNode
+  aplicTLMNode := aplic.toIMSIC
 
   lazy val module = new LazyModuleImp(this) {
     mTLCNode.makeIOs()(ValName("m"))
@@ -59,6 +68,7 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
     val intSrcs = IO(Input(chiselTypeOf(aplic.module.intSrcs)))
     intSrcs <> aplic.module.intSrcs
     dontTouch(aplic.module.intSrcs)
+    aplicTLMNode.makeIOs()(ValName("toimsic"))
   }
 }
 
