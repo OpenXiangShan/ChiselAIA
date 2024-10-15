@@ -45,7 +45,7 @@ class TLAPLIC(
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
-    val intSrcs = IO(Input(Vec(params.aplicIntSrcNum, Bool())))
+    val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
 
     val domaincfg = new Bundle {
       val high = 0x80.U(8.W)
@@ -58,7 +58,7 @@ class TLAPLIC(
       })
     }
     val sourcecfgs = new Bundle {
-      private val regs = RegInit(VecInit.fill(params.aplicIntSrcNum){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)})
+      private val regs = RegInit(VecInit.fill(params.intSrcNum){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)})
       class SourcecfgMeta(reg: UInt) {
         val D          = reg(10)
         val ChildIndex = reg(9,0)
@@ -83,7 +83,7 @@ class TLAPLIC(
       def apply(i: UInt) = new SourcecfgMeta(regs(i-1.U))
       def toSeq = regs.map (new SourcecfgMeta(_))
       val actives = Wire(Vec(params.ixNum, UInt(32.W)))
-      val activeBools = Wire(Vec(params.aplicIntSrcNum, Bool()))
+      val activeBools = Wire(Vec(params.intSrcNum, Bool()))
       dontTouch(actives) // TODO: remove: for debug
       locally {
         val activeBoolsSeq = toSeq.map(_.is_active())
@@ -141,7 +141,7 @@ class TLAPLIC(
     class Setixnum(ixs: IXs) {
       val r = RegReadFn(0.U(32.W)) // read zeros
       val w = RegWriteFn((valid, data) => {
-        when (valid && data =/= 0.U && data <= params.aplicIntSrcNum.U) {
+        when (valid && data =/= 0.U && data <= params.intSrcNum.U) {
           val index = data(9,5); val offset = data(4,0); val ix = ixs(index)
           ix.w32(ix.r32() | UIntToOH(offset))
         }; true.B
@@ -161,7 +161,7 @@ class TLAPLIC(
     class Clrixnum(ixs: IXs) {
       val r = RegReadFn(0.U(32.W)) // read zeros
       val w = RegWriteFn((valid, data) => {
-        when (valid && data =/= 0.U && data <= params.aplicIntSrcNum.U) {
+        when (valid && data =/= 0.U && data <= params.intSrcNum.U) {
           val index = data(9,5); val offset = data(4,0); val ix = ixs(index)
           ix.w32(ix.r32() & ~UIntToOH(offset))
         }; true.B
@@ -184,7 +184,7 @@ class TLAPLIC(
     val clrienum = new Clrixnum(ies)
     val genmsi       = RegInit(0.U(32.W)) // TODO: implement
     val targets = new Bundle {
-      private val regs = RegInit(VecInit.fill(params.aplicIntSrcNum){0.U(32.W)})
+      private val regs = RegInit(VecInit.fill(params.intSrcNum){0.U(32.W)})
       class TargetMeta(reg: UInt, active: Bool) {
         val HartIndex  = reg(31,18)
         val GuestIndex = reg(17,12)
@@ -220,7 +220,7 @@ class TLAPLIC(
     )
 
     val intSrcsSynced = RegNextN(intSrcs, 3)
-    val intSrcsRectified = Wire(Vec(params.aplicIntSrcNum, Bool()))
+    val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
     (intSrcsRectified zip (intSrcsSynced zip sourcecfgs.toSeq)).map {
       case (rect, (intSrc, sourcecfg)) => {
         when      (sourcecfg.SM === sourcecfg.edge1) {
