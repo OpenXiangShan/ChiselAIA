@@ -96,44 +96,20 @@ class TLAPLIC(
         }}
       }
     }
+    // It is recommended to hardwire *msiaddrcfg* by the manual:
+    // "For any given system, these addresses are fixed and should be hardwired into the APLIC if possible."
     val msiaddrcfg = new Bundle {
-      val L             = RegInit(false.B)
       val m = new Bundle {
-        val Low_Base_PPN  = RegInit(0.U(32.W))
-        val HHXS          = RegInit(0.U(5.W))
-        val LHXS          = RegInit(0.U(3.W))
-        val HHXW          = RegInit(0.U(3.W))
-        val LHXW          = RegInit(0.U(4.W))
-        val High_Base_PPN = RegInit(0.U(12.W))
-        val lr = RegReadFn(Low_Base_PPN)
-        val lw = RegWriteFn((valid, data) => { when (valid && ~L) { Low_Base_PPN := data}; true.B })
-        val hr = RegReadFn( L<<31 | HHXS<<24 | LHXS<<20 | HHXW<<16 | LHXW<<12 | High_Base_PPN )
-        val hw = RegWriteFn((valid, data) => {
-          when (valid) {
-            L := data(31)
-            when (~L) {
-              HHXS          := data(28,24)
-              LHXS          := data(22,20)
-              HHXW          := data(18,16)
-              LHXW          := data(15,12)
-              High_Base_PPN := data(11,0)
-            }
-          }; true.B
-        })
+        // TODO: hardwired values
+        val BasePPN = RegInit(0.U(44.W))
+        val HHXS    = RegInit(0.U(5.W))
+        val LHXS    = RegInit(0.U(3.W))
+        val HHXW    = RegInit(0.U(3.W))
+        val LHXW    = RegInit(0.U(4.W))
       }
       val s = new Bundle {
-        val Low_Base_PPN  = RegInit(0.U(32.W))
-        val LHXS          = RegInit(0.U(3.W))
-        val High_Base_PPN = RegInit(0.U(12.W))
-        val lr = RegReadFn(Low_Base_PPN)
-        val lw = RegWriteFn((valid, data) => { when (valid && ~L) { Low_Base_PPN := data}; true.B })
-        val hr = RegReadFn( LHXS<<20 | High_Base_PPN )
-        val hw = RegWriteFn((valid, data) => {
-          when (valid && ~L) {
-            LHXS          := data(22,20)
-            High_Base_PPN := data(11,0)
-          }; true.B
-        })
+        val BasePPN = RegInit(0.U(44.W))
+        val LHXS    = RegInit(0.U(3.W))
       }
     }
     class IXs extends Bundle {
@@ -228,10 +204,7 @@ class TLAPLIC(
     node.regmap(
       0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
       0x0004/*~0x0FFC*/ -> sourcecfgs.toSeq.map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
-      0x1BC0            -> Seq(RegField(32, msiaddrcfg.m.lr, msiaddrcfg.m.lw)),
-      0x1BC4            -> Seq(RegField(32, msiaddrcfg.m.hr, msiaddrcfg.m.hw)),
-      0x1BC8            -> Seq(RegField(32, msiaddrcfg.s.lr, msiaddrcfg.s.lw)),
-      0x1BCC            -> Seq(RegField(32, msiaddrcfg.s.hr, msiaddrcfg.s.hw)),
+      0x1BC4            -> Seq(RegField(32, 0x80000000L.U, RegWriteFn(():Unit))), // hardwired *msiaddrcfg* regs
       0x1C00/*~0x1C7C*/ -> setips.toSeq.map ( setip => RegField(32, setip.r, setip.w) ),
       0x1CDC            -> Seq(RegField(32, setipnum.r, setipnum.w)),
       0x1D00/*~0x1D7C*/ -> in_clrips.toSeq.map(in_clrip => RegField(32, in_clrip.r, in_clrip.w)),

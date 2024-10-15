@@ -64,6 +64,7 @@ async def a_get32(dut, addr) -> int:
 base_addr           = 0x19960000
 offset_domaincfg    = 0
 offset_sourcecfg    = 0x0004
+offset_readonly0    = 0x1000
 offset_mmsiaddrcfg  = 0x1BC0
 offset_mmsiaddrcfgh = 0x1BC4
 offset_smsiaddrcfg  = 0x1BC8
@@ -117,19 +118,6 @@ async def aplic_write_read_test(dut):
   ## enable offset_sourcecfg1 ~ offset_sourcecfg63
   for i in range(0,63):
     await write_read_check_1(dut, base_addr+offset_sourcecfg+i*4, sourcecfg_sm_edge1)
-  # Lock offset_mmsiaddrcfg
-  await write_read_check_1(dut, base_addr+offset_mmsiaddrcfg, offset_mmsiaddrcfg)
-  await write_read_check_1(dut, base_addr+offset_mmsiaddrcfgh, 1<<31 | offset_mmsiaddrcfgh)
-  # WARL locked offset_mmsiaddrcfg
-  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfg, 0xdead, offset_mmsiaddrcfg)
-  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfgh, 0xdeadbeef, 1<<31 | offset_mmsiaddrcfgh)
-  # WARL locked offset_smsiaddrcfg
-  await write_read_check_2(dut, base_addr+offset_smsiaddrcfg, 0xabcd, 0)
-  await write_read_check_2(dut, base_addr+offset_smsiaddrcfgh, 0x1234, 0)
-  # Unlock offset_mmsiaddrcfgh
-  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfgh, 0, offset_mmsiaddrcfgh)
-  # WARL unlocked offset_smsiaddrcfg
-  await write_read_check_2(dut, base_addr+offset_smsiaddrcfgh, 0xffffffff, 0x700fff)
   await write_read_check_2(dut, base_addr+offset_setips+0*4, 0xf, 0xe) # bit0 is readonly zero
   await write_read_check_2(dut, base_addr+offset_setips+1*4, 0xf, 0xf) # bit0 is readonly zero
   await write_read_check_2(dut, base_addr+offset_seties+0*4, 0xf, 0xe) # bit0 is readonly zero
@@ -140,6 +128,10 @@ async def aplic_write_read_test(dut):
   await write_read_check_1(dut, base_addr+offset_targets+3*4, offset_targets+3*4)
   # TODO: inactive target readonly zeros
   await write_read_check_2(dut, base_addr+offset_targets+64*4, offset_targets+64*4, 0)
+  # readonly zeros
+  await write_read_check_2(dut, base_addr+offset_readonly0+1*4, 0xdeadbeef, 0)
+  await write_read_check_2(dut, base_addr+offset_mmsiaddrcfgh, 0xdeadbeef, 0x80000000)
+  await write_read_check_2(dut, base_addr+offset_smsiaddrcfgh, 0xdeadbeef, 0)
 
 @cocotb.test()
 async def aplic_set_clr_test(dut):
