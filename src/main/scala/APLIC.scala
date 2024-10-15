@@ -25,11 +25,12 @@ import xs.utils._
 
 class TLAPLIC(
   params: APLICParams,
+  imsic_params: IMSICParams,
   beatBytes: Int = 8, // TODO: remove? and IMSIC's beatBytes
 )(implicit p: Parameters) extends LazyModule {
   // TODO: rename node for better readability
   val node = TLRegisterNode(
-    address = Seq(AddressSet(params.aplicBaseAddr, 0x4000-1)),
+    address = Seq(AddressSet(params.baseAddr, pow2(params.domainMemWidth)-1)),
     device = new SimpleDevice(
       "interrupt-controller",
       Seq(f"riscv,aplic")
@@ -269,7 +270,7 @@ class TLAPLIC(
     //  If do not append true.B, then we need to check whether the ip & ie are empty,
     //  otherwise, the returned topei will become the max index, that is 2^aplicIntSrcWidth-1
     //  [0,     2^aplicIntSrcWidth-1] :+ 2^aplicIntSrcWidth
-    val topi = Wire(UInt(params.aplicIntSrcWidth.W))
+    val topi = Wire(UInt(params.intSrcWidth.W))
     topi := ParallelPriorityMux((
       (ips.toBools:+true.B) zip (ies.toBools:+true.B)
     ).zipWithIndex.map {
@@ -279,8 +280,7 @@ class TLAPLIC(
     locally {
       val (tl, edge) = toIMSIC.out(0)
       when (domaincfg.IE && topi=/=0.U) {
-        // TODO: parameterization
-        val (_, pfbits) = edge.Put(0.U, 0x61000000.U, 2.U, targets(topi).EIID)
+        val (_, pfbits) = edge.Put(0.U, imsic_params.mBaseAddr.U, 2.U, targets(topi).EIID)
         // clear corresponding ip
         // TODO: may compete with mem mapped reg, thus causing lost info
         clripnum.w.fn(true.B, true.B, topi)

@@ -79,11 +79,11 @@ case class IMSICParams(
 }
 
 case class APLICParams(
-  // TODO: combine common part with IMSICParams, and remove prefix of "aplic"
-  aplicIntSrcWidth: Int = 10,
-  aplicBaseAddr: Long = 0x19960000L,
+  intSrcWidth: Int = 10, // Noted: APLIC's int source num is LESS THAN IMSIC's
+  baseAddr: Long = 0x19960000L,
 ) {
-  require(aplicIntSrcWidth <= 10, f"aplicIntSrcWidth=${aplicIntSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")
-  val aplicIntSrcNum: Int = pow2(aplicIntSrcWidth).toInt - 1
-  val ixNum: Int = pow2(aplicIntSrcWidth).toInt / 32
+  require(intSrcWidth <= 10, f"aplicIntSrcWidth=${intSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")
+  val aplicIntSrcNum: Int = pow2(intSrcWidth).toInt - 1
+  val ixNum: Int = pow2(intSrcWidth).toInt / 32
+  val domainMemWidth : Int  = 14 // interrupt file memory region width: 14-bit width => 16KB size
 }

@@ -33,7 +33,10 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
       Seq(TLMasterParameters.v1("sg_tl", IdRange(0, 16)))
   )))
 
-  val imsic = LazyModule(new TLIMSIC(IMSICParams())(Parameters.empty))
+  val imsic_params = IMSICParams()
+  val aplic_params = APLICParams()
+
+  val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
   imsic.mTLNode := mTLCNode
   imsic.sgTLNode := sgTLCNode
 
@@ -49,7 +52,7 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
     )),
     beatBytes = 8
   )))
-  val aplic = LazyModule(new TLAPLIC(APLICParams())(Parameters.empty))
+  val aplic = LazyModule(new TLAPLIC(aplic_params, imsic_params)(Parameters.empty))
   aplic.node := aplicTLCNode
   aplicTLMNode := aplic.toIMSIC
 
