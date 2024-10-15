@@ -258,7 +258,7 @@ class TLIMSIC(
       // The ":+ true.B" trick explain:
       //  Append true.B to handle the cornor case, where all bits in eip and eie are disabled.
       //  If do not append true.B, then we need to check whether the eip & eie are empty,
-      //  otherwise, the returned topei will become the max index, that is 2048-1
+      //  otherwise, the returned topei will become the max index, that is 2^intSrcWidth-1
       // Noted: the support max interrupt sources number = 2^intSrcWidth
       //              [0,     2^intSrcWidth-1] :+ 2^intSrcWidth
       val eipBools = Cat(eips.reverse).asBools :+ true.B

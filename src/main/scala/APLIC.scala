@@ -156,6 +156,7 @@ class TLAPLIC(
       }
       def apply(i: UInt) = new IxMeta(regs(i), sourcecfgs.actives(i), i==0)
       def toSeq = regs.zipWithIndex.map { case (reg:UInt, i:Int) => new IxMeta(reg, sourcecfgs.actives(i), i==0) }
+      def toBools = Cat(regs.reverse).asBools
     }
     class Setixs(ixs: IXs) {
       class SetixMeta(ix: ixs.IxMeta) {
@@ -272,5 +273,32 @@ class TLAPLIC(
       }
     }
     dontTouch(intSrcsRectified) // TODO: remove: for debug
+
+    // The ":+ true.B" trick explain:
+    //  Append true.B to handle the cornor case, where all bits in ip and ie are disabled.
+    //  If do not append true.B, then we need to check whether the ip & ie are empty,
+    //  otherwise, the returned topei will become the max index, that is 2^aplicIntSrcWidth-1
+    //  [0,     2^aplicIntSrcWidth-1] :+ 2^aplicIntSrcWidth
+    val topi = Wire(UInt(params.aplicIntSrcWidth.W))
+    topi := ParallelPriorityMux((
+      (ips.toBools:+true.B) zip (ies.toBools:+true.B)
+    ).zipWithIndex.map {
+      case ((p: Bool, e: Bool), i: Int) => (p & e, i.U)
+    })
+    // send MSI
+    locally {
+      val (tl, edge) = toIMSIC.out(0)
+      when (domaincfg.IE && topi=/=0.U) {
+        // TODO: parameterization
+        val (_, pfbits) = edge.Put(0.U, 0x61000000.U, 2.U, targets(topi).EIID)
+        // clear corresponding ip
+        // TODO: may compete with mem mapped reg, thus causing lost info
+        clripnum.w.fn(true.B, true.B, topi)
+        tl.a.bits := pfbits
+        tl.a.valid := true.B
+      }.otherwise {
+        tl.a.valid := false.B
+      }
+    }
   }
 }

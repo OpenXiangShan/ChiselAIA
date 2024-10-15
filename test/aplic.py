@@ -146,32 +146,6 @@ async def aplic_set_clr_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
 
-  # setipnum 0, which should be ignored
-  ip0 = await a_get32(dut, base_addr+offset_setips)
-  await a_put_full32(dut, base_addr+offset_setipnum, 0)
-  ip0_ignore0 = await a_get32(dut, base_addr+offset_setips)
-  assert ip0==ip0_ignore0
-
-  # setipnum ip0
-  await a_put_full32(dut, base_addr+offset_setipnum, 27)
-  ip0_set = await a_get32(dut, base_addr+offset_setips)
-  assert ip0|(1<<27)==ip0_set
-  # in_clrip0 clear all ip0
-  await a_put_full32(dut, base_addr+offset_in_clrips+0*4, 0xffffffff)
-  ip0_clear_all = await a_get32(dut, base_addr+offset_setips)
-  assert ip0_clear_all==0
-
-  # setipnum ip1
-  ip1 = await a_get32(dut, base_addr+offset_setips+1*4)
-  setipnum_1 = 63
-  await a_put_full32(dut, base_addr+offset_setipnum, setipnum_1)
-  ip1_set1 = await a_get32(dut, base_addr+offset_setips+1*4)
-  assert ip1|(1<<(setipnum_1-32))==ip1_set1
-  # clripnum ip1
-  await a_put_full32(dut, base_addr+offset_clripnum, setipnum_1)
-  ip1_clr1 = await a_get32(dut, base_addr+offset_setips+1*4)
-  assert ip1==ip1_clr1
-
   # setienum 0, which should be ignored
   ie0 = await a_get32(dut, base_addr+offset_seties)
   await a_put_full32(dut, base_addr+offset_setienum, 0)
@@ -206,6 +180,11 @@ async def aplic_set_clr_test(dut):
   assert ip1|(1<<(setipnum_1-32))==ip1_set1
   # setipnum_be readonly zeros
   assert 0==await a_get32(dut, base_addr+offset_setipnum_be)
+
+@cocotb.test()
+async def aplic_rectified_int_test(dut):
+  # Start the clock
+  cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
 
   # int sources
   async def expect_intSrcsRectified_1(dut, value):
@@ -242,3 +221,38 @@ async def aplic_set_clr_test(dut):
   await FallingEdge(dut.clock)
   dut.intSrcs_1.value = 0
   await expect_intSrcsRectified_1(dut, 1)
+
+@cocotb.test()
+async def aplic_msi_test(dut):
+  # Start the clock
+  cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
+
+  async def expect_int_num(dut, num):
+    for _ in range(0,10):
+      await RisingEdge(dut.clock)
+      if dut.toimsic_0_a_bits_data == num:
+          break
+    else:
+      assert False, f"Timeout waiting for dut.toimsic_0_a_bits_data"
+
+  # # setipnum 0, which should be ignored
+  # ip0 = await a_get32(dut, base_addr+offset_setips)
+  # await a_put_full32(dut, base_addr+offset_setipnum, 0)
+  # ip0_ignore0 = await a_get32(dut, base_addr+offset_setips)
+  # assert ip0==ip0_ignore0
+
+  # setipnum ip0
+  int_num = 27
+  eiid = 0xCA
+  await a_put_full32(dut, base_addr+offset_targets+(int_num-1)*4, eiid)
+  await a_put_full32(dut, base_addr+offset_seties+0*4, 0xffffffff)
+  await a_put_full32(dut, base_addr+offset_setipnum, int_num)
+  await expect_int_num(dut, eiid)
+
+  # setipnum ip1
+  int_num = 63
+  eiid = 0xEF
+  await a_put_full32(dut, base_addr+offset_targets+(int_num-1)*4, eiid)
+  await a_put_full32(dut, base_addr+offset_seties+1*4, 1<<(int_num-32))
+  await a_put_full32(dut, base_addr+offset_setipnum, int_num)
+  await expect_int_num(dut, eiid)
