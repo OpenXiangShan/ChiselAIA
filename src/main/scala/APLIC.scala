@@ -23,16 +23,6 @@ import freechips.rocketchip.tilelink._
 import freechips.rocketchip.regmapper._
 import xs.utils._
 
-case class APLICParams(
-  // TODO: combine common part with IMSICParams, and remove prefix of "aplic"
-  aplicIntSrcWidth: Int = 10,
-  aplicBaseAddr: Long = 0x19960000L,
-) {
-  require(aplicIntSrcWidth <= 10, f"aplicIntSrcWidth=${aplicIntSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")
-  val aplicIntSrcNum: Int = pow2(aplicIntSrcWidth).toInt - 1
-  val ixNum: Int = pow2(aplicIntSrcWidth).toInt / 32
-}
-
 class TLAPLIC(
   params: APLICParams,
   beatBytes: Int = 8, // TODO: remove? and IMSIC's beatBytes
