@@ -62,6 +62,7 @@ async def a_get32(dut, addr) -> int:
   return res & 0xffffffff
 
 base_addr           = 0x19960000
+imsic_m_base_addr   = 0x61000000
 offset_domaincfg    = 0
 offset_sourcecfg    = 0x0004
 offset_readonly0    = 0x1000
@@ -219,10 +220,11 @@ async def aplic_msi_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
 
-  async def expect_int_num(dut, num):
+  async def expect_int_num(dut, num, addr):
     for _ in range(0,10):
       await RisingEdge(dut.clock)
       if dut.toimsic_0_a_bits_data == num:
+          assert dut.toimsic_0_a_bits_address == addr
           break
     else:
       assert False, f"Timeout waiting for dut.toimsic_0_a_bits_data"
@@ -236,10 +238,11 @@ async def aplic_msi_test(dut):
   # setipnum ip0
   int_num = 27
   eiid = 0xCA
-  await a_put_full32(dut, base_addr+offset_targets+(int_num-1)*4, eiid)
+  guest_id = 2
+  await a_put_full32(dut, base_addr+offset_targets+(int_num-1)*4, (guest_id<<12)|eiid)
   await a_put_full32(dut, base_addr+offset_seties+0*4, 0xffffffff)
   await a_put_full32(dut, base_addr+offset_setipnum, int_num)
-  await expect_int_num(dut, eiid)
+  await expect_int_num(dut, eiid, imsic_m_base_addr+0x1000*guest_id)
 
   # setipnum ip1
   int_num = 63
@@ -247,4 +250,4 @@ async def aplic_msi_test(dut):
   await a_put_full32(dut, base_addr+offset_targets+(int_num-1)*4, eiid)
   await a_put_full32(dut, base_addr+offset_seties+1*4, 1<<(int_num-32))
   await a_put_full32(dut, base_addr+offset_setipnum, int_num)
-  await expect_int_num(dut, eiid)
+  await expect_int_num(dut, eiid, imsic_m_base_addr)

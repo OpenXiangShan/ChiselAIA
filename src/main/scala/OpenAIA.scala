@@ -47,7 +47,12 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
   val aplicTLMNode = TLManagerNode(Seq(TLSlavePortParameters.v1(
     Seq(TLSlaveParameters.v1(
       // TODO: parameterization
-      address = Seq(AddressSet(0x61000000L, 0x1000-1)), // TODO
+      address = Seq(
+        // TODO: parameterization
+        // test non-uniform address set seq
+        AddressSet(0x61000000L, 0x1000*0x10-1),
+        AddressSet(0x61010000L, 0x1000-1),
+      ), // TODO
       supportsPutFull = TransferSizes(1, 8),
     )),
     beatBytes = 8

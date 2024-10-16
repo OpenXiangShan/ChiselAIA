@@ -253,7 +253,15 @@ class TLAPLIC(
     locally {
       val (tl, edge) = toIMSIC.out(0)
       when (domaincfg.IE && topi=/=0.U) {
-        val (_, pfbits) = edge.Put(0.U, imsic_params.mBaseAddr.U, 2.U, targets(topi).EIID)
+        val target = targets(topi)
+        val groupID = target.HartIndex(imsic_params.groupsWidth+imsic_params.membersWidth-1, imsic_params.membersWidth)
+        val memberID = target.HartIndex(imsic_params.membersWidth-1, 0)
+        val guestID = target.GuestIndex
+        val msiAddr = imsic_params.mBaseAddr.U |
+                      (groupID<<imsic_params.groupStrideWidth) |
+                      (memberID<<imsic_params.sgStrideWidth) |
+                      (guestID<<imsic_params.intFileMemWidth)
+        val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, targets(topi).EIID)
         // clear corresponding ip
         // TODO: may compete with mem mapped reg, thus causing lost info
         clripnum.w.fn(true.B, true.B, topi)
