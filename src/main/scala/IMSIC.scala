@@ -65,7 +65,7 @@ class TLIMSIC(
 
   // addr for the machine-level interrupt file: g*2^E + A + h*2^C
   val mAddr = AddressSet(
-    groupID * pow2(params.groupStrideWidth) + params.mBaseAddr + memberID * pow2(params.mStrideBits),
+    groupID * pow2(params.groupStrideWidth) + params.mBaseAddr + memberID * pow2(params.mStrideWidth),
     pow2(params.intFileMemWidth) - 1
   )
   // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D

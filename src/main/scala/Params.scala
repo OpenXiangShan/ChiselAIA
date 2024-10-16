@@ -49,13 +49,13 @@ case class IMSICParams(
   // ## Arguments for interrupt file's memory region
   val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
   val membersWidth    : Int = log2Ceil(membersNum) // k
-  // require(mStrideBits >= intFileMemWidth)
-  val mStrideBits     : Int  = intFileMemWidth // C: stride between each machine-level interrupt files
-  require((mBaseAddr & (pow2(membersWidth + mStrideBits) -1)) == 0, "mBaseAddr should be aligned to a 2^(k+C)")
+  // require(mStrideWidth >= intFileMemWidth)
+  val mStrideWidth    : Int  = intFileMemWidth // C: stride between each machine-level interrupt files
+  require((mBaseAddr & (pow2(membersWidth + mStrideWidth) -1)) == 0, "mBaseAddr should be aligned to a 2^(k+C)")
   // require(sgStrideWidth >= log2Ceil(geilen+1) + intFileMemWidth)
   val sgStrideWidth   : Int = log2Ceil(geilen+1) + intFileMemWidth // D: stride between each supervisor- and guest-level interrupt files
-  // require(groupStrideWidth >= k + math.max(mStrideBits, sgStrideWidth))
-  val groupStrideWidth: Int = membersWidth + math.max(mStrideBits, sgStrideWidth) // E: stride between each interrupt file groups
+  // require(groupStrideWidth >= k + math.max(mStrideWidth, sgStrideWidth))
+  val groupStrideWidth: Int = membersWidth + math.max(mStrideWidth, sgStrideWidth) // E: stride between each interrupt file groups
   val groupsWidth     : Int = log2Ceil(groupsNum + 1) // j
   require((sgBaseAddr & (pow2(membersWidth + sgStrideWidth) - 1)) == 0, "sgBaseAddr should be aligned to a 2^(k+D)")
   require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & mBaseAddr ) == 0)
@@ -65,7 +65,7 @@ case class IMSICParams(
   println(f"IMSICParams.groupsWidth:       ${groupsWidth     }%d")
   println(f"IMSICParams.membersNum:        ${membersNum      }%d")
   println(f"IMSICParams.mBaseAddr:       0x${mBaseAddr       }%x")
-  println(f"IMSICParams.mStrideBits:       ${mStrideBits     }%d")
+  println(f"IMSICParams.mStrideWidth:      ${mStrideWidth    }%d")
   println(f"IMSICParams.sgBaseAddr:      0x${sgBaseAddr      }%x")
   println(f"IMSICParams.sgStrideWidth:     ${sgStrideWidth   }%d")
   println(f"IMSICParams.geilen:            ${geilen          }%d")
