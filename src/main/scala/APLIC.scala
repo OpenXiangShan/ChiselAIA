@@ -262,6 +262,7 @@ class Domain(
     ).zipWithIndex.map {
       case ((p: Bool, e: Bool), i: Int) => (p & e, i.U)
     })
+    // TODO: handle ready signal!
     // send MSI
     locally {
       val (tl, edge) = toIMSIC.out(0)
