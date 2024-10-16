@@ -183,7 +183,7 @@ async def aplic_rectified_int_test(dut):
   async def expect_intSrcsRectified_1(dut, value):
     for _ in range(10):
       await RisingEdge(dut.clock)
-      if dut.aplic.intSrcsRectified_1 == value:
+      if dut.aplic.mDomain.intSrcsRectified_1 == value:
         break
     else:
       assert False, f"Timeout waiting for dut.aplic.intSrcsRectified_1"
@@ -192,7 +192,7 @@ async def aplic_rectified_int_test(dut):
   await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_edge1)
   await FallingEdge(dut.clock)
   dut.intSrcs_1.value = 0
-  assert dut.aplic.intSrcsRectified_1 == 0
+  assert dut.aplic.mDomain.intSrcsRectified_1 == 0
   await FallingEdge(dut.clock)
   dut.intSrcs_1.value = 1
   await expect_intSrcsRectified_1(dut, 1)

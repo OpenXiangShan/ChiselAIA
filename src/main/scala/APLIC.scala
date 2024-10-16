@@ -28,12 +28,19 @@ class TLAPLIC(
   imsic_params: IMSICParams,
   beatBytes: Int = 8, // TODO: remove? and IMSIC's beatBytes
 )(implicit p: Parameters) extends LazyModule {
+
+class Domain(
+  baseAddr: Long, // base address for this aplic domain
+  imsicBaseAddr: Long, // base address for imsic's interrupt files
+  imsicMemberStrideWidth: Int, // C, D: stride between each interrupt files
+  imsicGeilen: Int, // number of guest interrupt files, it is 0 for machine-level domain
+)(implicit p: Parameters) extends LazyModule {
   // TODO: rename node for better readability
   val node = TLRegisterNode(
-    address = Seq(AddressSet(params.baseAddr, pow2(params.domainMemWidth)-1)),
+    address = Seq(AddressSet(baseAddr, pow2(params.domainMemWidth)-1)),
     device = new SimpleDevice(
       "interrupt-controller",
-      Seq(f"riscv,aplic")
+      Seq(f"riscv,aplic,0x${baseAddr}%x")
     ),
     beatBytes = beatBytes,
     undefZero = true,
@@ -186,9 +193,9 @@ class TLAPLIC(
     val targets = new Bundle {
       private val regs = RegInit(VecInit.fill(params.intSrcNum){0.U(32.W)})
       class TargetMeta(reg: UInt, active: Bool) {
-        val HartIndex  = reg(31,18)
-        val GuestIndex = reg(17,12)
-        val EIID       = reg(10,0)
+        val HartIndex  = reg(31,18) // TODO: parameterization: width of (groupsNum + membersNum)
+        val GuestIndex = reg(17,12) // TODO: parameterization: width of imsicGeilen
+        val EIID       = reg(10,0) // TODO: parameterization: intSrcWidth
         // TODO: For a machine-level domain, Guest Index is read-only zeros
         val r = RegReadFn(Mux(active, reg, 0.U))
         val w = RegWriteFn((valid, data) => {
@@ -257,9 +264,9 @@ class TLAPLIC(
         val groupID = target.HartIndex(imsic_params.groupsWidth+imsic_params.membersWidth-1, imsic_params.membersWidth)
         val memberID = target.HartIndex(imsic_params.membersWidth-1, 0)
         val guestID = target.GuestIndex
-        val msiAddr = imsic_params.mBaseAddr.U |
+        val msiAddr = imsicBaseAddr.U |
                       (groupID<<imsic_params.groupStrideWidth) |
-                      (memberID<<imsic_params.sgStrideWidth) |
+                      (memberID<<imsicMemberStrideWidth) |
                       (guestID<<imsic_params.intFileMemWidth)
         val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, targets(topi).EIID)
         // clear corresponding ip
@@ -271,5 +278,25 @@ class TLAPLIC(
         tl.a.valid := false.B
       }
     }
+  }
+}
+
+  val mDomain = LazyModule(new Domain(
+    params.baseAddr,
+    imsic_params.mBaseAddr,
+    imsic_params.mStrideWidth,
+    0,
+  ))
+  // TODO: rename node for better readability
+  val node = LazyModule(new TLXbar).node
+  val toIMSIC = LazyModule(new TLXbar).node
+  mDomain.node := node
+  toIMSIC := mDomain.toIMSIC
+
+  lazy val module = new Imp
+  class Imp extends LazyModuleImp(this) {
+    val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
+
+    intSrcs <> mDomain.module.intSrcs
   }
 }
