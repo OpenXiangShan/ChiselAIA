@@ -243,7 +243,7 @@ class TLAPLIC(
     //  If do not append true.B, then we need to check whether the ip & ie are empty,
     //  otherwise, the returned topei will become the max index, that is 2^aplicIntSrcWidth-1
     //  [0,     2^aplicIntSrcWidth-1] :+ 2^aplicIntSrcWidth
-    val topi = Wire(UInt(params.intSrcWidth.W))
+    val topi = Wire(UInt(params.intSrcWidth.W)); /*for debug*/dontTouch(topi)
     topi := ParallelPriorityMux((
       (ips.toBools:+true.B) zip (ies.toBools:+true.B)
     ).zipWithIndex.map {
