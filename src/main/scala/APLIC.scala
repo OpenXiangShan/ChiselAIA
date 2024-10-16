@@ -297,16 +297,25 @@ class Domain(
     imsic_params.mStrideWidth,
     0,
   ))
+  val sgDomain = LazyModule(new Domain(
+    params.baseAddr + pow2(params.domainMemWidth),
+    imsic_params.sgBaseAddr,
+    imsic_params.sgStrideWidth,
+    imsic_params.geilen,
+  ))
   // TODO: rename node for better readability
   val node = LazyModule(new TLXbar).node
   val toIMSIC = LazyModule(new TLXbar).node
   mDomain.node := node
+  sgDomain.node := node
   toIMSIC := mDomain.toIMSIC
+  toIMSIC := sgDomain.toIMSIC
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
     val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
 
-    intSrcs <> mDomain.module.intSrcs
+    mDomain.module.intSrcs := intSrcs
+    sgDomain.module.intSrcs := mDomain.module.intSrcsDelegated
   }
 }

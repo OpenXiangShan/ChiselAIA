@@ -48,10 +48,8 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
     Seq(TLSlaveParameters.v1(
       // TODO: parameterization
       address = Seq(
-        // TODO: parameterization
-        // test non-uniform address set seq
-        AddressSet(0x61000000L, 0x1000*0x10-1),
-        AddressSet(0x61010000L, 0x1000-1),
+        AddressSet(imsic_params.mBaseAddr, pow2(imsic_params.groupStrideWidth + imsic_params.groupsWidth)-1),
+        AddressSet(imsic_params.sgBaseAddr,pow2(imsic_params.groupStrideWidth + imsic_params.groupsWidth)-1),
       ), // TODO
       supportsPutFull = TransferSizes(1, 8),
     )),
