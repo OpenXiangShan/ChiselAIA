@@ -1,3 +1,4 @@
 * doc
 * aplic
-* split common.scala from IMSIC.scala
+* parallel exec cocotb
+* move ulimit and cocotb env to a Makefile?
