@@ -13,22 +13,10 @@ let
 
     * Show this help: `h`
     * Enter nix-shell: `nix-shell` (`direnv` recommanded!)
-
-    ## Generate Verilog (Chisel => Verilog)
-
-    `mill OpenAIA`
-
-    * Before generating verilog, make sure git submodules have been updated.
+    * Before running, make sure git submodules have been updated.
       * `git submodule update --init --recursive`
-
-    ## Run Unit Tests (Powered by Cocotb)
-
-    `make -j -C test`
-
-    * Before testing, make sure stack size is enough
-      * `ulimit -s 211487`
-    * To enable pdb when cocotb test failed
-      * `export COCOTB_PDB_ON_EXCEPTION=1`
+    * Run Unit Tests: `make -j`
+      * The verilog is generated into gen/ folder.
   '';
   _h_ = pkgs.writeShellScriptBin "h" ''
     ${pkgs.glow}/bin/glow ${h_content}
@@ -56,6 +44,8 @@ in pkgs.mkShell {
   in ''
     export CHISEL_FIRTOOL_PATH=${circt_1_62_0}/bin/
     export PYTHONPATH+=${my-python3}/lib/${my-python3.libPrefix}/site-packages
+    # To enable pdb when cocotb test failed
+    export COCOTB_PDB_ON_EXCEPTION=1
     h
   '';
 }
