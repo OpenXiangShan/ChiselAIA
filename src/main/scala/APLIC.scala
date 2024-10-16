@@ -246,6 +246,10 @@ class Domain(
       }
     }
     dontTouch(intSrcsRectified) // TODO: remove: for debug
+    // TODO: may compete with mem mapped reg, thus causing lost info
+    intSrcsRectified.zipWithIndex.map { case (intSrc:Bool, i:Int) =>
+      when(intSrc) {setipnum.w.fn(true.B, true.B, (i+1).U)}
+    }
 
     // The ":+ true.B" trick explain:
     //  Append true.B to handle the cornor case, where all bits in ip and ie are disabled.

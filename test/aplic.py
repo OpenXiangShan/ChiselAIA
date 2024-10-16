@@ -252,6 +252,14 @@ async def aplic_msi_test(dut):
   await a_put_full32(dut, base_addr+offset_setipnum, int_num)
   await expect_int_num(dut, eiid, imsic_m_base_addr)
 
+  # intSrc
+  await FallingEdge(dut.clock)
+  ## TODO: padding intSrcs_0, thus use intSrcs_63
+  dut.intSrcs_62.value = 1
+  await FallingEdge(dut.clock)
+  dut.intSrcs_62.value = 0
+  await expect_int_num(dut, eiid, imsic_m_base_addr)
+
   # delegation
   int_num = 43
   eiid = 0xAB
