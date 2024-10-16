@@ -232,16 +232,14 @@ class Domain(
 
     val intSrcsSynced = RegNextN(intSrcs, 3)
     val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
+    // TODO: For level sensitive intSrc:
+    //       The pending bit may also be set by a relevant write to a setip or setipnum register when the rectified input value is high, but not when the rectified input value is low.
     (intSrcsRectified zip (intSrcsSynced zip sourcecfgs.toSeq)).map {
       case (rect, (intSrc, sourcecfg)) => {
-        when      (sourcecfg.SM === sourcecfg.edge1) {
+        when      (sourcecfg.SM===sourcecfg.edge1 || sourcecfg.SM===sourcecfg.level1) {
           rect := intSrc && !RegNext(intSrc)
-        }.elsewhen(sourcecfg.SM === sourcecfg.edge0) {
+        }.elsewhen(sourcecfg.SM===sourcecfg.edge0 || sourcecfg.SM===sourcecfg.level0) {
           rect := !intSrc && RegNext(intSrc)
-        }.elsewhen(sourcecfg.SM === sourcecfg.level1) {
-          rect := intSrc
-        }.elsewhen(sourcecfg.SM === sourcecfg.level0) {
-          rect := !intSrc
         }.otherwise {
           rect := false.B
         }
