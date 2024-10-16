@@ -53,6 +53,8 @@ class Domain(
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
     val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
+    val intSrcsDelegated = IO(Output(Vec(params.intSrcNum, Bool())))
+    dontTouch(intSrcsDelegated) // TODO: remove: for debug
 
     val domaincfg = new Bundle {
       val high = 0x80.U(8.W)
@@ -85,7 +87,7 @@ class Domain(
             )
           }; true.B
         })
-        def is_active(): Bool = D || (~D && SM=/=inactive)
+        def is_active(): Bool = ~D && SM=/=inactive
       }
       def apply(i: UInt) = new SourcecfgMeta(regs(i-1.U))
       def toSeq = regs.map (new SourcecfgMeta(_))
@@ -102,6 +104,8 @@ class Domain(
           active := Cat(activeBoolsSeq1.slice(i*32, (i+1)*32).reverse)
         }}
       }
+      val DBools = Wire(Vec(params.intSrcNum, Bool()))
+      (DBools zip toSeq).map {case (d:Bool, s:SourcecfgMeta) => d:=s.D}
     }
     // It is recommended to hardwire *msiaddrcfg* by the manual:
     // "For any given system, these addresses are fixed and should be hardwired into the APLIC if possible."
@@ -278,6 +282,9 @@ class Domain(
         tl.a.valid := false.B
       }
     }
+
+    // delegate
+    intSrcsDelegated := (sourcecfgs.DBools zip intSrcs).map {case (d:Bool, i:Bool) => d&i}
   }
 }
 

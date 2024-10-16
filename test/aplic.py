@@ -251,3 +251,19 @@ async def aplic_msi_test(dut):
   await a_put_full32(dut, base_addr+offset_seties+1*4, 1<<(int_num-32))
   await a_put_full32(dut, base_addr+offset_setipnum, int_num)
   await expect_int_num(dut, eiid, imsic_m_base_addr)
+
+  # delegation
+  int_num = 43
+  eiid = 0xAB
+  await a_put_full32(dut, base_addr+offset_sourcecfg+(int_num-1)*4, 1<<10)
+  await a_put_full32(dut, base_addr+offset_targets+(int_num-1)*4, eiid)
+  await a_put_full32(dut, base_addr+offset_seties+1*4, 1<<(int_num-32))
+  await a_put_full32(dut, base_addr+offset_setipnum, int_num)
+  assert dut.aplic.mDomain.intSrcsDelegated_42 == 0
+  dut.intSrcs_42.value = 1
+  for _ in range(0,10):
+    await RisingEdge(dut.clock)
+    if dut.aplic.mDomain.intSrcsDelegated_42 == 1:
+        break
+  else:
+    assert False, f"Timeout waiting for dut.mDomain.intSrcsDelegated_42"
