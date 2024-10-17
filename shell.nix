@@ -17,6 +17,8 @@ let
       * `git submodule update --init --recursive`
     * Run Unit Tests: `make -j`
       * The verilog is generated into gen/ folder.
+      * Run a single unit test: `make run-aplic`, `make run-imsic`, ...
+        * The available unit tests are located in test/*/main.py
   '';
   _h_ = pkgs.writeShellScriptBin "h" ''
     ${pkgs.glow}/bin/glow ${h_content}
