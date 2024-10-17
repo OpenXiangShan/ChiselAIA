@@ -40,24 +40,23 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
   imsic.mTLNode := mTLCNode
   imsic.sgTLNode := sgTLCNode
 
-  val aplicTLCNode = TLClientNode(
+  val aplic_fromCPU = TLClientNode(
     Seq(TLMasterPortParameters.v1(
       Seq(TLMasterParameters.v1("aplic_tl", IdRange(0, 16)))
   )))
-  val aplicTLMNode = TLManagerNode(Seq(TLSlavePortParameters.v1(
+  val aplic_toIMSIC = TLManagerNode(Seq(TLSlavePortParameters.v1(
     Seq(TLSlaveParameters.v1(
-      // TODO: parameterization
       address = Seq(
         AddressSet(imsic_params.mBaseAddr, pow2(imsic_params.groupStrideWidth + imsic_params.groupsWidth)-1),
         AddressSet(imsic_params.sgBaseAddr,pow2(imsic_params.groupStrideWidth + imsic_params.groupsWidth)-1),
-      ), // TODO
+      ),
       supportsPutFull = TransferSizes(1, 8),
     )),
     beatBytes = 8
   )))
   val aplic = LazyModule(new TLAPLIC(aplic_params, imsic_params)(Parameters.empty))
-  aplic.node := aplicTLCNode
-  aplicTLMNode := aplic.toIMSIC
+  aplic.fromCPU := aplic_fromCPU
+  aplic_toIMSIC := aplic.toIMSIC
 
   lazy val module = new LazyModuleImp(this) {
     mTLCNode.makeIOs()(ValName("m"))
@@ -70,11 +69,11 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
     dontTouch(imsic.module.toCSR)
     dontTouch(imsic.module.fromCSR)
 
-    aplicTLCNode.makeIOs()(ValName("domain"))
+    aplic_fromCPU.makeIOs()(ValName("domain"))
     val intSrcs = IO(Input(chiselTypeOf(aplic.module.intSrcs)))
     intSrcs <> aplic.module.intSrcs
     dontTouch(aplic.module.intSrcs)
-    aplicTLMNode.makeIOs()(ValName("toimsic"))
+    aplic_toIMSIC.makeIOs()(ValName("toimsic"))
   }
 }
 

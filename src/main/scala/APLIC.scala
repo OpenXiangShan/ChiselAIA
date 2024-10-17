@@ -35,8 +35,7 @@ class Domain(
   imsicMemberStrideWidth: Int, // C, D: stride between each interrupt files
   imsicGeilen: Int, // number of guest interrupt files, it is 0 for machine-level domain
 )(implicit p: Parameters) extends LazyModule {
-  // TODO: rename node for better readability
-  val node = TLRegisterNode(
+  val fromCPU = TLRegisterNode(
     address = Seq(AddressSet(baseAddr, pow2(params.domainMemWidth)-1)),
     device = new SimpleDevice(
       "interrupt-controller",
@@ -212,7 +211,7 @@ class Domain(
       }
     }
 
-    node.regmap(
+    fromCPU.regmap(
       0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
       0x0004/*~0x0FFC*/ -> sourcecfgs.toSeq.map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
       0x1BC4            -> Seq(RegField(32, 0x80000000L.U, RegWriteFn(():Unit))), // hardwired *msiaddrcfg* regs
@@ -303,11 +302,10 @@ class Domain(
     imsic_params.sgStrideWidth,
     imsic_params.geilen,
   ))
-  // TODO: rename node for better readability
-  val node = LazyModule(new TLXbar).node
+  val fromCPU = LazyModule(new TLXbar).node
   val toIMSIC = LazyModule(new TLXbar).node
-  mDomain.node := node
-  sgDomain.node := node
+  mDomain.fromCPU := fromCPU
+  sgDomain.fromCPU := fromCPU
   toIMSIC := mDomain.toIMSIC
   toIMSIC := sgDomain.toIMSIC
 
