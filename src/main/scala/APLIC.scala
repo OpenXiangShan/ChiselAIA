@@ -53,7 +53,6 @@ class Domain(
   class Imp extends LazyModuleImp(this) {
     val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
     val intSrcsDelegated = IO(Output(Vec(params.intSrcNum, Bool())))
-    dontTouch(intSrcsDelegated) // TODO: remove: for debug
 
     val domaincfg = new Bundle {
       val high = 0x80.U(8.W)
@@ -92,7 +91,6 @@ class Domain(
       def toSeq = regs.map (new SourcecfgMeta(_))
       val actives = Wire(Vec(params.ixNum, UInt(32.W)))
       val activeBools = Wire(Vec(params.intSrcNum, Bool()))
-      dontTouch(actives) // TODO: remove: for debug
       locally {
         val activeBoolsSeq = toSeq.map(_.is_active())
         activeBools.zipWithIndex.map { case (activeBool: Bool, i: Int) => {
