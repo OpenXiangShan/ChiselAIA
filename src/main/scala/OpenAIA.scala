@@ -24,21 +24,15 @@ import freechips.rocketchip.tilelink._
 import _root_.circt.stage.ChiselStage
 
 class OpenAIA()(implicit p: Parameters) extends LazyModule {
-  val mTLCNode = TLClientNode(
-    Seq(TLMasterPortParameters.v1(
-      Seq(TLMasterParameters.v1("m_tl", IdRange(0, 16)))
-  )))
-  val sgTLCNode = TLClientNode(
-    Seq(TLMasterPortParameters.v1(
-      Seq(TLMasterParameters.v1("sg_tl", IdRange(0, 16)))
-  )))
-
   val imsic_params = IMSICParams()
   val aplic_params = APLICParams()
 
+  val imsic_fromCPU = TLClientNode(
+    Seq(TLMasterPortParameters.v1(
+      Seq(TLMasterParameters.v1("imsic_tl", IdRange(0, 16)))
+  )))
   val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
-  imsic.mTLNode := mTLCNode
-  imsic.sgTLNode := sgTLCNode
+  imsic.fromCPU := imsic_fromCPU
 
   val aplic_fromCPU = TLClientNode(
     Seq(TLMasterPortParameters.v1(
@@ -59,21 +53,16 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
   aplic_toIMSIC := aplic.toIMSIC
 
   lazy val module = new LazyModuleImp(this) {
-    mTLCNode.makeIOs()(ValName("m"))
-    sgTLCNode.makeIOs()(ValName("sg"))
+    imsic_fromCPU.makeIOs()(ValName("intfile"))
     val toCSR = IO(Output(chiselTypeOf(imsic.module.toCSR)))
     val fromCSR = IO(Input(chiselTypeOf(imsic.module.fromCSR)))
     toCSR   <> imsic.module.toCSR
     fromCSR <> imsic.module.fromCSR
 
-    dontTouch(imsic.module.toCSR)
-    dontTouch(imsic.module.fromCSR)
-
     aplic_fromCPU.makeIOs()(ValName("domain"))
+    aplic_toIMSIC.makeIOs()(ValName("toimsic"))
     val intSrcs = IO(Input(chiselTypeOf(aplic.module.intSrcs)))
     intSrcs <> aplic.module.intSrcs
-    dontTouch(aplic.module.intSrcs)
-    aplic_toIMSIC.makeIOs()(ValName("toimsic"))
   }
 }
 

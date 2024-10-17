@@ -37,74 +37,42 @@ op_csrrs = 2
 op_csrrc = 3
 
 # Functions to interact with the DUT
-async def a_put_full(dut, mode, addr, mask, size, data):
+async def a_put_full(dut, addr, mask, size, data):
   """Send a PutFullData message on the TileLink 'a' channel."""
   await FallingEdge(dut.clock)
-  if mode == 'm':
-    a_valid = dut.m_0_a_valid
-    a_ready = dut.m_0_a_ready
-    a_bits_opcode = dut.m_0_a_bits_opcode
-    a_bits_address = dut.m_0_a_bits_address
-    a_bits_mask = dut.m_0_a_bits_mask
-    a_bits_size = dut.m_0_a_bits_size
-    a_bits_data = dut.m_0_a_bits_data
-  else:
-    a_valid = dut.sg_0_a_valid
-    a_ready = dut.sg_0_a_ready
-    a_bits_opcode = dut.sg_0_a_bits_opcode
-    a_bits_address = dut.sg_0_a_bits_address
-    a_bits_mask = dut.sg_0_a_bits_mask
-    a_bits_size = dut.sg_0_a_bits_size
-    a_bits_data = dut.sg_0_a_bits_data
-
   # Wait until the interface is ready
-  while not a_ready.value:
+  while not dut.intfile_0_a_ready.value:
     await RisingEdge(dut.clock)
 
   # Send the transaction
-  a_valid.value = 1
-  a_bits_opcode.value = tl_a_putFullData
-  a_bits_address.value = addr
-  a_bits_mask.value = mask
-  a_bits_size.value = size
-  a_bits_data.value = data
+  dut.intfile_0_a_valid.value = 1
+  dut.intfile_0_a_bits_opcode.value = tl_a_putFullData
+  dut.intfile_0_a_bits_address.value = addr
+  dut.intfile_0_a_bits_mask.value = mask
+  dut.intfile_0_a_bits_size.value = size
+  dut.intfile_0_a_bits_data.value = data
   await FallingEdge(dut.clock)
-  a_valid.value = 0
+  dut.intfile_0_a_valid.value = 0
 
-async def a_get(dut, mode, addr, mask, size):
+async def a_get(dut, addr, mask, size):
   """Send a Get message on the TileLink 'a' channel."""
   await FallingEdge(dut.clock)
-  if mode == 'm':
-    a_valid = dut.m_0_a_valid
-    a_ready = dut.m_0_a_ready
-    a_bits_opcode = dut.m_0_a_bits_opcode
-    a_bits_address = dut.m_0_a_bits_address
-    a_bits_mask = dut.m_0_a_bits_mask
-    a_bits_size = dut.m_0_a_bits_size
-  else:
-    a_valid = dut.sg_0_a_valid
-    a_ready = dut.sg_0_a_ready
-    a_bits_opcode = dut.sg_0_a_bits_opcode
-    a_bits_address = dut.sg_0_a_bits_address
-    a_bits_mask = dut.sg_0_a_bits_mask
-    a_bits_size = dut.sg_0_a_bits_size
-
   # Wait until the interface is ready
-  while not a_ready.value:
+  while not dut.intfile_0_a_ready.value:
     await RisingEdge(dut.clock)
 
   # Send the transaction
-  a_valid.value = 1
-  a_bits_opcode.value = tl_a_get
-  a_bits_address.value = addr
-  a_bits_mask.value = mask
-  a_bits_size.value = size
+  dut.intfile_0_a_valid.value = 1
+  dut.intfile_0_a_bits_opcode.value = tl_a_get
+  dut.intfile_0_a_bits_address.value = addr
+  dut.intfile_0_a_bits_mask.value = mask
+  dut.intfile_0_a_bits_size.value = size
   await FallingEdge(dut.clock)
-  a_valid.value = 0
+  dut.intfile_0_a_valid.value = 0
 
 async def m_int(dut, intnum):
   """Issue an interrupt to the M-mode interrupt file."""
-  await a_put_full(dut, 'm', mBaseAddr, 0xf, 2, intnum)
+  await a_put_full(dut, mBaseAddr, 0xf, 2, intnum)
   for _ in range(10):
     await RisingEdge(dut.clock)
     seteipnum = dut.imsic.seteipnum.value
@@ -116,7 +84,7 @@ async def m_int(dut, intnum):
 
 async def s_int(dut, intnum):
   """Issue an interrupt to the S-mode interrupt file."""
-  await a_put_full(dut, 'sg', sgBaseAddr, 0xf, 2, intnum)
+  await a_put_full(dut, sgBaseAddr, 0xf, 2, intnum)
   for _ in range(10):
     await RisingEdge(dut.clock)
     seteipnum = dut.imsic.seteipnum_1.value
@@ -128,7 +96,7 @@ async def s_int(dut, intnum):
 
 async def v_int_vgein2(dut, intnum):
   """Issue an interrupt to the VS-mode interrupt file with vgein2."""
-  await a_put_full(dut, 'sg', sgBaseAddr + 0x1000*(1+2), 0xf, 2, intnum)
+  await a_put_full(dut, sgBaseAddr + 0x1000*(1+2), 0xf, 2, intnum)
   for _ in range(10):
     await RisingEdge(dut.clock)
     seteipnum = dut.imsic.seteipnum_4.value
@@ -216,8 +184,7 @@ async def imsic_test(dut):
   dut.reset.value = 0
 
   # Initialize ready signals
-  dut.m_0_d_ready.value = 1
-  dut.sg_0_d_ready.value = 1
+  dut.intfile_0_d_ready.value = 1
 
   await RisingEdge(dut.clock)
 

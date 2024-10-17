@@ -83,6 +83,9 @@ class TLIMSIC(
     undefZero = true,
     concurrency = 1
   ))
+  val fromCPU = LazyModule(new TLXbar).node
+  mTLNode := fromCPU
+  sgTLNode := fromCPU
 
   // Based on Xiangshan NewCSR
   object OpType extends ChiselEnum {
