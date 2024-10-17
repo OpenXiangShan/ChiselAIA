@@ -178,45 +178,45 @@ async def aplic_set_clr_test(dut):
   assert 0==await a_get32(dut, base_addr+offset_setipnum_be)
 
 @cocotb.test()
-async def aplic_rectified_int_test(dut):
+async def aplic_triggered_int_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
 
   # int sources
-  async def expect_intSrcsRectified_1(dut, value):
+  async def expect_intSrcsTriggered_1(dut, value):
     for _ in range(10):
       await RisingEdge(dut.clock)
-      if dut.aplic.mDomain.intSrcsRectified_1 == value:
+      if dut.aplic.mDomain.intSrcsTriggered_1 == value:
         break
     else:
-      assert False, f"Timeout waiting for dut.aplic.intSrcsRectified_1"
+      assert False, f"Timeout waiting for dut.aplic.intSrcsTriggered_1"
 
   ## edge1
   await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_edge1)
   await FallingEdge(dut.clock)
   dut.intSrcs_1.value = 0
-  assert dut.aplic.mDomain.intSrcsRectified_1 == 0
+  assert dut.aplic.mDomain.intSrcsTriggered_1 == 0
   await FallingEdge(dut.clock)
   dut.intSrcs_1.value = 1
-  await expect_intSrcsRectified_1(dut, 1)
+  await expect_intSrcsTriggered_1(dut, 1)
   ## edge0
   await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_edge0)
-  await expect_intSrcsRectified_1(dut, 0)
+  await expect_intSrcsTriggered_1(dut, 0)
   await FallingEdge(dut.clock)
   dut.intSrcs_1.value = 0
-  await expect_intSrcsRectified_1(dut, 1)
+  await expect_intSrcsTriggered_1(dut, 1)
   ## level1
   await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_level1)
-  await expect_intSrcsRectified_1(dut, 0)
+  await expect_intSrcsTriggered_1(dut, 0)
   await FallingEdge(dut.clock)
   dut.intSrcs_1.value = 1
-  await expect_intSrcsRectified_1(dut, 1)
+  await expect_intSrcsTriggered_1(dut, 1)
   ## level0
   await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_level0)
-  await expect_intSrcsRectified_1(dut, 0)
+  await expect_intSrcsTriggered_1(dut, 0)
   await FallingEdge(dut.clock)
   dut.intSrcs_1.value = 0
-  await expect_intSrcsRectified_1(dut, 1)
+  await expect_intSrcsTriggered_1(dut, 1)
 
 @cocotb.test()
 async def aplic_msi_test(dut):

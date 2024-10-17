@@ -218,18 +218,21 @@ class Domain(
     (intSrcsRectified zip (intSrcsSynced zip sourcecfgs.toSeq)).map {
       case (rect, (intSrc, sourcecfg)) => {
         when      (sourcecfg.SM===sourcecfg.edge1 || sourcecfg.SM===sourcecfg.level1) {
-          rect := intSrc && !RegNext(intSrc)
+          rect := intSrc
         }.elsewhen(sourcecfg.SM===sourcecfg.edge0 || sourcecfg.SM===sourcecfg.level0) {
-          rect := !intSrc && RegNext(intSrc)
+          rect := !intSrc
         }.otherwise {
           rect := false.B
         }
       }
     }
-    dontTouch(intSrcsRectified) // TODO: remove: for debug
+    val intSrcsTriggered = Wire(Vec(params.intSrcNum, Bool())); /*for debug*/dontTouch(intSrcsTriggered)
+    (intSrcsTriggered zip intSrcsRectified).map { case (trigger, rect) => {
+      trigger := rect && !RegNext(rect)
+    }}
     // TODO: may compete with mem mapped reg, thus causing lost info
-    intSrcsRectified.zipWithIndex.map { case (intSrc:Bool, i:Int) =>
-      when(intSrc) {setipnum.w.fn(true.B, true.B, (i+1).U)}
+    intSrcsTriggered.zipWithIndex.map { case (trigger:Bool, i:Int) =>
+      when(trigger) {setipnum.w.fn(true.B, true.B, (i+1).U)}
     }
 
     // The ":+ true.B" trick explain:
