@@ -219,6 +219,42 @@ async def aplic_triggered_int_test(dut):
   await expect_intSrcsTriggered_1(dut, 1)
 
 @cocotb.test()
+async def aplic_in_clrips_test(dut):
+  # Start the clock
+  cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
+
+  await a_put_full32(dut, base_addr+offset_seties, 0)
+  rect_before = await a_get32(dut, base_addr+offset_in_clrips+0*4)
+  await a_put_full32(dut, base_addr+offset_sourcecfg+3*4, sourcecfg_sm_edge1)
+  await a_put_full32(dut, base_addr+offset_sourcecfg+4*4, sourcecfg_sm_edge0)
+  await a_put_full32(dut, base_addr+offset_sourcecfg+5*4, sourcecfg_sm_level1)
+  await a_put_full32(dut, base_addr+offset_sourcecfg+6*4, sourcecfg_sm_level0)
+  await FallingEdge(dut.clock)
+  dut.intSrcs_3.value = 0
+  dut.intSrcs_4.value = 1
+  dut.intSrcs_5.value = 0
+  dut.intSrcs_6.value = 1
+  await FallingEdge(dut.clock)
+  dut.intSrcs_3.value = 1
+  dut.intSrcs_4.value = 0
+  dut.intSrcs_5.value = 1
+  dut.intSrcs_6.value = 0
+  await FallingEdge(dut.clock)
+  rect_after = await a_get32(dut, base_addr+offset_in_clrips+0*4)
+  assert rect_after == 0xf0 | rect_before
+  # clean
+  await FallingEdge(dut.clock)
+  dut.intSrcs_3.value = 0
+  dut.intSrcs_4.value = 0
+  dut.intSrcs_5.value = 0
+  dut.intSrcs_6.value = 0
+  await a_put_full32(dut, base_addr+offset_sourcecfg+3*4, 0)
+  await a_put_full32(dut, base_addr+offset_sourcecfg+4*4, 0)
+  await a_put_full32(dut, base_addr+offset_sourcecfg+5*4, 0)
+  await a_put_full32(dut, base_addr+offset_sourcecfg+6*4, 0)
+  await FallingEdge(dut.clock)
+
+@cocotb.test()
 async def aplic_msi_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())

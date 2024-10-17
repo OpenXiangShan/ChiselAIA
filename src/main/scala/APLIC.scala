@@ -140,15 +140,21 @@ class Domain(
       })
     }
     val setipnum = new Setixnum(ips)
+    val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
     object in_clrips {
-      class In_clripMeta(ip: ips.IxMeta) {
-        val r = RegReadFn(0.U(32.W)) // TODO: returns the rectified input
+      private val intSrcsRectified32 = Wire(Vec(pow2(params.intSrcWidth-5).toInt, UInt(32.W)))
+      private val intSrcsRectified_0 = false.B +: intSrcsRectified
+      intSrcsRectified32.zipWithIndex.map { case (rect32:UInt, i:Int) => {
+        rect32 := Cat(intSrcsRectified_0.slice(i*32, i*32+32).reverse)
+      }}
+      class In_clripMeta(ip: ips.IxMeta, rects: UInt) {
+        val r = RegReadFn(rects)
         val w = RegWriteFn((valid, data) => {
           when (valid) { ip.w32( ip.r32() & ~data ) }; true.B
         })
       }
-      def apply(i: UInt) = new In_clripMeta(ips(i))
-      def toSeq = ips.toSeq.map ( ip => new In_clripMeta(ip) )
+      def apply(i: UInt) = new In_clripMeta(ips(i), intSrcsRectified32(i))
+      def toSeq = ips.toSeq.zipWithIndex.map { case (ip:ips.IxMeta, i:Int) => new In_clripMeta(ip, intSrcsRectified32(i)) }
     }
     class Clrixnum(ixs: IXs) {
       val r = RegReadFn(0.U(32.W)) // read zeros
@@ -212,7 +218,6 @@ class Domain(
     )
 
     val intSrcsSynced = RegNextN(intSrcs, 3)
-    val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
     // TODO: For level sensitive intSrc:
     //       The pending bit may also be set by a relevant write to a setip or setipnum register when the rectified input value is high, but not when the rectified input value is low.
     (intSrcsRectified zip (intSrcsSynced zip sourcecfgs.toSeq)).map {
