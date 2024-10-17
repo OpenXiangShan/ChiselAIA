@@ -106,22 +106,6 @@ class Domain(
       val DBools = Wire(Vec(params.intSrcNum, Bool()))
       (DBools zip toSeq).map {case (d:Bool, s:SourcecfgMeta) => d:=s.D}
     }
-    // It is recommended to hardwire *msiaddrcfg* by the manual:
-    // "For any given system, these addresses are fixed and should be hardwired into the APLIC if possible."
-    val msiaddrcfg = new Bundle {
-      val m = new Bundle {
-        // TODO: hardwired values
-        val BasePPN = RegInit(0.U(44.W))
-        val HHXS    = RegInit(0.U(5.W))
-        val LHXS    = RegInit(0.U(3.W))
-        val HHXW    = RegInit(0.U(3.W))
-        val LHXW    = RegInit(0.U(4.W))
-      }
-      val s = new Bundle {
-        val BasePPN = RegInit(0.U(44.W))
-        val LHXS    = RegInit(0.U(3.W))
-      }
-    }
     class IXs extends Bundle {
       private val regs = RegInit(VecInit.fill(params.ixNum){0.U(32.W)})
       class IxMeta(reg: UInt, active: UInt, bit0ReadOnlyZero: Boolean) {
@@ -266,6 +250,8 @@ class Domain(
     locally {
       val (tl, edge) = toIMSIC.out(0)
       when (domaincfg.IE && topi=/=0.U) {
+        // It is recommended to hardwire *msiaddrcfg* by the manual:
+        // "For any given system, these addresses are fixed and should be hardwired into the APLIC if possible."
         val target = targets(topi)
         val groupID = target.HartIndex(imsic_params.groupsWidth+imsic_params.membersWidth-1, imsic_params.membersWidth)
         val memberID = target.HartIndex(imsic_params.membersWidth-1, 0)
