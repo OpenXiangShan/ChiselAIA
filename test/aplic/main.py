@@ -183,40 +183,40 @@ async def aplic_triggered_int_test(dut):
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
 
   # int sources
-  async def expect_intSrcsTriggered_1(dut, value):
+  async def expect_intSrcsTriggered_2(dut, value):
     for _ in range(10):
       await RisingEdge(dut.clock)
-      if dut.aplic.mDomain.intSrcsTriggered_1 == value:
+      if dut.aplic.mDomain.intSrcsTriggered_2 == value:
         break
     else:
-      assert False, f"Timeout waiting for dut.aplic.intSrcsTriggered_1"
+      assert False, f"Timeout waiting for dut.aplic.intSrcsTriggered_2"
 
   ## edge1
   await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_edge1)
   await FallingEdge(dut.clock)
-  dut.intSrcs_1.value = 0
-  assert dut.aplic.mDomain.intSrcsTriggered_1 == 0
+  dut.intSrcs_2.value = 0
+  assert dut.aplic.mDomain.intSrcsTriggered_2 == 0
   await FallingEdge(dut.clock)
-  dut.intSrcs_1.value = 1
-  await expect_intSrcsTriggered_1(dut, 1)
+  dut.intSrcs_2.value = 1
+  await expect_intSrcsTriggered_2(dut, 1)
   ## edge0
   await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_edge0)
-  await expect_intSrcsTriggered_1(dut, 0)
+  await expect_intSrcsTriggered_2(dut, 0)
   await FallingEdge(dut.clock)
-  dut.intSrcs_1.value = 0
-  await expect_intSrcsTriggered_1(dut, 1)
+  dut.intSrcs_2.value = 0
+  await expect_intSrcsTriggered_2(dut, 1)
   ## level1
   await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_level1)
-  await expect_intSrcsTriggered_1(dut, 0)
+  await expect_intSrcsTriggered_2(dut, 0)
   await FallingEdge(dut.clock)
-  dut.intSrcs_1.value = 1
-  await expect_intSrcsTriggered_1(dut, 1)
+  dut.intSrcs_2.value = 1
+  await expect_intSrcsTriggered_2(dut, 1)
   ## level0
   await a_put_full32(dut, base_addr+offset_sourcecfg+1*4, sourcecfg_sm_level0)
-  await expect_intSrcsTriggered_1(dut, 0)
+  await expect_intSrcsTriggered_2(dut, 0)
   await FallingEdge(dut.clock)
-  dut.intSrcs_1.value = 0
-  await expect_intSrcsTriggered_1(dut, 1)
+  dut.intSrcs_2.value = 0
+  await expect_intSrcsTriggered_2(dut, 1)
 
 @cocotb.test()
 async def aplic_in_clrips_test(dut):
@@ -230,24 +230,24 @@ async def aplic_in_clrips_test(dut):
   await a_put_full32(dut, base_addr+offset_sourcecfg+5*4, sourcecfg_sm_level1)
   await a_put_full32(dut, base_addr+offset_sourcecfg+6*4, sourcecfg_sm_level0)
   await FallingEdge(dut.clock)
-  dut.intSrcs_3.value = 0
-  dut.intSrcs_4.value = 1
-  dut.intSrcs_5.value = 0
-  dut.intSrcs_6.value = 1
-  await FallingEdge(dut.clock)
-  dut.intSrcs_3.value = 1
   dut.intSrcs_4.value = 0
   dut.intSrcs_5.value = 1
   dut.intSrcs_6.value = 0
+  dut.intSrcs_7.value = 1
+  await FallingEdge(dut.clock)
+  dut.intSrcs_4.value = 1
+  dut.intSrcs_5.value = 0
+  dut.intSrcs_6.value = 1
+  dut.intSrcs_7.value = 0
   await FallingEdge(dut.clock)
   rect_after = await a_get32(dut, base_addr+offset_in_clrips+0*4)
   assert rect_after == 0xf0 | rect_before
   # clean
   await FallingEdge(dut.clock)
-  dut.intSrcs_3.value = 0
   dut.intSrcs_4.value = 0
   dut.intSrcs_5.value = 0
   dut.intSrcs_6.value = 0
+  dut.intSrcs_7.value = 0
   await a_put_full32(dut, base_addr+offset_sourcecfg+3*4, 0)
   await a_put_full32(dut, base_addr+offset_sourcecfg+4*4, 0)
   await a_put_full32(dut, base_addr+offset_sourcecfg+5*4, 0)
@@ -293,10 +293,9 @@ async def aplic_msi_test(dut):
 
   # intSrc
   await FallingEdge(dut.clock)
-  ## TODO: padding intSrcs_0, thus use intSrcs_63
-  dut.intSrcs_62.value = 1
+  dut.intSrcs_63.value = 1
   await FallingEdge(dut.clock)
-  dut.intSrcs_62.value = 0
+  dut.intSrcs_63.value = 0
   await expect_int_num(dut, eiid, imsic_m_base_addr)
 
   # delegation
@@ -312,7 +311,7 @@ async def aplic_msi_test(dut):
   await a_put_full32(dut, sg_base_addr+offset_targets+(int_num-1)*4, (guest_id<<12)|eiid)
   await a_put_full32(dut, sg_base_addr+offset_seties+1*4, 1<<(int_num-32))
   await FallingEdge(dut.clock)
-  dut.intSrcs_42.value = 1
+  dut.intSrcs_43.value = 1
   await FallingEdge(dut.clock)
-  dut.intSrcs_42.value = 0
+  dut.intSrcs_43.value = 0
   await expect_int_num(dut, eiid, imsic_sg_base_addr+0x1000*guest_id)

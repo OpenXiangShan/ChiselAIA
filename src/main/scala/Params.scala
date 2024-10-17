@@ -92,7 +92,7 @@ case class APLICParams(
   baseAddr: Long = 0x19960000L,
 ) {
   require(intSrcWidth <= 10, f"intSrcWidth=${intSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")
-  val intSrcNum: Int = pow2(intSrcWidth).toInt - 1
+  val intSrcNum: Int = pow2(intSrcWidth).toInt
   val ixNum: Int = pow2(intSrcWidth).toInt / 32
   val domainMemWidth : Int  = 14 // interrupt file memory region width: 14-bit width => 16KB size
 }

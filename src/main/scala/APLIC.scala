@@ -87,7 +87,7 @@ class Domain(
         })
         def is_active(): Bool = ~D && SM=/=inactive
       }
-      def apply(i: UInt) = new SourcecfgMeta(regs(i-1.U))
+      def apply(i: UInt) = new SourcecfgMeta(regs(i))
       def toSeq = regs.map (new SourcecfgMeta(_))
       val actives = Wire(Vec(params.ixNum, UInt(32.W)))
       val activeBools = Wire(Vec(params.intSrcNum, Bool()))
@@ -96,9 +96,8 @@ class Domain(
         activeBools.zipWithIndex.map { case (activeBool: Bool, i: Int) => {
           activeBool := activeBoolsSeq(i)
         }}
-        val activeBoolsSeq1 = false.B +: activeBoolsSeq
         actives.zipWithIndex.map{ case (active: UInt, i: Int) => {
-          active := Cat(activeBoolsSeq1.slice(i*32, (i+1)*32).reverse)
+          active := Cat(activeBoolsSeq.slice(i*32, (i+1)*32).reverse)
         }}
       }
       val DBools = Wire(Vec(params.intSrcNum, Bool()))
@@ -133,7 +132,7 @@ class Domain(
     class Setixnum(ixs: IXs) {
       val r = RegReadFn(0.U(32.W)) // read zeros
       val w = RegWriteFn((valid, data) => {
-        when (valid && data =/= 0.U && data <= params.intSrcNum.U) {
+        when (valid && data =/= 0.U && data < params.intSrcNum.U) {
           val index = data(9,5); val offset = data(4,0); val ix = ixs(index)
           ix.w32(ix.r32() | UIntToOH(offset))
         }; true.B
@@ -143,9 +142,8 @@ class Domain(
     val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
     object in_clrips {
       private val intSrcsRectified32 = Wire(Vec(pow2(params.intSrcWidth-5).toInt, UInt(32.W)))
-      private val intSrcsRectified_0 = false.B +: intSrcsRectified
       intSrcsRectified32.zipWithIndex.map { case (rect32:UInt, i:Int) => {
-        rect32 := Cat(intSrcsRectified_0.slice(i*32, i*32+32).reverse)
+        rect32 := Cat(intSrcsRectified.slice(i*32, i*32+32).reverse)
       }}
       class In_clripMeta(ip: ips.IxMeta, rects: UInt) {
         val r = RegReadFn(rects)
@@ -159,7 +157,7 @@ class Domain(
     class Clrixnum(ixs: IXs) {
       val r = RegReadFn(0.U(32.W)) // read zeros
       val w = RegWriteFn((valid, data) => {
-        when (valid && data =/= 0.U && data <= params.intSrcNum.U) {
+        when (valid && data =/= 0.U && data < params.intSrcNum.U) {
           val index = data(9,5); val offset = data(4,0); val ix = ixs(index)
           ix.w32(ix.r32() & ~UIntToOH(offset))
         }; true.B
@@ -193,7 +191,7 @@ class Domain(
           when (valid && active) { reg := data }; true.B
         })
       }
-      def apply(i: UInt) = new TargetMeta(regs(i-1.U), sourcecfgs.activeBools(i-1.U))
+      def apply(i: UInt) = new TargetMeta(regs(i), sourcecfgs.activeBools(i))
       def toSeq = (regs zip sourcecfgs.activeBools).map {
         case (reg:UInt, activeBool:UInt) => new TargetMeta(reg, activeBool)
       }
@@ -201,7 +199,7 @@ class Domain(
 
     fromCPU.regmap(
       0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
-      0x0004/*~0x0FFC*/ -> sourcecfgs.toSeq.map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
+      0x0004/*~0x0FFC*/ -> sourcecfgs.toSeq.drop(1).map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
       0x1BC4            -> Seq(RegField(32, 0x80000000L.U, RegWriteFn(():Unit))), // hardwired *msiaddrcfg* regs
       0x1C00/*~0x1C7C*/ -> setips.toSeq.map ( setip => RegField(32, setip.r, setip.w) ),
       0x1CDC            -> Seq(RegField(32, setipnum.r, setipnum.w)),
@@ -214,7 +212,7 @@ class Domain(
       0x2000            -> Seq(RegField(32, setipnum.r ,setipnum.w)),
       0x2004            -> Seq(RegField(32, 0.U(32.W), RegWriteFn(():Unit))), // setipnum_be not implemented
       0x3000            -> Seq(RegField(32, genmsi)),
-      0x3004/*~0x3FFC*/ -> targets.toSeq.map( target => RegField(32, target.r, target.w)),
+      0x3004/*~0x3FFC*/ -> targets.toSeq.drop(1).map( target => RegField(32, target.r, target.w)),
     )
 
     val intSrcsSynced = RegNextN(intSrcs, 3)
@@ -237,7 +235,7 @@ class Domain(
     }}
     // TODO: may compete with mem mapped reg, thus causing lost info
     intSrcsTriggered.zipWithIndex.map { case (trigger:Bool, i:Int) =>
-      when(trigger) {setipnum.w.fn(true.B, true.B, (i+1).U)}
+      when(trigger) {setipnum.w.fn(true.B, true.B, i.U)}
     }
 
     // The ":+ true.B" trick explain:
