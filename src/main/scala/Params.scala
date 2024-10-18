@@ -24,7 +24,7 @@ object pow2 {
 case class IMSICParams(
   // # IMSICParams Arguments
   xlen            : Int  = 64          ,
-  intSrcWidth     : Int  = 11          ,// log2(number of interrupt sources)
+  intSrcWidth     : Int  = 8          ,// log2(number of interrupt sources)
   // ## Arguments for interrupt file's memory region
   // For detailed explainations of these memory region arguments,
   // please refer to the manual *The RISC-V Advanced Interrupt Architeture*: 3.6. Arrangement of the memory regions of multiple interrupt files
@@ -88,7 +88,7 @@ case class IMSICParams(
 }
 
 case class APLICParams(
-  intSrcWidth: Int = 10, // Noted: APLIC's int source num is LESS THAN IMSIC's
+  intSrcWidth: Int = 7, // Noted: APLIC's int source num is LESS THAN IMSIC's
   baseAddr: Long = 0x19960000L,
 ) {
   require(intSrcWidth <= 10, f"intSrcWidth=${intSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")

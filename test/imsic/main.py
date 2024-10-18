@@ -197,8 +197,8 @@ async def imsic_test(dut):
 
   # mseteipnum began
   cocotb.log.info("mseteipnum began")
-  await m_int(dut, 1996)
-  topeis_0 = wrap_topei(1996)
+  await m_int(dut, 1996%256)
+  topeis_0 = wrap_topei(1996%256)
   assert dut.toCSR_topeis_0.value == topeis_0
   dut.toCSR_pendings_0.value = 1
   cocotb.log.info("mseteipnum passed")
@@ -274,8 +274,8 @@ async def imsic_test(dut):
   cocotb.log.info("simple_supervisor_level began")
   await select_s_intfile(dut)
   assert dut.toCSR_topeis_1.value == wrap_topei(0)
-  await s_int(dut, 1234)
-  assert dut.toCSR_topeis_1.value == wrap_topei(1234)
+  await s_int(dut, 1234%256)
+  assert dut.toCSR_topeis_1.value == wrap_topei(1234%256)
   dut.toCSR_pendings_1.value = 1
   await select_m_intfile(dut)
   cocotb.log.info("simple_supervisor_level end")
