@@ -146,7 +146,7 @@ class Domain(
         /*domaincfg*/   0x0000 -> Seq(RegField(32, domaincfg.r, RegWriteFn((v, d)=>{ when(v){domaincfg.w(d)}; true.B }))),
         /*sourcecfgs*/  0x0004 -> (1 until params.intSrcNum).map(i => RegField(32, sourcecfgs.rI(i),
           RegWriteFn((v, d)=>{ when(v){sourcecfgs.wI(i, d)}; true.B }))),
-        0x1BC4            -> Seq(RegField(32, 0x80000000L.U, RegWriteFn(():Unit))), // hardwired *msiaddrcfg* regs
+        /*mmsiaddrcfgh*/0x1BC4 -> Seq(RegField(32, 0x80000000L.U, RegWriteFn(():Unit))), // hardwired *msiaddrcfg* regs
         /*setips*/      0x1C00 -> (0 until params.ixNum).map(i => RegField(32, ips.r32I(i), RWF_setixs(i, ips))),
         /*setipnum*/    0x1CDC -> Seq(RegField(32, 0.U, RWF_setipnum)),
         /*in_clrips*/   0x1D00 -> (0 until params.ixNum).map(i => RegField(32, intSrcsRectified32(i), RWF_clrixs(i, ips))),
@@ -156,8 +156,8 @@ class Domain(
         /*clries*/      0x1F00 -> (0 until params.ixNum).map(i => RegField(32, 0.U, RWF_clrixs(i, ies))),
         /*clrienum*/    0x1FDC -> Seq(RegField(32, 0.U, RWF_setclrixnum(false.B, ies))),
         /*setipnum_le*/ 0x2000 -> Seq(RegField(32, 0.U, RWF_setipnum)),
-        0x2004            -> Seq(RegField(32, 0.U(32.W), RegWriteFn(():Unit))), // setipnum_be not implemented
-        0x3000            -> Seq(RegField(32, genmsi)),
+        /*setipnum_be*/ 0x2004 -> Seq(RegField(32, 0.U, RegWriteFn(():Unit))), // setipnum_be not implemented
+        /*genmsi*/      0x3000 -> Seq(RegField(32, genmsi)),
         0x3004/*~0x3FFC*/ -> targets.toSeq.drop(1).map( target => RegField(32, target.r, target.w)),
       )
     }
