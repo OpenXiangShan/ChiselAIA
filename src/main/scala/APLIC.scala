@@ -70,6 +70,7 @@ class Domain(
         // therefore, ChildIndex is not needed.
         val SM = UInt(3.W)
       }
+      // TODO: private?
       private val regs = RegInit(VecInit.fill(params.intSrcNum)(0.U.asTypeOf(new Sourcecfg)))
       def rI(i:Int): UInt = regs(i).D<<10 | Mux(regs(i).D, 0.U, regs(i).SM)
       def wI(i:Int, data:UInt): Unit = {
@@ -113,21 +114,21 @@ class Domain(
     val ies = new IXs // internal regs
     val genmsi       = RegInit(0.U(32.W)) // TODO: implement
     val targets = new Bundle {
-      private val regs = RegInit(VecInit.fill(params.intSrcNum){0.U(32.W)})
-      class TargetMeta(reg: UInt, active: Bool) {
-        val HartIndex  = reg(31,18) // TODO: parameterization: width of (groupsNum + membersNum)
-        val GuestIndex = reg(17,12) // TODO: parameterization: width of imsicGeilen
-        val EIID       = reg(10,0) // TODO: parameterization: intSrcWidth
-        // TODO: For a machine-level domain, Guest Index is read-only zeros
-        val r = RegReadFn(Mux(active, reg, 0.U))
-        val w = RegWriteFn((valid, data) => {
-          when (valid && active) { reg := data }; true.B
-        })
+      class Target extends Bundle {
+        val HartIndex  = UInt(imsic_params.groupsWidth.W + imsic_params.membersWidth.W)
+        val GuestIndex = UInt(if (imsicGeilen==0) 0.W else log2Ceil(imsicGeilen).W)
+        val EIID       = UInt(imsic_params.intSrcWidth.W)
       }
-      def apply(i: UInt) = new TargetMeta(regs(i), sourcecfgs.actives(i))
-      def toSeq = (regs zip sourcecfgs.actives).map {
-        case (reg:UInt, activeBool:UInt) => new TargetMeta(reg, activeBool)
-      }
+      val regs = RegInit(VecInit.fill(params.intSrcNum){0.U.asTypeOf(new Target)})
+      def rI(i:Int): UInt = Mux(sourcecfgs.actives(i),
+        regs(i).HartIndex<<18 | regs(i).GuestIndex<<12 | regs(i).EIID, 0.U
+      )
+      def wI(i:Int, data:UInt): Unit = {
+        when (sourcecfgs.actives(i)) {
+          regs(i).HartIndex := data(31,18)
+          regs(i).GuestIndex := data(17,12)
+          regs(i).EIID := data(10,0)
+      }}
     }
 
     locally {
@@ -158,7 +159,8 @@ class Domain(
         /*setipnum_le*/ 0x2000 -> Seq(RegField(32, 0.U, RWF_setipnum)),
         /*setipnum_be*/ 0x2004 -> Seq(RegField(32, 0.U, RegWriteFn(():Unit))), // setipnum_be not implemented
         /*genmsi*/      0x3000 -> Seq(RegField(32, genmsi)),
-        0x3004/*~0x3FFC*/ -> targets.toSeq.drop(1).map( target => RegField(32, target.r, target.w)),
+        /*targets*/     0x3004 -> (1 until params.intSrcNum).map(i => RegField(32, targets.rI(i),
+          RegWriteFn((v, d)=>{ when(v){targets.wI(i, d)}; true.B }))),
       )
     }
 
@@ -203,7 +205,7 @@ class Domain(
       when (domaincfg.IE && topi=/=0.U) {
         // It is recommended to hardwire *msiaddrcfg* by the manual:
         // "For any given system, these addresses are fixed and should be hardwired into the APLIC if possible."
-        val target = targets(topi)
+        val target = targets.regs(topi)
         val groupID = target.HartIndex(imsic_params.groupsWidth+imsic_params.membersWidth-1, imsic_params.membersWidth)
         val memberID = target.HartIndex(imsic_params.membersWidth-1, 0)
         val guestID = target.GuestIndex
@@ -211,7 +213,7 @@ class Domain(
                       (groupID<<imsic_params.groupStrideWidth) |
                       (memberID<<imsicMemberStrideWidth) |
                       (guestID<<imsic_params.intFileMemWidth)
-        val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, targets(topi).EIID)
+        val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, targets.regs(topi).EIID)
         // clear corresponding ip
         // TODO: may compete with mem mapped reg, thus causing lost info
         ips.wBitUI(topi, false.B)

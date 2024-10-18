@@ -128,8 +128,8 @@ async def aplic_write_read_test(dut):
   await write_read_check_2(dut, base_addr+offset_seties+1*4, 0xf, 0xf) # bit0 is readonly zero
   # TODO: move to aplic_set_clr_test
   await write_read_check_1(dut, base_addr+offset_genmsi, offset_genmsi)
-  await write_read_check_1(dut, base_addr+offset_targets+0*4, offset_targets+0*4)
-  await write_read_check_1(dut, base_addr+offset_targets+3*4, offset_targets+3*4)
+  await write_read_check_1(dut, base_addr+offset_targets+0*4, (offset_targets+0*4)%8) # GuestIndex is not worked in machine-level domain
+  await write_read_check_1(dut, base_addr+offset_targets+3*4, (offset_targets+3*4)%8) # GuestIndex is not worked in machine-level domain
   # TODO: inactive target readonly zeros
   await write_read_check_2(dut, base_addr+offset_targets+64*4, offset_targets+64*4, 0)
   # readonly zeros
@@ -281,7 +281,7 @@ async def aplic_msi_test(dut):
   await a_put_full32(dut, base_addr+offset_targets+(int_num-1)*4, (guest_id<<12)|eiid)
   await a_put_full32(dut, base_addr+offset_seties+0*4, 0xffffffff)
   await a_put_full32(dut, base_addr+offset_setipnum, int_num)
-  await expect_int_num(dut, eiid, imsic_m_base_addr+0x1000*guest_id)
+  await expect_int_num(dut, eiid, imsic_m_base_addr) # guest_id is not worked in machine-level domain
 
   # setipnum ip1
   int_num = 63
