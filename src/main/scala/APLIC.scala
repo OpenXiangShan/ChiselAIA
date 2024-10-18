@@ -59,10 +59,8 @@ class Domain(
       val IE   = RegInit(false.B)
       val DM   = true.B // only support MSI delivery mode
       val BE   = false.B // only support little endian
-      val r = RegReadFn( high<<24 | IE<<8 | DM<<2 | BE )
-      val w = RegWriteFn((valid, data) => {
-        when (valid) { IE := data(8) }; true.B
-      })
+      val r = high<<24 | IE<<8 | DM<<2 | BE
+      def w(data:UInt):Unit = IE := data(8)
     }
     val sourcecfgs = new Bundle {
       private val regs = RegInit(VecInit.fill(params.intSrcNum){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)})
@@ -165,7 +163,7 @@ class Domain(
       def RWF_clrixs(i:Int, ixs:IXs) = RegWriteFn((valid, data) => {
         when (valid) { ixs.w32I(i, ixs.r32I(i) & ~data) }; true.B })
       fromCPU.regmap(
-        0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
+        /*domaincfg*/   0x0000 -> Seq(RegField(32, domaincfg.r, RegWriteFn((v, d)=>{ when(v){domaincfg.w(d)}; true.B }))),
         0x0004/*~0x0FFC*/ -> sourcecfgs.toSeq.drop(1).map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
         0x1BC4            -> Seq(RegField(32, 0x80000000L.U, RegWriteFn(():Unit))), // hardwired *msiaddrcfg* regs
         /*setips*/      0x1C00 -> (0 until params.ixNum).map(i => RegField(32, ips.r32I(i), RWF_setixs(i, ips))),
