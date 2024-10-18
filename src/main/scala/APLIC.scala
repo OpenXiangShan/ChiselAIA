@@ -159,11 +159,9 @@ class Domain(
       // bit may also be set by a relevant write to a setip or setipnum register when the rectified input
       // value is high, but not when the rectified input value is low.
       def RWF_setipnum = RegWriteFn((valid, data) => {
-        // TODO: change data<params.intSrcNum.U to data[params.intSrcNum-1,0]
-        // for better performance? and less area?
-        when (valid && data=/=0.U && data<params.intSrcNum.U) { ips.wBitUI(data, true.B) }; true.B })
+        when (valid && data=/=0.U) { ips.wBitUI(data(params.intSrcWidth-1,0), true.B) }; true.B })
       def RWF_setclrixnum(setclr:Bool, ixs:IXs) = RegWriteFn((valid, data) => {
-        when (valid && data=/=0.U && data<params.intSrcNum.U) { ixs.wBitUI(data, setclr) }; true.B })
+        when (valid && data=/=0.U) { ixs.wBitUI(data(params.intSrcWidth-1,0), setclr) }; true.B })
       def RWF_clrixs(i:Int, ixs:IXs) = RegWriteFn((valid, data) => {
         when (valid) { ixs.w32I(i, ixs.r32I(i) & ~data) }; true.B })
       fromCPU.regmap(
