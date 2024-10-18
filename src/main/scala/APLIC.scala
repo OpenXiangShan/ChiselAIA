@@ -104,80 +104,35 @@ class Domain(
       (DBools zip toSeq).map {case (d:Bool, s:SourcecfgMeta) => d:=s.D}
     }
     class IXs extends Bundle {
-      private val regs = RegInit(VecInit.fill(params.ixNum){0.U(32.W)})
-      class IxMeta(reg: UInt, active: UInt, bit0ReadOnlyZero: Boolean) {
-        def r32() = reg & active
-        def w32(d32: UInt) = {
-          if (bit0ReadOnlyZero) reg := d32 & active & ~1.U(reg.getWidth.W)
-          else                  reg := d32 & active
-        }
+      private val bits = RegInit(VecInit.fill(params.intSrcNum){false.B})
+      val bits0 = VecInit(false.B +: bits.drop(1)) // bits0(0) is read-only 0
+      // TODO: parameterization: 32, 5
+      def r32I(i:Int): UInt = {
+        val tmp = (0 until 32).map(j => {
+          val index = i<<5|j
+          bits0(index) & sourcecfgs.activeBools(index)
+        })
+        Cat(tmp.reverse)
       }
-      def apply(i: UInt) = new IxMeta(regs(i), sourcecfgs.actives(i), i==0)
-      def toSeq = regs.zipWithIndex.map { case (reg:UInt, i:Int) => new IxMeta(reg, sourcecfgs.actives(i), i==0) }
-      def toBools = Cat(regs.reverse).asBools
-    }
-    class Setixs(ixs: IXs) {
-      class SetixMeta(ix: ixs.IxMeta) {
-        val r = RegReadFn(ix.r32())
-        val w = RegWriteFn((valid, data) => { when(valid) {ix.w32(data)}; true.B })
+      def w32I(i:Int, d32:UInt): Unit = {
+        (0 until 32).map(j => {
+          val index = i<<5|j
+          when (sourcecfgs.activeBools(index)) {bits(index):=d32(j)}
+        })
       }
-      def apply(i: UInt) = new SetixMeta(ixs(i))
-      def toSeq = ixs.toSeq.map( ix => new SetixMeta(ix) )
+      def rBitUI(ui:UInt): Bool = bits0(ui) & sourcecfgs.activeBools(ui)
+      def rBitI(i:Int):    Bool = bits0(i)  & sourcecfgs.activeBools(i)
+      def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.activeBools(ui)) {bits(ui):=bit}
+      def wBitI(i:Int, bit:Bool):    Unit = when (sourcecfgs.activeBools(i))  {bits(i):=bit}
     }
     val ips = new IXs // internal regs
-    // TODO: The pending
-    // bit may also be set by a relevant write to a setip or setipnum register when the rectified input
-    // value is high, but not when the rectified input value is low.
-    val setips = new Setixs(ips)
-    class Setixnum(ixs: IXs) {
-      val r = RegReadFn(0.U(32.W)) // read zeros
-      val w = RegWriteFn((valid, data) => {
-        when (valid && data =/= 0.U && data < params.intSrcNum.U) {
-          val index = data(9,5); val offset = data(4,0); val ix = ixs(index)
-          ix.w32(ix.r32() | UIntToOH(offset))
-        }; true.B
-      })
-    }
-    val setipnum = new Setixnum(ips)
     val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
-    object in_clrips {
-      private val intSrcsRectified32 = Wire(Vec(pow2(params.intSrcWidth-5).toInt, UInt(32.W)))
-      intSrcsRectified32.zipWithIndex.map { case (rect32:UInt, i:Int) => {
-        rect32 := Cat(intSrcsRectified.slice(i*32, i*32+32).reverse)
-      }}
-      class In_clripMeta(ip: ips.IxMeta, rects: UInt) {
-        val r = RegReadFn(rects)
-        val w = RegWriteFn((valid, data) => {
-          when (valid) { ip.w32( ip.r32() & ~data ) }; true.B
-        })
-      }
-      def apply(i: UInt) = new In_clripMeta(ips(i), intSrcsRectified32(i))
-      def toSeq = ips.toSeq.zipWithIndex.map { case (ip:ips.IxMeta, i:Int) => new In_clripMeta(ip, intSrcsRectified32(i)) }
-    }
-    class Clrixnum(ixs: IXs) {
-      val r = RegReadFn(0.U(32.W)) // read zeros
-      val w = RegWriteFn((valid, data) => {
-        when (valid && data =/= 0.U && data < params.intSrcNum.U) {
-          val index = data(9,5); val offset = data(4,0); val ix = ixs(index)
-          ix.w32(ix.r32() & ~UIntToOH(offset))
-        }; true.B
-      })
-    }
-    val clripnum = new Clrixnum(ips)
+    // TODO: move it to locally
+    val intSrcsRectified32 = Wire(Vec(pow2(params.intSrcWidth-5).toInt, UInt(32.W)))
+    intSrcsRectified32.zipWithIndex.map { case (rect32:UInt, i:Int) => {
+      rect32 := Cat(intSrcsRectified.slice(i*32, i*32+32).reverse)
+    }}
     val ies = new IXs // internal regs
-    val seties = new Setixs(ies)
-    val setienum = new Setixnum(ies)
-    object clries {
-      class ClrieMeta(ie: ies.IxMeta) {
-        val r = RegReadFn(0.U(32.W))
-        val w = RegWriteFn((valid, data) => {
-          when (valid) { ie.w32( ie.r32() & ~data ) }; true.B
-        })
-      }
-      def apply(i: UInt) = new ClrieMeta(ies(i))
-      def toSeq = ies.toSeq.map ( ie => new ClrieMeta(ie) )
-    }
-    val clrienum = new Clrixnum(ies)
     val genmsi       = RegInit(0.U(32.W)) // TODO: implement
     val targets = new Bundle {
       private val regs = RegInit(VecInit.fill(params.intSrcNum){0.U(32.W)})
@@ -197,19 +152,49 @@ class Domain(
       }
     }
 
+    // TODO: deduplicate RegWriteFn and RegWriteFn
     fromCPU.regmap(
       0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
       0x0004/*~0x0FFC*/ -> sourcecfgs.toSeq.drop(1).map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
       0x1BC4            -> Seq(RegField(32, 0x80000000L.U, RegWriteFn(():Unit))), // hardwired *msiaddrcfg* regs
-      0x1C00/*~0x1C7C*/ -> setips.toSeq.map ( setip => RegField(32, setip.r, setip.w) ),
-      0x1CDC            -> Seq(RegField(32, setipnum.r, setipnum.w)),
-      0x1D00/*~0x1D7C*/ -> in_clrips.toSeq.map(in_clrip => RegField(32, in_clrip.r, in_clrip.w)),
-      0x1DDC            -> Seq(RegField(32, clripnum.r, clripnum.w)),
-      0x1E00/*~0x1F7C*/ -> seties.toSeq.map( setie => RegField(32, setie.r, setie.w) ),
-      0x1EDC            -> Seq(RegField(32, setienum.r, setienum.w)),
-      0x1F00/*~0x1F7C*/ -> clries.toSeq.map( clrie => RegField(32, clrie.r, clrie.w)),
-      0x1FDC            -> Seq(RegField(32, clrienum.r, clrienum.w)),
-      0x2000            -> Seq(RegField(32, setipnum.r ,setipnum.w)),
+      /*setips*/ 0x1C00 -> (0 until params.ixNum).map(i => RegField(32,
+        RegReadFn(ips.r32I(i)),
+        RegWriteFn((valid, data) => { when(valid) {ips.w32I(i, data)}; true.B })
+      )),
+      /*setipnum*/ 0x1CDC -> Seq(RegField(32, 0.U,
+        // TODO: The pending
+        // bit may also be set by a relevant write to a setip or setipnum register when the rectified input
+        // value is high, but not when the rectified input value is low.
+                                                                  // TODO: change data<params.intSrcNum.U to data[params.intSrcNum-1,0]
+                                                                  // for better performance? and less area?
+        RegWriteFn((valid, data) => {when (valid && data=/=0.U && data<params.intSrcNum.U) { ips.wBitUI(data, true.B) }; true.B })
+      )),
+      /*in_clrips*/ 0x1D00 -> (0 until params.ixNum).map(i => RegField(32,
+        RegReadFn(intSrcsRectified32(i)),
+        RegWriteFn((valid, data) => { when (valid) { ips.w32I(i, ips.r32I(i) & ~data) }; true.B })
+      )),
+      /*clripnum*/ 0x1DDC -> Seq(RegField(32, 0.U,
+        RegWriteFn((valid, data) => {when (valid && data=/=0.U && data<params.intSrcNum.U) { ips.wBitUI(data, false.B) }; true.B })
+      )),
+      /*seties*/ 0x1E00 -> (0 until params.ixNum).map(i => RegField(32,
+        RegReadFn(ies.r32I(i)),
+        RegWriteFn((valid, data) => { when(valid) {ies.w32I(i, data)}; true.B })
+      )),
+      /*setienum*/ 0x1EDC -> Seq(RegField(32, 0.U,
+        RegWriteFn((valid, data) => {when (valid && data=/=0.U && data<params.intSrcNum.U) { ies.wBitUI(data, true.B) }; true.B })
+      )),
+      /*clries*/ 0x1F00 -> (0 until params.ixNum).map(i => RegField(32, 0.U,
+        RegWriteFn((valid, data) => { when (valid) { ies.w32I(i, ies.r32I(i) & ~data) }; true.B })
+      )),
+      /*clrienum*/ 0x1FDC -> Seq(RegField(32, 0.U,
+        RegWriteFn((valid, data) => {when (valid && data=/=0.U && data<params.intSrcNum.U) { ies.wBitUI(data, false.B) }; true.B })
+      )),
+      /*setipnum_le*/ 0x2000 -> Seq(RegField(32, 0.U,
+        // TODO: The pending
+        // bit may also be set by a relevant write to a setip or setipnum register when the rectified input
+        // value is high, but not when the rectified input value is low.
+        RegWriteFn((valid, data) => {when (valid && data=/=0.U && data<params.intSrcNum.U) { ips.wBitUI(data, true.B) }; true.B })
+      )),
       0x2004            -> Seq(RegField(32, 0.U(32.W), RegWriteFn(():Unit))), // setipnum_be not implemented
       0x3000            -> Seq(RegField(32, genmsi)),
       0x3004/*~0x3FFC*/ -> targets.toSeq.drop(1).map( target => RegField(32, target.r, target.w)),
@@ -235,7 +220,7 @@ class Domain(
     }}
     // TODO: may compete with mem mapped reg, thus causing lost info
     intSrcsTriggered.zipWithIndex.map { case (trigger:Bool, i:Int) =>
-      when(trigger) {setipnum.w.fn(true.B, true.B, i.U)}
+      when(trigger) {ips.wBitI(i, true.B)}
     }
 
     // The ":+ true.B" trick explain:
@@ -245,7 +230,7 @@ class Domain(
     //  [0,     2^aplicIntSrcWidth-1] :+ 2^aplicIntSrcWidth
     val topi = Wire(UInt(params.intSrcWidth.W)); /*for debug*/dontTouch(topi)
     topi := ParallelPriorityMux((
-      (ips.toBools:+true.B) zip (ies.toBools:+true.B)
+      (ips.bits0:+true.B) zip (ies.bits0:+true.B)
     ).zipWithIndex.map {
       case ((p: Bool, e: Bool), i: Int) => (p & e, i.U)
     })
@@ -267,7 +252,7 @@ class Domain(
         val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, targets(topi).EIID)
         // clear corresponding ip
         // TODO: may compete with mem mapped reg, thus causing lost info
-        clripnum.w.fn(true.B, true.B, topi)
+        ips.wBitUI(topi, false.B)
         tl.a.bits := pfbits
         tl.a.valid := true.B
       }.otherwise {
