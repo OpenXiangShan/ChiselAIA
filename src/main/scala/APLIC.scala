@@ -152,53 +152,38 @@ class Domain(
       }
     }
 
-    // TODO: deduplicate RegWriteFn and RegWriteFn
-    fromCPU.regmap(
-      0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
-      0x0004/*~0x0FFC*/ -> sourcecfgs.toSeq.drop(1).map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
-      0x1BC4            -> Seq(RegField(32, 0x80000000L.U, RegWriteFn(():Unit))), // hardwired *msiaddrcfg* regs
-      /*setips*/ 0x1C00 -> (0 until params.ixNum).map(i => RegField(32,
-        RegReadFn(ips.r32I(i)),
-        RegWriteFn((valid, data) => { when(valid) {ips.w32I(i, data)}; true.B })
-      )),
-      /*setipnum*/ 0x1CDC -> Seq(RegField(32, 0.U,
-        // TODO: The pending
-        // bit may also be set by a relevant write to a setip or setipnum register when the rectified input
-        // value is high, but not when the rectified input value is low.
-                                                                  // TODO: change data<params.intSrcNum.U to data[params.intSrcNum-1,0]
-                                                                  // for better performance? and less area?
-        RegWriteFn((valid, data) => {when (valid && data=/=0.U && data<params.intSrcNum.U) { ips.wBitUI(data, true.B) }; true.B })
-      )),
-      /*in_clrips*/ 0x1D00 -> (0 until params.ixNum).map(i => RegField(32,
-        RegReadFn(intSrcsRectified32(i)),
-        RegWriteFn((valid, data) => { when (valid) { ips.w32I(i, ips.r32I(i) & ~data) }; true.B })
-      )),
-      /*clripnum*/ 0x1DDC -> Seq(RegField(32, 0.U,
-        RegWriteFn((valid, data) => {when (valid && data=/=0.U && data<params.intSrcNum.U) { ips.wBitUI(data, false.B) }; true.B })
-      )),
-      /*seties*/ 0x1E00 -> (0 until params.ixNum).map(i => RegField(32,
-        RegReadFn(ies.r32I(i)),
-        RegWriteFn((valid, data) => { when(valid) {ies.w32I(i, data)}; true.B })
-      )),
-      /*setienum*/ 0x1EDC -> Seq(RegField(32, 0.U,
-        RegWriteFn((valid, data) => {when (valid && data=/=0.U && data<params.intSrcNum.U) { ies.wBitUI(data, true.B) }; true.B })
-      )),
-      /*clries*/ 0x1F00 -> (0 until params.ixNum).map(i => RegField(32, 0.U,
-        RegWriteFn((valid, data) => { when (valid) { ies.w32I(i, ies.r32I(i) & ~data) }; true.B })
-      )),
-      /*clrienum*/ 0x1FDC -> Seq(RegField(32, 0.U,
-        RegWriteFn((valid, data) => {when (valid && data=/=0.U && data<params.intSrcNum.U) { ies.wBitUI(data, false.B) }; true.B })
-      )),
-      /*setipnum_le*/ 0x2000 -> Seq(RegField(32, 0.U,
-        // TODO: The pending
-        // bit may also be set by a relevant write to a setip or setipnum register when the rectified input
-        // value is high, but not when the rectified input value is low.
-        RegWriteFn((valid, data) => {when (valid && data=/=0.U && data<params.intSrcNum.U) { ips.wBitUI(data, true.B) }; true.B })
-      )),
-      0x2004            -> Seq(RegField(32, 0.U(32.W), RegWriteFn(():Unit))), // setipnum_be not implemented
-      0x3000            -> Seq(RegField(32, genmsi)),
-      0x3004/*~0x3FFC*/ -> targets.toSeq.drop(1).map( target => RegField(32, target.r, target.w)),
-    )
+    locally {
+      def RWF_setixs(i:Int, ixs:IXs) = RegWriteFn((valid, data) => {
+        when(valid) {ixs.w32I(i, data)}; true.B })
+      // TODO: The pending
+      // bit may also be set by a relevant write to a setip or setipnum register when the rectified input
+      // value is high, but not when the rectified input value is low.
+      def RWF_setipnum = RegWriteFn((valid, data) => {
+        // TODO: change data<params.intSrcNum.U to data[params.intSrcNum-1,0]
+        // for better performance? and less area?
+        when (valid && data=/=0.U && data<params.intSrcNum.U) { ips.wBitUI(data, true.B) }; true.B })
+      def RWF_setclrixnum(setclr:Bool, ixs:IXs) = RegWriteFn((valid, data) => {
+        when (valid && data=/=0.U && data<params.intSrcNum.U) { ixs.wBitUI(data, setclr) }; true.B })
+      def RWF_clrixs(i:Int, ixs:IXs) = RegWriteFn((valid, data) => {
+        when (valid) { ixs.w32I(i, ixs.r32I(i) & ~data) }; true.B })
+      fromCPU.regmap(
+        0x0000            -> Seq(RegField(32, domaincfg.r, domaincfg.w)),
+        0x0004/*~0x0FFC*/ -> sourcecfgs.toSeq.drop(1).map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
+        0x1BC4            -> Seq(RegField(32, 0x80000000L.U, RegWriteFn(():Unit))), // hardwired *msiaddrcfg* regs
+        /*setips*/      0x1C00 -> (0 until params.ixNum).map(i => RegField(32, ips.r32I(i), RWF_setixs(i, ips))),
+        /*setipnum*/    0x1CDC -> Seq(RegField(32, 0.U, RWF_setipnum)),
+        /*in_clrips*/   0x1D00 -> (0 until params.ixNum).map(i => RegField(32, intSrcsRectified32(i), RWF_clrixs(i, ips))),
+        /*clripnum*/    0x1DDC -> Seq(RegField(32, 0.U, RWF_setclrixnum(false.B, ips))),
+        /*seties*/      0x1E00 -> (0 until params.ixNum).map(i => RegField(32, ies.r32I(i), RWF_setixs(i, ies))),
+        /*setienum*/    0x1EDC -> Seq(RegField(32, 0.U, RWF_setclrixnum(true.B, ies))),
+        /*clries*/      0x1F00 -> (0 until params.ixNum).map(i => RegField(32, 0.U, RWF_clrixs(i, ies))),
+        /*clrienum*/    0x1FDC -> Seq(RegField(32, 0.U, RWF_setclrixnum(false.B, ies))),
+        /*setipnum_le*/ 0x2000 -> Seq(RegField(32, 0.U, RWF_setipnum)),
+        0x2004            -> Seq(RegField(32, 0.U(32.W), RegWriteFn(():Unit))), // setipnum_be not implemented
+        0x3000            -> Seq(RegField(32, genmsi)),
+        0x3004/*~0x3FFC*/ -> targets.toSeq.drop(1).map( target => RegField(32, target.r, target.w)),
+      )
+    }
 
     val intSrcsSynced = RegNextN(intSrcs, 3)
     // TODO: For level sensitive intSrc:
