@@ -118,7 +118,7 @@ async def aplic_write_read_test(dut):
   # WARL offset_sourcecfg
   await write_read_check_2(dut, base_addr+offset_sourcecfg+3*4, 0x2, 0x0)
   await write_read_check_1(dut, base_addr+offset_sourcecfg+3*4, 0x1)
-  await write_read_check_1(dut, base_addr+offset_sourcecfg+3*4, 0x407)
+  await write_read_check_2(dut, base_addr+offset_sourcecfg+3*4, 0x407, 0x400) # machine-level dont support child index
   ## enable offset_sourcecfg1 ~ offset_sourcecfg63
   for i in range(0,63):
     await write_read_check_1(dut, base_addr+offset_sourcecfg+i*4, sourcecfg_sm_edge1)

@@ -63,43 +63,23 @@ class Domain(
       def w(data:UInt):Unit = IE := data(8)
     }
     val sourcecfgs = new Bundle {
-      private val regs = RegInit(VecInit.fill(params.intSrcNum){0.U(/*D*/1.W + /*ChildIndex, SM*/10.W)})
-      class SourcecfgMeta(reg: UInt) {
-        val D          = reg(10)
-        val ChildIndex = reg(9,0)
-        val SM         = reg(2,0)
-        val List(inactive, detached, reserved2, reserved3, edge1, edge0, level1, level0) = Enum(8)
-        val r = RegReadFn( D<<10 | Mux(D, ChildIndex, SM) )
-        // TODO: setting sourcecfg inactive will clear corresponding ip and ie
-        // * If source is changed from inactive to an active mode, the interrupt source’s pending and enable bits remain zeros, unless set automatically for a reason specified later in this section or in Section 4.7.
-        // * A write to a sourcecfg register will not by itself cause a pending bit to be cleared except when the source is made inactive.
-        val w = RegWriteFn((valid, data) => {
-          val i_D=data(10); val i_ChildIndex=data(9,0); val i_SM=data(2,0)
-          when (valid) {
-            reg := i_D<<10 | Mux(
-              i_D,
-              i_ChildIndex,
-              Mux(i_SM===reserved2 || i_SM===reserved3, inactive, i_SM),
-            )
-          }; true.B
-        })
-        def is_active(): Bool = ~D && SM=/=inactive
+      val List(inactive, detached, reserved2, reserved3, edge1, edge0, level1, level0) = Enum(8)
+      class Sourcecfg extends Bundle {
+        val D = Bool()
+        // Currently only support one machine-level domain and one supervisor-level domain,
+        // therefore, ChildIndex is not needed.
+        val SM = UInt(3.W)
       }
-      def apply(i: UInt) = new SourcecfgMeta(regs(i))
-      def toSeq = regs.map (new SourcecfgMeta(_))
-      val actives = Wire(Vec(params.ixNum, UInt(32.W)))
-      val activeBools = Wire(Vec(params.intSrcNum, Bool()))
-      locally {
-        val activeBoolsSeq = toSeq.map(_.is_active())
-        activeBools.zipWithIndex.map { case (activeBool: Bool, i: Int) => {
-          activeBool := activeBoolsSeq(i)
-        }}
-        actives.zipWithIndex.map{ case (active: UInt, i: Int) => {
-          active := Cat(activeBoolsSeq.slice(i*32, (i+1)*32).reverse)
-        }}
+      private val regs = RegInit(VecInit.fill(params.intSrcNum)(0.U.asTypeOf(new Sourcecfg)))
+      def rI(i:Int): UInt = regs(i).D<<10 | Mux(regs(i).D, 0.U, regs(i).SM)
+      def wI(i:Int, data:UInt): Unit = {
+        val D=data(10); val SM=data(2,0)
+        regs(i).D := D
+        regs(i).SM := Mux(D, 0.U, Mux(SM===reserved2||SM===reserved3, inactive, SM))
       }
-      val DBools = Wire(Vec(params.intSrcNum, Bool()))
-      (DBools zip toSeq).map {case (d:Bool, s:SourcecfgMeta) => d:=s.D}
+      val actives = VecInit(regs.map(reg => ~reg.D && reg.SM=/=inactive))
+      val Ds = VecInit(regs.map(_.D))
+      val SMs = VecInit(regs.map(_.SM))
     }
     class IXs extends Bundle {
       private val bits = RegInit(VecInit.fill(params.intSrcNum){false.B})
@@ -108,20 +88,20 @@ class Domain(
       def r32I(i:Int): UInt = {
         val tmp = (0 until 32).map(j => {
           val index = i<<5|j
-          bits0(index) & sourcecfgs.activeBools(index)
+          bits0(index) & sourcecfgs.actives(index)
         })
         Cat(tmp.reverse)
       }
       def w32I(i:Int, d32:UInt): Unit = {
         (0 until 32).map(j => {
           val index = i<<5|j
-          when (sourcecfgs.activeBools(index)) {bits(index):=d32(j)}
+          when (sourcecfgs.actives(index)) {bits(index):=d32(j)}
         })
       }
-      def rBitUI(ui:UInt): Bool = bits0(ui) & sourcecfgs.activeBools(ui)
-      def rBitI(i:Int):    Bool = bits0(i)  & sourcecfgs.activeBools(i)
-      def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.activeBools(ui)) {bits(ui):=bit}
-      def wBitI(i:Int, bit:Bool):    Unit = when (sourcecfgs.activeBools(i))  {bits(i):=bit}
+      def rBitUI(ui:UInt): Bool = bits0(ui) & sourcecfgs.actives(ui)
+      def rBitI(i:Int):    Bool = bits0(i)  & sourcecfgs.actives(i)
+      def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {bits(ui):=bit}
+      def wBitI(i:Int, bit:Bool):    Unit = when (sourcecfgs.actives(i))  {bits(i):=bit}
     }
     val ips = new IXs // internal regs
     val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
@@ -144,8 +124,8 @@ class Domain(
           when (valid && active) { reg := data }; true.B
         })
       }
-      def apply(i: UInt) = new TargetMeta(regs(i), sourcecfgs.activeBools(i))
-      def toSeq = (regs zip sourcecfgs.activeBools).map {
+      def apply(i: UInt) = new TargetMeta(regs(i), sourcecfgs.actives(i))
+      def toSeq = (regs zip sourcecfgs.actives).map {
         case (reg:UInt, activeBool:UInt) => new TargetMeta(reg, activeBool)
       }
     }
@@ -164,7 +144,8 @@ class Domain(
         when (valid) { ixs.w32I(i, ixs.r32I(i) & ~data) }; true.B })
       fromCPU.regmap(
         /*domaincfg*/   0x0000 -> Seq(RegField(32, domaincfg.r, RegWriteFn((v, d)=>{ when(v){domaincfg.w(d)}; true.B }))),
-        0x0004/*~0x0FFC*/ -> sourcecfgs.toSeq.drop(1).map(sourcecfg => RegField(32, sourcecfg.r, sourcecfg.w)),
+        /*sourcecfgs*/  0x0004 -> (1 until params.intSrcNum).map(i => RegField(32, sourcecfgs.rI(i),
+          RegWriteFn((v, d)=>{ when(v){sourcecfgs.wI(i, d)}; true.B }))),
         0x1BC4            -> Seq(RegField(32, 0x80000000L.U, RegWriteFn(():Unit))), // hardwired *msiaddrcfg* regs
         /*setips*/      0x1C00 -> (0 until params.ixNum).map(i => RegField(32, ips.r32I(i), RWF_setixs(i, ips))),
         /*setipnum*/    0x1CDC -> Seq(RegField(32, 0.U, RWF_setipnum)),
@@ -184,17 +165,17 @@ class Domain(
     val intSrcsSynced = RegNextN(intSrcs, 3)
     // TODO: For level sensitive intSrc:
     //       The pending bit may also be set by a relevant write to a setip or setipnum register when the rectified input value is high, but not when the rectified input value is low.
-    (intSrcsRectified zip (intSrcsSynced zip sourcecfgs.toSeq)).map {
-      case (rect, (intSrc, sourcecfg)) => {
-        when      (sourcecfg.SM===sourcecfg.edge1 || sourcecfg.SM===sourcecfg.level1) {
-          rect := intSrc
-        }.elsewhen(sourcecfg.SM===sourcecfg.edge0 || sourcecfg.SM===sourcecfg.level0) {
-          rect := !intSrc
-        }.otherwise {
-          rect := false.B
-        }
+    intSrcsRectified(0) := false.B
+    (1 until params.intSrcNum).map(i => {
+      val (rect, sync, sm) = (intSrcsRectified(i), intSrcsSynced(i), sourcecfgs.SMs(i))
+      when      (sm===sourcecfgs.edge1 || sm===sourcecfgs.level1) {
+        rect := sync
+      }.elsewhen(sm===sourcecfgs.edge0 || sm===sourcecfgs.level0) {
+        rect := !sync
+      }.otherwise {
+        rect := false.B
       }
-    }
+    })
     val intSrcsTriggered = Wire(Vec(params.intSrcNum, Bool())); /*for debug*/dontTouch(intSrcsTriggered)
     (intSrcsTriggered zip intSrcsRectified).map { case (trigger, rect) => {
       trigger := rect && !RegNext(rect)
@@ -242,7 +223,7 @@ class Domain(
     }
 
     // delegate
-    intSrcsDelegated := (sourcecfgs.DBools zip intSrcs).map {case (d:Bool, i:Bool) => d&i}
+    intSrcsDelegated := (sourcecfgs.Ds zip intSrcs).map {case (d:Bool, i:Bool) => d&i}
   }
 }
 
