@@ -70,8 +70,7 @@ class Domain(
         // therefore, ChildIndex is not needed.
         val SM = UInt(3.W)
       }
-      // TODO: private?
-      private val regs = RegInit(VecInit.fill(params.intSrcNum)(0.U.asTypeOf(new Sourcecfg)))
+      val regs = RegInit(VecInit.fill(params.intSrcNum)(0.U.asTypeOf(new Sourcecfg)))
       def rI(i:Int): UInt = regs(i).D<<10 | Mux(regs(i).D, 0.U, regs(i).SM)
       def wI(i:Int, data:UInt): Unit = {
         val D=data(10); val SM=data(2,0)
@@ -79,8 +78,6 @@ class Domain(
         regs(i).SM := Mux(D, 0.U, Mux(SM===reserved2||SM===reserved3, inactive, SM))
       }
       val actives = VecInit(regs.map(reg => ~reg.D && reg.SM=/=inactive))
-      val Ds = VecInit(regs.map(_.D))
-      val SMs = VecInit(regs.map(_.SM))
     }
     class IXs extends Bundle {
       private val bits = RegInit(VecInit.fill(params.intSrcNum){false.B})
@@ -169,7 +166,7 @@ class Domain(
     //       The pending bit may also be set by a relevant write to a setip or setipnum register when the rectified input value is high, but not when the rectified input value is low.
     intSrcsRectified(0) := false.B
     (1 until params.intSrcNum).map(i => {
-      val (rect, sync, sm) = (intSrcsRectified(i), intSrcsSynced(i), sourcecfgs.SMs(i))
+      val (rect, sync, sm) = (intSrcsRectified(i), intSrcsSynced(i), sourcecfgs.regs(i).SM)
       when      (sm===sourcecfgs.edge1 || sm===sourcecfgs.level1) {
         rect := sync
       }.elsewhen(sm===sourcecfgs.edge0 || sm===sourcecfgs.level0) {
@@ -225,7 +222,7 @@ class Domain(
     }
 
     // delegate
-    intSrcsDelegated := (sourcecfgs.Ds zip intSrcs).map {case (d:Bool, i:Bool) => d&i}
+    intSrcsDelegated := (sourcecfgs.regs zip intSrcs).map {case (r, i:Bool) => r.D&i}
   }
 }
 
