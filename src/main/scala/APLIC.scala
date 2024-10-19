@@ -82,17 +82,16 @@ class Domain(
     class IXs extends Bundle {
       private val bits = RegInit(VecInit.fill(params.intSrcNum){false.B})
       val bits0 = VecInit(false.B +: bits.drop(1)) // bits0(0) is read-only 0
-      // TODO: parameterization: 32, 5
       def r32I(i:Int): UInt = {
         val tmp = (0 until 32).map(j => {
-          val index = i<<5|j
+          val index = i<<log2Ceil(32)|j
           bits0(index) & sourcecfgs.actives(index)
         })
         Cat(tmp.reverse)
       }
       def w32I(i:Int, d32:UInt): Unit = {
         (0 until 32).map(j => {
-          val index = i<<5|j
+          val index = i<<log2Ceil(32)|j
           when (sourcecfgs.actives(index)) {bits(index):=d32(j)}
         })
       }
