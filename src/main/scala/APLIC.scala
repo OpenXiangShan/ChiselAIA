@@ -82,12 +82,10 @@ class Domain(
     abstract class IXs extends Bundle {
       protected val bits = RegInit(VecInit.fill(params.intSrcNum){false.B})
       val bits0 = VecInit(false.B +: bits.drop(1)) // bits0(0) is read-only 0
-      def r32I(i:Int): UInt = Cat((0 until 32).map(j => rBitI(i<<log2Ceil(32)|j)).reverse)
-      def w32I(i:Int, d32:UInt): Unit = (0 until 32).map(j => wBitI(i<<log2Ceil(32)|j, d32(j)))
+      def r32I(i:Int): UInt = Cat((0 until 32).map(j => rBitUI((i<<log2Ceil(32)|j).U)).reverse)
+      def w32I(i:Int, d32:UInt): Unit = (0 until 32).map(j => wBitUI((i<<log2Ceil(32)|j).U, d32(j)))
       def rBitUI(ui:UInt): Bool = bits0(ui) & sourcecfgs.actives(ui)
-      def rBitI(i:Int):    Bool = bits0(i)  & sourcecfgs.actives(i)
       def wBitUI(ui:UInt, bit:Bool): Unit
-      def wBitI(i:Int, bit:Bool):    Unit
     }
     val ips = new IXs {
       def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {
@@ -97,18 +95,10 @@ class Domain(
           }.otherwise {/* Currently not support domaincfg.DM===0 */}
         }.otherwise { bits(ui):=bit }
       }
-      def wBitI(i:Int, bit:Bool):    Unit = when (sourcecfgs.actives(i))  {
-        when (sourcecfgs.regs(i).SM===sourcecfgs.level1 || sourcecfgs.regs(i).SM===sourcecfgs.level0) {
-          when (domaincfg.DM) {
-            when (intSrcsRectified(i)) { bits(i):=bit }
-          }.otherwise {/* Currently not support domaincfg.DM===0 */}
-        }.otherwise { bits(i):=bit }
-      }
     }
     val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
     val ies = new IXs {
       def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {bits(ui):=bit}
-      def wBitI(i:Int, bit:Bool):    Unit = when (sourcecfgs.actives(i))  {bits(i):=bit}
     }
     val genmsi       = RegInit(0.U(32.W)) // TODO: implement
     val targets = new Bundle {
@@ -181,7 +171,7 @@ class Domain(
     }}
     // TODO: may compete with mem mapped reg, thus causing lost info
     intSrcsTriggered.zipWithIndex.map { case (trigger:Bool, i:Int) =>
-      when(trigger) {ips.wBitI(i, true.B)}
+      when(trigger) {ips.wBitUI(i.U, true.B)}
     }
 
     // The ":+ true.B" trick explain:
