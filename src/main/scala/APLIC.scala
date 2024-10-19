@@ -102,11 +102,6 @@ class Domain(
     }
     val ips = new IXs // internal regs
     val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
-    // TODO: move it to locally
-    val intSrcsRectified32 = Wire(Vec(pow2(params.intSrcWidth-5).toInt, UInt(32.W)))
-    intSrcsRectified32.zipWithIndex.map { case (rect32:UInt, i:Int) => {
-      rect32 := Cat(intSrcsRectified.slice(i*32, i*32+32).reverse)
-    }}
     val ies = new IXs // internal regs
     val genmsi       = RegInit(0.U(32.W)) // TODO: implement
     val targets = new Bundle {
@@ -128,6 +123,10 @@ class Domain(
     }
 
     locally {
+      val intSrcsRectified32 = Wire(Vec(pow2(params.intSrcWidth-5).toInt, UInt(32.W)))
+      intSrcsRectified32.zipWithIndex.map { case (rect32:UInt, i:Int) => {
+        rect32 := Cat(intSrcsRectified.slice(i*32, i*32+32).reverse)
+      }}
       def RWF_setixs(i:Int, ixs:IXs) = RegWriteFn((valid, data) => {
         when(valid) {ixs.w32I(i, data)}; true.B })
       // TODO: The pending
