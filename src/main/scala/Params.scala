@@ -77,9 +77,9 @@ case class IMSICParams(
   // ### Arguments for indirect accessed CSRs, aka, CSRs accessed by *iselect and *ireg
   require(iselectWidth >=8, f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63")
 
-  def hartIndex_to_gh(hardIndex: Int): (Int, Int) = {
-    val g = (hardIndex>>membersWidth) & (pow2(groupsWidth)-1)
-    val h = hardIndex & (pow2(membersWidth)-1)
+  def hartIndex_to_gh(hartIndex: Int): (Int, Int) = {
+    val g = (hartIndex>>membersWidth) & (pow2(groupsWidth)-1)
+    val h = hartIndex & (pow2(membersWidth)-1)
     (g.toInt, h.toInt)
   }
   def gh_to_hartIndex(g: Int, h: Int): Int = {
