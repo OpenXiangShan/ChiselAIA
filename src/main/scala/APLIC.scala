@@ -128,7 +128,7 @@ class Domain(
         rect32 := Cat(intSrcsRectified.slice(i*32, i*32+32).reverse)
       }}
       def RWF_setixs(i:Int, ixs:IXs) = RegWriteFn((valid, data) => {
-        when(valid) {ixs.w32I(i, data)}; true.B })
+        when(valid) {ixs.w32I(i, ixs.r32I(i) | data)}; true.B })
       // TODO: The pending
       // bit may also be set by a relevant write to a setip or setipnum register when the rectified input
       // value is high, but not when the rectified input value is low.

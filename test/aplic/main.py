@@ -126,6 +126,10 @@ async def aplic_write_read_test(dut):
   await write_read_check_2(dut, base_addr+offset_setips+1*4, 0xf, 0xf) # bit0 is readonly zero
   await write_read_check_2(dut, base_addr+offset_seties+0*4, 0xf, 0xe) # bit0 is readonly zero
   await write_read_check_2(dut, base_addr+offset_seties+1*4, 0xf, 0xf) # bit0 is readonly zero
+  # On a write to a setie/setip register, for each bit that is one in the 32-bit value written, if that bit position
+  # corresponds to an active interrupt source, the interrupt-enable bit for that source is set to one.
+  await write_read_check_2(dut, base_addr+offset_seties+1*4, 0x0, 0xf)
+  await write_read_check_2(dut, base_addr+offset_seties+1*4, 0x10, 0x1f)
   # TODO: move to aplic_set_clr_test
   await write_read_check_1(dut, base_addr+offset_genmsi, offset_genmsi)
   await write_read_check_1(dut, base_addr+offset_targets+0*4, (offset_targets+0*4)%8) # GuestIndex is not worked in machine-level domain
