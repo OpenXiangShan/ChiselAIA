@@ -79,19 +79,25 @@ class Domain(
       }
       val actives = VecInit(regs.map(reg => ~reg.D && reg.SM=/=inactive))
     }
-    class IXs extends Bundle {
-      private val bits = RegInit(VecInit.fill(params.intSrcNum){false.B})
+    abstract class IXs extends Bundle {
+      protected val bits = RegInit(VecInit.fill(params.intSrcNum){false.B})
       val bits0 = VecInit(false.B +: bits.drop(1)) // bits0(0) is read-only 0
       def r32I(i:Int): UInt = Cat((0 until 32).map(j => rBitI(i<<log2Ceil(32)|j)).reverse)
       def w32I(i:Int, d32:UInt): Unit = (0 until 32).map(j => wBitI(i<<log2Ceil(32)|j, d32(j)))
       def rBitUI(ui:UInt): Bool = bits0(ui) & sourcecfgs.actives(ui)
       def rBitI(i:Int):    Bool = bits0(i)  & sourcecfgs.actives(i)
+      def wBitUI(ui:UInt, bit:Bool): Unit
+      def wBitI(i:Int, bit:Bool):    Unit
+    }
+    val ips = new IXs {
       def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {bits(ui):=bit}
       def wBitI(i:Int, bit:Bool):    Unit = when (sourcecfgs.actives(i))  {bits(i):=bit}
     }
-    val ips = new IXs // internal regs
     val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
-    val ies = new IXs // internal regs
+    val ies = new IXs {
+      def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {bits(ui):=bit}
+      def wBitI(i:Int, bit:Bool):    Unit = when (sourcecfgs.actives(i))  {bits(i):=bit}
+    }
     val genmsi       = RegInit(0.U(32.W)) // TODO: implement
     val targets = new Bundle {
       class Target extends Bundle {
