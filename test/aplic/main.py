@@ -130,6 +130,17 @@ async def aplic_write_read_test(dut):
   # corresponds to an active interrupt source, the interrupt-enable bit for that source is set to one.
   await write_read_check_2(dut, base_addr+offset_seties+1*4, 0x0, 0xf)
   await write_read_check_2(dut, base_addr+offset_seties+1*4, 0x10, 0x1f)
+  # If the source mode is Level1 or Level0 and the interrupt domain is configured in MSI delivery mode
+  # (domaincfg.DM = 1):
+  # • The pending bit is set to one by a low-to-high transition in the rectified input value. The pending
+  # bit may also be set by a relevant write to a setip or setipnum register when the rectified input
+  # value is high, but not when the rectified input value is low.
+  setips_0 = await a_get32(dut, base_addr+offset_setips+0*4)
+  int_num = 17
+  await write_read_check_1(dut, base_addr+offset_sourcecfg+(int_num-1)*4, sourcecfg_sm_level1)
+  await write_read_check_2(dut, base_addr+offset_setips+0*4, 1<<int_num, setips_0)
+  await a_put_full32(dut, base_addr+offset_setipnum, int_num)
+  assert (await a_get32(dut, base_addr+offset_setips+0*4)) == setips_0
   # TODO: move to aplic_set_clr_test
   await write_read_check_1(dut, base_addr+offset_genmsi, offset_genmsi)
   await write_read_check_1(dut, base_addr+offset_targets+0*4, (offset_targets+0*4)%8) # GuestIndex is not worked in machine-level domain

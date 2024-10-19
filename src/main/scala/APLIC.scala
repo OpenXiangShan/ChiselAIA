@@ -90,8 +90,20 @@ class Domain(
       def wBitI(i:Int, bit:Bool):    Unit
     }
     val ips = new IXs {
-      def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {bits(ui):=bit}
-      def wBitI(i:Int, bit:Bool):    Unit = when (sourcecfgs.actives(i))  {bits(i):=bit}
+      def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {
+        when (sourcecfgs.regs(ui).SM===sourcecfgs.level1 || sourcecfgs.regs(ui).SM===sourcecfgs.level0) {
+          when (domaincfg.DM) {
+            when (intSrcsRectified(ui)) { bits(ui):=bit }
+          }.otherwise {/* Currently not support domaincfg.DM===0 */}
+        }.otherwise { bits(ui):=bit }
+      }
+      def wBitI(i:Int, bit:Bool):    Unit = when (sourcecfgs.actives(i))  {
+        when (sourcecfgs.regs(i).SM===sourcecfgs.level1 || sourcecfgs.regs(i).SM===sourcecfgs.level0) {
+          when (domaincfg.DM) {
+            when (intSrcsRectified(i)) { bits(i):=bit }
+          }.otherwise {/* Currently not support domaincfg.DM===0 */}
+        }.otherwise { bits(i):=bit }
+      }
     }
     val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
     val ies = new IXs {
@@ -124,9 +136,6 @@ class Domain(
       }}
       def RWF_setixs(i:Int, ixs:IXs) = RegWriteFn((valid, data) => {
         when(valid) {ixs.w32I(i, ixs.r32I(i) | data)}; true.B })
-      // TODO: The pending
-      // bit may also be set by a relevant write to a setip or setipnum register when the rectified input
-      // value is high, but not when the rectified input value is low.
       def RWF_setipnum = RegWriteFn((valid, data) => {
         when (valid && data=/=0.U) { ips.wBitUI(data(params.intSrcWidth-1,0), true.B) }; true.B })
       def RWF_setclrixnum(setclr:Bool, ixs:IXs) = RegWriteFn((valid, data) => {
@@ -155,8 +164,6 @@ class Domain(
     }
 
     val intSrcsSynced = RegNextN(intSrcs, 3)
-    // TODO: For level sensitive intSrc:
-    //       The pending bit may also be set by a relevant write to a setip or setipnum register when the rectified input value is high, but not when the rectified input value is low.
     intSrcsRectified(0) := false.B
     (1 until params.intSrcNum).map(i => {
       val (rect, sync, sm) = (intSrcsRectified(i), intSrcsSynced(i), sourcecfgs.regs(i).SM)
