@@ -119,6 +119,12 @@ class Domain(
       }}
     }
 
+    // Writing ips priorities:
+    // * 3st: regmapped regs: including setips, setipnum, in_clrips, clripnum
+    // * 2nd: intSrcsTriggered, which sets the corresponding ip
+    // * 1rd: send MSI, which cleans the corresponding ip
+    // For more details about how ip-writing priority is achieved,
+    // see FIRRTL Specification's chapter Conditional Last Connect Semantics.
     locally {
       val intSrcsRectified32 = Wire(Vec(pow2(params.intSrcWidth-5).toInt, UInt(32.W)))
       intSrcsRectified32.zipWithIndex.map { case (rect32:UInt, i:Int) => {
@@ -169,7 +175,6 @@ class Domain(
     (intSrcsTriggered zip intSrcsRectified).map { case (trigger, rect) => {
       trigger := rect && !RegNext(rect)
     }}
-    // TODO: may compete with mem mapped reg, thus causing lost info
     intSrcsTriggered.zipWithIndex.map { case (trigger:Bool, i:Int) =>
       when(trigger) {ips.wBitUI(i.U, true.B)}
     }
@@ -202,7 +207,6 @@ class Domain(
                       (guestID<<imsic_params.intFileMemWidth)
         val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, targets.regs(topi).EIID)
         // clear corresponding ip
-        // TODO: may compete with mem mapped reg, thus causing lost info
         ips.wBitUI(topi, false.B)
         tl.a.bits := pfbits
         tl.a.valid := true.B
