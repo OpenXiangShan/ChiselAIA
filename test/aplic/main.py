@@ -157,7 +157,6 @@ async def aplic_write_read_test(dut):
   await a_put_full32(dut, base_addr+offset_setipnum, int_num)
   assert (await a_get32(dut, base_addr+offset_setips+0*4)) == setips_0
   # TODO: move to aplic_set_clr_test
-  await write_read_check_1(dut, base_addr+offset_genmsi, offset_genmsi)
   await write_read_check_1(dut, base_addr+offset_targets+0*4, (offset_targets+0*4)%8) # GuestIndex is not worked in machine-level domain
   await write_read_check_1(dut, base_addr+offset_targets+3*4, (offset_targets+3*4)%8) # GuestIndex is not worked in machine-level domain
   # TODO: inactive target readonly zeros
@@ -346,3 +345,8 @@ async def aplic_msi_test(dut):
   await FallingEdge(dut.clock)
   dut.intSrcs_43.value = 0
   await expect_int_num(dut, eiid, imsic_sg_base_addr+0x1000*guest_id)
+
+  eiid = 0x77
+  hart_index = 1
+  await a_put_full32(dut, base_addr+offset_genmsi, hart_index<<18|eiid)
+  await expect_int_num(dut, eiid, imsic_m_base_addr+0x1000*hart_index)

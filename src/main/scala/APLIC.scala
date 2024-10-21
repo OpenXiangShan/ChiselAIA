@@ -100,7 +100,15 @@ class Domain(
     val ies = new IXs {
       def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {bits(ui):=bit}
     }
-    val genmsi       = RegInit(0.U(32.W)) // TODO: implement
+    val genmsi = new Bundle {
+      val HartIndex = RegInit(0.U(imsic_params.groupsWidth.W + imsic_params.membersWidth.W))
+      val Busy      = RegInit(false.B)
+      val EIID      = RegInit(0.U(imsic_params.intSrcWidth.W))
+      def r = Mux(domaincfg.DM, HartIndex<<18 | Busy<<12 | EIID, 0.U)
+      def w(data:UInt) = {
+        when (domaincfg.DM && ~Busy) { HartIndex:=data(31,18); Busy:=true.B; EIID:=data(10,0); }
+      }
+    }
     val targets = new Bundle {
       class Target extends Bundle {
         val HartIndex  = UInt(imsic_params.groupsWidth.W + imsic_params.membersWidth.W)
@@ -153,7 +161,7 @@ class Domain(
         /*clrienum*/    0x1FDC -> Seq(RegField(32, 0.U, RWF_setclrixnum(false.B, ies))),
         /*setipnum_le*/ 0x2000 -> Seq(RegField(32, 0.U, RWF_setipnum)),
         /*setipnum_be*/ 0x2004 -> Seq(RegField(32, 0.U, RegWriteFn(():Unit))), // setipnum_be not implemented
-        /*genmsi*/      0x3000 -> Seq(RegField(32, genmsi)),
+        /*genmsi*/      0x3000 -> Seq(RegField(32, genmsi.r, RegWriteFn((v,d)=>{ when(v){genmsi.w(d)}; true.B }))),
         /*targets*/     0x3004 -> (1 until params.intSrcNum).map(i => RegField(32, targets.rI(i),
           RegWriteFn((v, d)=>{ when(v){targets.wI(i, d)}; true.B }))),
       )
@@ -194,18 +202,26 @@ class Domain(
     locally {
       val (tl, edge) = toIMSIC.out(0)
       tl.d.ready := true.B
-      when (domaincfg.IE && topi=/=0.U) {
+      def getMSIAddr(HartIndex:UInt, guestID:UInt): UInt = {
+        val groupID = HartIndex(imsic_params.groupsWidth+imsic_params.membersWidth-1, imsic_params.membersWidth)
+        val memberID = HartIndex(imsic_params.membersWidth-1, 0)
         // It is recommended to hardwire *msiaddrcfg* by the manual:
         // "For any given system, these addresses are fixed and should be hardwired into the APLIC if possible."
+        imsicBaseAddr.U |
+          (groupID<<imsic_params.groupStrideWidth) |
+          (memberID<<imsicMemberStrideWidth) |
+          (guestID<<imsic_params.intFileMemWidth)
+      }
+      when (genmsi.Busy) {// A pending extempore MSI (genmsi) should be sent by the APLIC with minimal delay.
+        val msiAddr = getMSIAddr(genmsi.HartIndex, 0.U)
+        val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, genmsi.EIID)
+        when (tl.a.ready) { genmsi.Busy := false.B }
+        tl.a.bits := pfbits
+        tl.a.valid := true.B
+      }.elsewhen (domaincfg.IE && topi=/=0.U) {
         val target = targets.regs(topi)
-        val groupID = target.HartIndex(imsic_params.groupsWidth+imsic_params.membersWidth-1, imsic_params.membersWidth)
-        val memberID = target.HartIndex(imsic_params.membersWidth-1, 0)
-        val guestID = target.GuestIndex
-        val msiAddr = imsicBaseAddr.U |
-                      (groupID<<imsic_params.groupStrideWidth) |
-                      (memberID<<imsicMemberStrideWidth) |
-                      (guestID<<imsic_params.intFileMemWidth)
-        val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, targets.regs(topi).EIID)
+        val msiAddr = getMSIAddr(target.HartIndex, target.GuestIndex)
+        val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, target.EIID)
         // clear corresponding ip
         when (tl.a.ready) { ips.wBitUI(topi, false.B) }
         tl.a.bits := pfbits
