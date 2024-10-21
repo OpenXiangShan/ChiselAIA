@@ -76,6 +76,7 @@ object OpenAIA extends App {
 
   ChiselStage.emitSystemVerilog(
     top.module,
+    args = Array("--dump-fir"),
     // more opts see: $CHISEL_FIRTOOL_PATH/firtool -h
     firtoolOpts = Array(
       "-disable-all-randomization",
