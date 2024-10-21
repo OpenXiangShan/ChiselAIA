@@ -56,7 +56,7 @@ case class IMSICParams(
   val sgStrideWidth   : Int = log2Ceil(geilen+1) + intFileMemWidth // D: stride between each supervisor- and guest-level interrupt files
   // require(groupStrideWidth >= k + math.max(mStrideWidth, sgStrideWidth))
   val groupStrideWidth: Int = membersWidth + math.max(mStrideWidth, sgStrideWidth) // E: stride between each interrupt file groups
-  val groupsWidth     : Int = log2Ceil(groupsNum + 1) // j
+  val groupsWidth     : Int = log2Ceil(groupsNum) // j
   require((sgBaseAddr & (pow2(membersWidth + sgStrideWidth) - 1)) == 0, "sgBaseAddr should be aligned to a 2^(k+D)")
   require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & mBaseAddr ) == 0)
   require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & sgBaseAddr) == 0)
