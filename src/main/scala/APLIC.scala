@@ -190,10 +190,10 @@ class Domain(
     ).zipWithIndex.map {
       case ((p: Bool, e: Bool), i: Int) => (p & e, i.U)
     })
-    // TODO: handle ready signal!
     // send MSI
     locally {
       val (tl, edge) = toIMSIC.out(0)
+      tl.d.ready := true.B
       when (domaincfg.IE && topi=/=0.U) {
         // It is recommended to hardwire *msiaddrcfg* by the manual:
         // "For any given system, these addresses are fixed and should be hardwired into the APLIC if possible."
@@ -207,7 +207,7 @@ class Domain(
                       (guestID<<imsic_params.intFileMemWidth)
         val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, targets.regs(topi).EIID)
         // clear corresponding ip
-        ips.wBitUI(topi, false.B)
+        when (tl.a.ready) { ips.wBitUI(topi, false.B) }
         tl.a.bits := pfbits
         tl.a.valid := true.B
       }.otherwise {

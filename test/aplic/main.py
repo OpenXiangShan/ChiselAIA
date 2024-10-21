@@ -15,7 +15,7 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import RisingEdge, FallingEdge
+from cocotb.triggers import RisingEdge, FallingEdge, Edge
 
 op_put_full = 0
 op_get = 4
@@ -92,11 +92,25 @@ sourcecfg_sm_edge0    = 5
 sourcecfg_sm_level1   = 6
 sourcecfg_sm_level0   = 7
 
+async def handle_toimsic_a(dut):
+  while True:
+    await Edge(dut.toimsic_0_a_valid)
+    if dut.toimsic_0_a_valid.value:
+      op = dut.toimsic_0_a_bits_opcode
+      if (op == op_put_full):
+        cocotb.log.info("dut.toimsic_0_a_bits_opcode op_put_full")
+        dut.toimsic_0_d_valid.value = 1
+        dut.toimsic_0_d_bits_opcode.value = op_access_ack
+        dut.toimsic_0_d_bits_source.value = dut.toimsic_0_a_bits_source.value
+        dut.toimsic_0_d_bits_size.value = 2
+    else:
+      dut.toimsic_0_d_valid.value = 0
 
 @cocotb.test()
 async def aplic_write_read_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
+  cocotb.start_soon(handle_toimsic_a(dut))
   # Apply reset
   dut.reset.value = 1
   for _ in range(10):
@@ -104,6 +118,7 @@ async def aplic_write_read_test(dut):
   dut.reset.value = 0
   # Initialize ready signals
   dut.domain_0_d_ready.value = 1
+  dut.toimsic_0_a_ready.value = 1
   await RisingEdge(dut.clock)
 
   async def write_read_check_2(dut, addr, idata, odata):
@@ -273,6 +288,7 @@ async def aplic_in_clrips_test(dut):
 async def aplic_msi_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
+  cocotb.start_soon(handle_toimsic_a(dut))
 
   async def expect_int_num(dut, num, addr):
     for _ in range(0,10):
