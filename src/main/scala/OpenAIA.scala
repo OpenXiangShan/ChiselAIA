@@ -28,16 +28,15 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
   val imsic_params = IMSICParams(groupsNum=2, membersNum=2)
   val aplic_params = APLICParams()
 
-  // TODO: rename, not only from CPU, but alse from APLIC, how about fromMem?
-  val imsics_fromCPU = TLClientNode(
+  val imsics_fromMem = TLClientNode(
     Seq(TLMasterPortParameters.v1(
       Seq(TLMasterParameters.v1("imsic_tl", IdRange(0, 16)))
   )))
-  val imsics_fromCPU_xbar = LazyModule(new TLXbar).node
-  imsics_fromCPU_xbar := imsics_fromCPU
+  val imsics_fromMem_xbar = LazyModule(new TLXbar).node
+  imsics_fromMem_xbar := imsics_fromMem
   val imsics = (0 until 4).map( i => {
     val imsic = LazyModule(new TLIMSIC(imsic_params, i)(Parameters.empty))
-    imsic.fromCPU := imsics_fromCPU_xbar
+    imsic.fromMem := imsics_fromMem_xbar
     imsic
   })
 
@@ -60,7 +59,7 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
   aplic_toIMSIC := aplic.toIMSIC
 
   lazy val module = new LazyModuleImp(this) {
-    imsics_fromCPU.makeIOs()(ValName("intfile"))
+    imsics_fromMem.makeIOs()(ValName("intfile"))
     (0 until 4).map (i => {
       val toCSR = IO(Output(chiselTypeOf(imsics(i).module.toCSR))).suggestName(f"toCSR${i}")
       val fromCSR = IO(Input(chiselTypeOf(imsics(i).module.fromCSR))).suggestName(f"fromCSR${i}")
