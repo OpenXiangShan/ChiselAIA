@@ -38,6 +38,7 @@ in pkgs.mkShell {
     pkgs.zlib
     # for docs
     pkgs.graphviz
+    pkgs.mdbook
   ];
 
   shellHook = let

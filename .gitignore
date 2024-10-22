@@ -16,4 +16,8 @@ sim_build
 # for gtkwave
 *.fst
 *.gtkw
+
+# for docs
 *.py.dot
+*.py.svg
+book

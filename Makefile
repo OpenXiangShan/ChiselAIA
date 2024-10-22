@@ -20,6 +20,10 @@ clean:
 ################################################################################
 # doc
 ################################################################################
-doc: ./docs/images/arch.py.dot
+MDs=$(shell find docs/ -name "*.md")
+doc: ./docs/images/arch.py.svg ./docs/images/arch.configure.py.svg $(MDs)
+	mdbook build
 %.py.dot: %.dot.py
 	python3 $<
+%.py.svg: %.py.dot
+	dot -Tsvg $< -o $@
