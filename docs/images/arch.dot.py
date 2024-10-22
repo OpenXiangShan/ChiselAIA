@@ -3,12 +3,18 @@ from pydot import Dot, Edge, Node, Subgraph
 ###############################################################################
 # Graph
 ###############################################################################
-graph = Dot(
-  label="Interrupt delivery by MSIs when harts have IMSICs for receiving them.",
+interrupt = Dot(
+  label="Interrupt Paths in an AIA System",
   rankdir="LR",
   splines="ortho",
 )
-graph.set_node_defaults(shape="box")
+interrupt.set_node_defaults(shape="box")
+configure = Dot(
+  label="Configuration Paths in an AIA System",
+  rankdir="RL",
+  splines="ortho",
+)
+configure.set_node_defaults(shape="box")
 
 ###############################################################################
 # Nodes and Subgraphs
@@ -19,7 +25,7 @@ msi_devices = [
   Node("msi_device__", label="MSI Device ..."),
 ]
 for msi_device in msi_devices:
-  graph.add_node(msi_device)
+  interrupt.add_node(msi_device)
 
 class APLIC(Subgraph):
   def __init__(self):
@@ -33,7 +39,8 @@ class APLIC(Subgraph):
     for domain in self.domains:
       self.add_node(domain)
 aplic = APLIC()
-graph.add_subgraph(aplic)
+interrupt.add_subgraph(aplic)
+configure.add_subgraph(aplic)
 
 wired_devices = [
   Node("wired_device_0", label="Wired Device 0"),
@@ -41,9 +48,11 @@ wired_devices = [
   Node("wired_device__", label="Wired Device ..."),
 ]
 for wired_device in wired_devices:
-  graph.add_node(wired_device)
+  interrupt.add_node(wired_device)
 
 bus_network = Node("bus_network", label="Bus", height=7)
+interrupt.add_node(bus_network)
+configure.add_node(bus_network)
 
 class IMSICHart(Subgraph):
   class IMSIC(Subgraph):
@@ -73,29 +82,33 @@ class IMSICHart(Subgraph):
 
 imsic_harts = [IMSICHart(0, 0), IMSICHart("...", "_")]
 for imsic_hart in imsic_harts:
-  graph.add_subgraph(imsic_hart)
+  interrupt.add_subgraph(imsic_hart)
+  configure.add_subgraph(imsic_hart)
 
 ###############################################################################
 # Edges
 ###############################################################################
-graph.add_node(bus_network)
 for msi_device in msi_devices:
-  graph.add_edge(Edge(msi_device, bus_network))
+  interrupt.add_edge(Edge(msi_device, bus_network))
 for domain in aplic.domains:
-  graph.add_edge(Edge(domain, bus_network))
-graph.add_edge(Edge(aplic.domains[1], bus_network))
-aplic.add_edge(Edge(aplic.domains[0], aplic.domains[1], constraint=False))
-aplic.add_edge(Edge(aplic.domains[0], aplic.domains[1], constraint=False))
+  interrupt.add_edge(Edge(domain, bus_network))
+  configure.add_edge(Edge(bus_network, domain))
+interrupt.add_edge(Edge(aplic.domains[1], bus_network))
+interrupt.add_edge(Edge(aplic.domains[0], aplic.domains[1], constraint=False))
+interrupt.add_edge(Edge(aplic.domains[0], aplic.domains[1], constraint=False))
 for wired_device in wired_devices:
-  graph.add_edge(Edge(wired_device, aplic.domains[0]))
+  interrupt.add_edge(Edge(wired_device, aplic.domains[0]))
 for imsic_hart in imsic_harts:
   imsic = imsic_hart.imsic
   hart = imsic_hart.hart
   for intFile in imsic.intFiles:
-    graph.add_edge(Edge(intFile, hart))
-    graph.add_edge(Edge(bus_network, intFile))
-
+    interrupt.add_edge(Edge(intFile, hart))
+    configure.add_edge(Edge(hart, intFile))
+    interrupt.add_edge(Edge(bus_network, intFile))
+    configure.add_edge(Edge(intFile, bus_network, color="transparent"))
+  configure.add_edge(Edge(hart, bus_network))
 ###############################################################################
 # Output
 ###############################################################################
-graph.write(__file__.replace(".dot.py", ".py.dot"))
+interrupt.write(__file__.replace(".dot.py", ".py.dot"))
+configure.write(__file__.replace(".dot.py", ".configure.py.dot"))
