@@ -7,12 +7,14 @@ interrupt = Dot(
   label="Interrupt Paths in an AIA System",
   rankdir="LR",
   splines="ortho",
+  bgcolor="transparent",
 )
 interrupt.set_node_defaults(shape="box")
 configure = Dot(
   label="Configuration Paths in an AIA System",
   rankdir="RL",
   splines="ortho",
+  bgcolor="transparent",
 )
 configure.set_node_defaults(shape="box")
 
