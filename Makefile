@@ -11,3 +11,10 @@ run-%: test/%/main.py $(compile)
 	ulimit -s 211487 && make -C $(dir $<) -f ../dir/Makefile
 clean:
 	rm -rf out/ gen/ test/sim_build/
+
+################################################################################
+# doc
+################################################################################
+doc: ./docs/images/arch.py.dot
+%.py.dot: %.dot.py
+	python3 $<

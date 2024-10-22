@@ -16,3 +16,4 @@ sim_build
 # for gtkwave
 *.fst
 *.gtkw
+*.py.dot

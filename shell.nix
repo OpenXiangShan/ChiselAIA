@@ -7,6 +7,8 @@ let
   }) {};
   my-python3 = pkgs.python3.withPackages (python-pkgs: [
     python-pkgs.cocotb
+    # for docs
+    python-pkgs.pydot
   ]);
   h_content = builtins.toFile "h_content" ''
     # ${pkgs.lib.toUpper "${name} usage tips"}
@@ -34,6 +36,8 @@ in pkgs.mkShell {
     my-python3
     # for generating gtkwave's fst waveform
     pkgs.zlib
+    # for docs
+    pkgs.graphviz
   ];
 
   shellHook = let
