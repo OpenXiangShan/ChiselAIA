@@ -6,6 +6,11 @@ $(gen)&: $(wildcard src/main/scala/*)
 compile=test/sim_build/Vtop
 $(compile): $(gen)
 	make -C test/dir ../sim_build/Vtop
+# let the `make run-...` can be auto completed
+define RUN_TESTCASE =
+run-$(1):
+endef
+$(foreach testcase,$(testcases),$(eval $(call RUN_TESTCASE,$(testcase))))
 run-%: test/%/main.py $(compile)
 	# `ulimit -s` make sure stack size is enough
 	ulimit -s 211487 && make -C $(dir $<) -f ../dir/Makefile
