@@ -28,3 +28,6 @@ doc: $(MDs) $(PYSVGs)
 	python3 $<
 %_py.svg: %_py.dot
 	dot -Tsvg $< -o $@
+	# css can only recognize intrinsic size in px
+	# https://developer.mozilla.org/en-US/docs/Glossary/Intrinsic_Size
+	sed -i 's/\([0-9]\+\)pt/\1px/g' $@
