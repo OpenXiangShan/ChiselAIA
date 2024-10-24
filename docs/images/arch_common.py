@@ -57,3 +57,40 @@ class IMSICHart(Subgraph):
     self.add_node(self.hart)
 
 imsic_harts = [IMSICHart(0, 0), IMSICHart("...", "_")]
+
+###############################################################################
+# Edges
+###############################################################################
+class MessageEdge(Edge):
+  def __init__(self, src, dst, obj_dict=None, **attrs):
+    Edge.__init__(self, src, dst, obj_dict, **attrs, color='"black:invis:black"')
+class WireEdge(Edge):
+  def __init__(self, src, dst, obj_dict=None, **attrs):
+    Edge.__init__(self, src, dst, obj_dict, **attrs)
+
+###############################################################################
+# Graph
+###############################################################################
+class AIADot(Dot):
+  class Legend(Subgraph):
+    def __init__(self):
+      Subgraph.__init__(self, "legend", label="Legend", cluster=True, pencolor="gray")
+    def add_edge_legend(self, EdgeClass, label):
+      src = Node(f"legend_${label}_edge_src", shape="plain", label=label)
+      self.add_node(src)
+      dst = Node(f"legend_${label}_edge_dst", shape="plain", label=" ")
+      self.add_node(dst)
+      self.add_edge(EdgeClass(src, dst))
+
+  def __init__(self, *argsl, **argsd):
+    Dot.__init__(self, *argsl, **argsd,
+      splines="ortho",
+      bgcolor="transparent",
+    )
+    self.main = Subgraph("main", label="", cluster=True, pencolor="transparent")
+    self.main.set_node_defaults(shape="box")
+    self.add_subgraph(self.main)
+    self.legend = self.Legend()
+    self.add_subgraph(self.legend)
+    self.legend.add_edge_legend(WireEdge, "wire")
+    self.legend.add_edge_legend(MessageEdge, "message")
