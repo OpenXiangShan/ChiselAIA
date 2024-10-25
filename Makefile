@@ -1,3 +1,5 @@
+.NOTINTERMEDIATE:
+
 testcases=$(shell ls test/*/main.py | awk -F '/' '{print $$2}')
 default: $(addprefix run-,$(testcases))
 gen=gen/filelist.f
@@ -24,6 +26,8 @@ MDs=$(shell find docs/ -name "*.md")
 PYSVGs=$(subst _dot.py,_py.svg,$(shell find docs/ -name "*_dot.py"))
 doc: $(MDs) $(PYSVGs)
 	mdbook build
+docs/images/arch_configure_py.dot: docs/images/arch_common.py
+docs/images/arch_interrupt_py.dot: docs/images/arch_common.py
 %_py.dot: %_dot.py
 	python3 $<
 %_py.svg: %_py.dot
