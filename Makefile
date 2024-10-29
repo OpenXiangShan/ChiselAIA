@@ -24,7 +24,8 @@ clean:
 ################################################################################
 MDs=$(shell find docs/ -name "*.md")
 PYSVGs=$(subst _dot.py,_py.svg,$(shell find docs/ -name "*_dot.py"))
-doc: $(MDs) $(PYSVGs)
+DRAWIOSVGs=$(subst .drawio,.svg,$(shell find docs/ -name "*.drawio"))
+doc: $(MDs) $(PYSVGs) $(DRAWIOSVGs)
 	mdbook build
 docs/images/arch_configure_py.dot: docs/images/arch_common.py
 docs/images/arch_interrupt_py.dot: docs/images/arch_common.py
@@ -35,3 +36,5 @@ docs/images/arch_interrupt_py.dot: docs/images/arch_common.py
 	# css can only recognize intrinsic size in px
 	# https://developer.mozilla.org/en-US/docs/Glossary/Intrinsic_Size
 	sed -i 's/\([0-9]\+\)pt/\1px/g' $@
+%.svg: %.drawio
+	drawio -x -f svg $<

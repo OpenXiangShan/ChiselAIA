@@ -39,6 +39,7 @@ in pkgs.mkShell {
     # for docs
     pkgs.graphviz
     pkgs.mdbook
+    pkgs.drawio-headless
   ];
 
   shellHook = let

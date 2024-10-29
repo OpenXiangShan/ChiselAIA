@@ -7,3 +7,4 @@ title = "OpenAIA.scala"
 
 [output.html]
 git-repository-url = "https://github.com/xieby1/OpenAIA.scala"
+mathjax-support = true

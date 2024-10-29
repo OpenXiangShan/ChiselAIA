@@ -19,5 +19,6 @@ sim_build
 
 # for docs
 *_py.dot
-*_py.svg
+*.svg
+*.bkp
 book
