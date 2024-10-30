@@ -41,6 +41,9 @@ class IMSIC(Subgraph):
       self.add_node(self.ireg)
       self.add_edge(Edge(self.mem.seteipnum, self.ireg, color="transparent"))
 
+      self.add_node(Node(f"{name}_eips", label="eip[]"))
+      self.add_node(Node(f"{name}_eies", label="eie[]"))
+
   def __init__(self):
     Subgraph.__init__(self, "imsic", label="IMSIC", cluster=True, bgcolor="#F8CECC", pencolor="#B85450")
     self.intFiles = [
@@ -105,7 +108,7 @@ class IMSIC(Subgraph):
 imsic = IMSIC()
 graph.add_subgraph(imsic)
 for intFile in imsic.intFiles:
-  graph.add_edge(Edge(bus, intFile.mem.seteipnum))
+  graph.add_edge(Edge(bus, intFile.mem.seteipnum, color='"black:invis:black"'))
 for pending in imsic.pendings:
   graph.add_edge(Edge(pending, hart))
 graph.add_edge(Edge(imsic.mtopei, hart))

@@ -3,6 +3,10 @@
 <!-- vim-markdown-toc GFM -->
 
 * [Individual IMSIC Functionality](#individual-imsic-functionality)
+  * [IMSIC IO](#imsic-io)
+  * [Interrupt File IO](#interrupt-file-io)
+  * [Interrupt File Memory-mapped Registers](#interrupt-file-memory-mapped-registers)
+  * [Interrupt File Internal Registers](#interrupt-file-internal-registers)
 * [Multiple IMSICs Arrangement](#multiple-imsics-arrangement)
   * [IMSIC Address Fields](#imsic-address-fields)
   * [IMSIC Memory Regions](#imsic-memory-regions)
@@ -26,6 +30,8 @@ This document covers:
 
 ## Individual IMSIC Functionality
 
+### IMSIC IO
+
 The IMSIC is tightly coupled with its hart,
 directly using wire connection rather than bus/network for information transfer.
 Key signals include:
@@ -38,20 +44,38 @@ Key signals include:
 
 ![](./images/imsic_py.svg)
 
+### Interrupt File IO
+
 One IMSIC manages all privilege levels in its hart,
 including: one machine level, one supervisor level, and multiple virtualized supervisor levels.
 As the behaviors of each level are identical in general, the AIA specification modularizes these functionalities of each level into independent and reusable components, called interrupt files.
-Each interrupt file  exchanges privilege-agnostic information with IMSIC:
+Each interrupt file exchanges privilege-agnostic information with IMSIC:
 
 * `pending`: Interrupt pending status for this interrupt file.
 * `topei`: Top external interrupt ID for this interrupt file.
 * `iselect`: CSR indirect access address for this interrupt file.
 * `ireg`: Read and write data for indirect CSR access for this interrupt file.
 
+### Interrupt File Memory-mapped Registers
+
 In addition, each interrupt file includes a 4KB memory page for receiving messages from bus/network.
 The memory page including only one 4B memory-mapped register:
 
 * `seteipnum`: Located at offset of 0x0, receiving incoming interrupt IDs.
+
+Each interrupt file maintains internal registers that interact with the interfaces above.
+The key internal registers consist of:
+
+### Interrupt File Internal Registers
+
+* `eip[intSrcNum bits]`: Interrupt pending register, indicating which interrupts are currently pending
+* `eie[intSrcNum bits]`: Interrupt enable register, controlling which interrupts are enabled
+
+All above interfaces operating with interrupt file's internal registers.
+The key internal registers including:
+
+* `eip[intSrcNum bits]`: Whether this interrupt is pending.
+* `eie[intSrcNum bits]`: Whether this interrupt is enabled.
 
 ## Multiple IMSICs Arrangement
 

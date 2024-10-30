@@ -62,6 +62,6 @@ graph.add_node(bus)
 groups = [Group(i) for i in range(0,2)]
 for group in groups:
   graph.add_subgraph(group)
-  graph.add_edge(Edge(bus, group.bus))
+  graph.add_edge(Edge(bus, group.bus, color='"black:invis:black"'))
 
 graph.write(__file__.replace("_dot.py", "_py.dot"), prog="circo")
