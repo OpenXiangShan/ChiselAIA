@@ -3,6 +3,8 @@ on: [push]
 jobs:
   deploy-github-pages:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v23
