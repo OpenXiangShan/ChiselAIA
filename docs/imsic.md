@@ -2,41 +2,56 @@
 
 <!-- vim-markdown-toc GFM -->
 
-* [Individual IMSIC Functionality](#individual-imsic-functionality)
-  * [IMSIC IO](#imsic-io)
-  * [Interrupt File IO](#interrupt-file-io)
-  * [Interrupt File Memory-mapped Registers](#interrupt-file-memory-mapped-registers)
-  * [Interrupt File Internal Registers](#interrupt-file-internal-registers)
-* [Multiple IMSICs Arrangement](#multiple-imsics-arrangement)
-  * [IMSIC Address Fields](#imsic-address-fields)
-  * [IMSIC Memory Regions](#imsic-memory-regions)
+* [单个IMSIC的功能（Individual IMSIC Functionality）](#单个imsic的功能individual-imsic-functionality)
+  * [IMSIC的输入与输出（IMSIC IO）](#imsic的输入与输出imsic-io)
+  * [中断文件的输入与输出（Interrupt File IO）](#中断文件的输入与输出interrupt-file-io)
+  * [中断文件的内存映射寄存器（Interrupt File Memory-mapped Registers）](#中断文件的内存映射寄存器interrupt-file-memory-mapped-registers)
+  * [中断文件内部的寄存器（Interrupt File Internal Registers）](#中断文件内部的寄存器interrupt-file-internal-registers)
+* [多个IMSIC的组织形式（Multiple IMSICs Arrangement）](#多个imsic的组织形式multiple-imsics-arrangement)
+  * [IMSIC地址字段（IMSIC Address Fields）](#imsic地址字段imsic-address-fields)
+  * [IMSIC内存区域（IMSIC Memory Regions）](#imsic内存区域imsic-memory-regions)
 
 <!-- vim-markdown-toc -->
+
+在典型的RISC-V系统中，每个处理器核心都配有专用的IMSIC。
+IMSIC执行三个主要功能:
+
+* 通过内存映射寄存器接收MSI，
+* 为其关联的处理器核心生成中断，
+* 管理处理器核心所需的AIA控制寄存器。
 
 In a typical RISC-V system, each hart is paired with its dedicated IMSIC.
 The IMSIC performs three main functions:
 
 * Receives MSIs through memory-mapped registers,
 * Generates interrupts for its associated hart,
-* Manages CSRs under hart control.
+* Manages AIA CSRs under hart control.
+
+在对称多处理系统中，多个“核-IMSIC”对可以划分成组，
+每组包含相同数量的核-IMSIC对。
 
 In symmetric multiprocessing systems, multiple harts-IMSIC pairs can be organized into groups,
 with each group containing an equal number of pairs.
 
-This document covers:
+## 单个IMSIC的功能（Individual IMSIC Functionality）
 
-* The functionality of an individual IMSIC,
-* The logical arrangement of multiple IMSICs within a system.
+### IMSIC的输入与输出（IMSIC IO）
 
-## Individual IMSIC Functionality
+IMSIC与其处理器核心紧密耦合，
+直接使用线路连接而不是总线/网络进行信息传输。
+其关键信号包括:
 
-### IMSIC IO
+* `pendings`: 每个中断文件的待处理中断状态。
+* `{m,s,vs}topei`: 每个特权态中，优先级最高的外部中断号。
+* `{m.s,vs}iselect`: 每个特权态中，间接访问控制寄存器的地址。
+* `{m,s,vs}ireg`: 每个特权态中，间接访问控制寄存器所读写的数据。
+* `vgein`: 虚拟化监管态的选择信号。
 
 The IMSIC is tightly coupled with its hart,
 directly using wire connection rather than bus/network for information transfer.
 Key signals include:
 
-* `pendings`: Pending interrupt status for each interrupt file (introduced as below).
+* `pendings`: Pending interrupt status for each interrupt file.
 * `{m,s,vs}topei`: Top external interrupt ID for each privilege level.
 * `{m.s,vs}iselect`: CSR indirect access address for each privilege level.
 * `{m,s,vs}ireg`: Read and write data for indirect CSR access for each privilege level.
@@ -44,7 +59,17 @@ Key signals include:
 
 ![](./images/imsic_py.svg)
 
-### Interrupt File IO
+### 中断文件的输入与输出（Interrupt File IO）
+
+一个IMSIC负责管理其处理器核心中的所有特权态，
+包括：一个机器态、一个监管态和多个虚拟化监管态。
+由于每个态的行为在一般情况下是相同的，AIA规范将这些功能模块化成独立且可重用的组件，称为中断文件。
+每个中断文件与IMSIC交换与特权态无关的信息:
+
+* `pending`: 该中断文件的中断状态。
+* `topei`: 该中断文件中，优先级最高的外部中断号。
+* `iselect`: 该中断文件中，间接访问控制寄存器的地址。
+* `ireg`: 该中断文件中，间接访问控制寄存器所读写的数据。
 
 One IMSIC manages all privilege levels in its hart,
 including: one machine level, one supervisor level, and multiple virtualized supervisor levels.
@@ -56,28 +81,38 @@ Each interrupt file exchanges privilege-agnostic information with IMSIC:
 * `iselect`: CSR indirect access address for this interrupt file.
 * `ireg`: Read and write data for indirect CSR access for this interrupt file.
 
-### Interrupt File Memory-mapped Registers
+### 中断文件的内存映射寄存器（Interrupt File Memory-mapped Registers）
 
-In addition, each interrupt file includes a 4KB memory page for receiving messages from bus/network.
+每个中断文件包含一个4KB内存页，用于接收来自总线/网络的消息。
+内存页内仅包含一个4B内存映射寄存器:
+
+* `seteipnum`: 位于偏移量0x0处，接收传入的中断号。
+
+Each interrupt file includes a 4KB memory page for receiving messages from bus/network.
 The memory page including only one 4B memory-mapped register:
 
 * `seteipnum`: Located at offset of 0x0, receiving incoming interrupt IDs.
 
+
+### 中断文件内部的寄存器（Interrupt File Internal Registers）
+
+所有上述接口都与中断文件的内部寄存器交互。
+关键的内部寄存器包括:
+
+* `eip[intSrcNum位]`: 表示该中断是否待处理。
+* `eie[intSrcNum位]`: 表示该中断是否使能。
+
 Each interrupt file maintains internal registers that interact with the interfaces above.
 The key internal registers consist of:
-
-### Interrupt File Internal Registers
-
-* `eip[intSrcNum bits]`: Interrupt pending register, indicating which interrupts are currently pending
-* `eie[intSrcNum bits]`: Interrupt enable register, controlling which interrupts are enabled
-
-All above interfaces operating with interrupt file's internal registers.
-The key internal registers including:
 
 * `eip[intSrcNum bits]`: Whether this interrupt is pending.
 * `eie[intSrcNum bits]`: Whether this interrupt is enabled.
 
-## Multiple IMSICs Arrangement
+## 多个IMSIC的组织形式（Multiple IMSICs Arrangement）
+
+在大型系统中，核-IMSIC对可以分成多组。
+下图显示了一个对称的4核-IMSIC系统。
+这4对被分为2**组**，每组包含2个**成员**(hart-IMSIC对)。
 
 In a large system, hart-IMSIC pairs can be divided into groups.
 The below figure shows a symmetric 4-hart-IMSIC system.
@@ -85,7 +120,15 @@ These 4 pairs are divided into 2 **groups**, and each group contains 2 **members
 
 ![](./images/imsics_arrangement_py.svg)
 
-### IMSIC Address Fields
+### IMSIC地址字段（IMSIC Address Fields）
+
+为了支持物理内存保护(physical memory protection, PMP)，相同特权态的中断文件位于同一内存区域:
+
+* 机器态内存区域:
+  * 每个处理器核心对应一个机器态中断文件
+* 监管态内存区域:
+  * 每个处理器核心对应一个监管态中断文件,
+  * 每个处理器核心对应多个虚拟化监管态中断文件。
 
 To support physical memory protection (PMP), interrupt files of the same privilege level are located in a same memory region:
 
@@ -94,6 +137,15 @@ To support physical memory protection (PMP), interrupt files of the same privile
 * Supervisor-level memory region:
   * One supervisor-level interrupt file per hart,
   * Multiple virtualized supervisor-level interrupt files per hart.
+
+因此，每个处理器核心在机器态内存区域只占一页，但在监管态内存区域占多页，
+由**客户号**（监管态为0，虚拟化监管态为1、2、3、...)索引。
+需要四个字段来确定一个IMSIC的内存页的地址：
+
+* 特权态：机器态或监管态。
+* 组号：该IMSIC所属的组。
+* 成员号：该IMSIC所属的成员。
+* 客户号：监管态或虚拟化监管态之一。
 
 Thus, each hart has only one page in machine-level memory region and multiple pages in supervisor-level memory region,
 indexed by a **guest ID** (0 for supervisor-level, 1,2,3,... for virtualized supervisor level).
@@ -105,6 +157,8 @@ When determining the memory page address for a given IMSIC, four fields are need
 * Guest ID: Supervisor level or one of the virtualized supervisor levels.
 
 ![](./images/imsic_addr.svg)
+
+机器态中断文件的地址表达式为：
 
 The formal expression for a machine-level interrupt file address:
 
@@ -118,6 +172,8 @@ mIntFileAddr =
 \end{align}
 $$
 
+虚拟化监管态中断文件的地址表达式为：
+
 The formal expression for a virtualized supervisor-level interrupt file address:
 
 $$
@@ -130,14 +186,22 @@ vsIntFileAddr =
 \end{align}
 $$
 
+按照AIA规范的要求，`vsGroupStrideWidth`与`mGroupStrideWidth`相同。
+更多详细信息，请参阅AIA规范[^imsic_memory_region]。
+
 As required by the AIA specification, the `vsGroupStrideWidth` is the same as the `mGroupStrideWidth`.
 For more details, please refer to the AIA specification[^imsic_memory_region].
 
-### IMSIC Memory Regions
+### IMSIC内存区域（IMSIC Memory Regions）
+
+机器和监管态的内存区域如下所示。
 
 The memory regions for machine and supervisor levels are shown as below.
 
 ![](./images/imsic_addr_space.svg)
+
+这里展示一个具体的例子。
+假设机器态和监管态的内存区域基地址分别为`0x6100_0000`和`0x8290_0000`，那么每个中断文件的地址为：
 
 Here is a concrete example.
 Assuming the base addresses for machine-level and supervisor-level memory regions are `0x6100_0000` and `0x8290_0000`, respectively,
