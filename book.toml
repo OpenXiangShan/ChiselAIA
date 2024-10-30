@@ -6,5 +6,5 @@ src = "docs/"
 title = "OpenAIA.scala"
 
 [output.html]
-git-repository-url = "https://github.com/xieby1/OpenAIA.scala"
+git-repository-url = "https://github.com/OpenXiangShan-Nanhu/OpenAIA.scala"
 mathjax-support = true
