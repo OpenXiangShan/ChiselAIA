@@ -75,7 +75,7 @@ async def m_int(dut, intnum):
   await a_put_full(dut, mBaseAddr, 0xf, 2, intnum)
   for _ in range(10):
     await RisingEdge(dut.clock)
-    seteipnum = dut.imsic_1.seteipnum.value
+    seteipnum = dut.imsic_1.seteipnum_bits.value
     if seteipnum == intnum:
       break
   else:
@@ -87,11 +87,11 @@ async def s_int(dut, intnum):
   await a_put_full(dut, sgBaseAddr, 0xf, 2, intnum)
   for _ in range(10):
     await RisingEdge(dut.clock)
-    seteipnum = dut.imsic_1.seteipnum_1.value
+    seteipnum = dut.imsic_1.seteipnum_1_bits.value
     if seteipnum == intnum:
       break
   else:
-    assert False, f"Timeout waiting for seteipnum_1 == {intnum}"
+    assert False, f"Timeout waiting for seteipnum_1_bits == {intnum}"
   await RisingEdge(dut.clock)
 
 async def v_int_vgein2(dut, intnum):
@@ -99,11 +99,11 @@ async def v_int_vgein2(dut, intnum):
   await a_put_full(dut, sgBaseAddr + 0x1000*(1+2), 0xf, 2, intnum)
   for _ in range(10):
     await RisingEdge(dut.clock)
-    seteipnum = dut.imsic_1.seteipnum_4.value
+    seteipnum = dut.imsic_1.seteipnum_4_bits.value
     if seteipnum == intnum:
       break
   else:
-    assert False, f"Timeout waiting for seteipnum_4 == {intnum}"
+    assert False, f"Timeout waiting for seteipnum_4_bits == {intnum}"
   await RisingEdge(dut.clock)
 
 async def claim(dut):
@@ -209,15 +209,15 @@ async def imsic_1_test(dut):
   assert dut.toCSR1_topeis_0.value == wrap_topei(0)
   cocotb.log.info("mclaim passed")
 
-  # 2_mseteipnum_1_mclaim began
-  cocotb.log.info("2_mseteipnum_1_mclaim began")
+  # 2_mseteipnum_1_bits_mclaim began
+  cocotb.log.info("2_mseteipnum_1_bits_mclaim began")
   await m_int(dut, 12)
   assert dut.toCSR1_topeis_0.value == wrap_topei(12)
   await m_int(dut, 8)
   assert dut.toCSR1_topeis_0.value == wrap_topei(8)
   await claim(dut)
   assert dut.toCSR1_topeis_0.value == wrap_topei(12)
-  cocotb.log.info("2_mseteipnum_1_mclaim passed")
+  cocotb.log.info("2_mseteipnum_1_bits_mclaim passed")
 
   # write_csr:op began
   cocotb.log.info("write_csr:op began")

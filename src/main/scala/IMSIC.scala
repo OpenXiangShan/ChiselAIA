@@ -255,15 +255,12 @@ class TLIMSIC(
     Seq((mTLNode,1), (sgTLNode,1+params.geilen)).zipWithIndex.map {
       case ((tlNode: TLRegisterNode, thisNodeintFilesNum: Int), nodei: Int)
     => {
-      // TODO: directly access TL protocol, instead of use the regmap
       // thisNode_ii: index for intFiles in this node: S, G1, G2, ...
       val maps = (0 until thisNodeintFilesNum).map { thisNode_ii => {
         val ii = nodei + thisNode_ii
         val pi = if(ii>2) 2 else ii // index for privileges: M, S, VS.
 
-        val seteipnum = RegInit(0.U(32.W))
-        when (seteipnum =/= 0.U) {seteipnum := 0.U}
-
+        val seteipnum = WireInit(0.U.asTypeOf(Valid(UInt(32.W)))); /*for debug*/dontTouch(seteipnum)
         def sel[T<:Data](old: Valid[T]): Valid[T] = {
           val new_ = Wire(Valid(chiselTypeOf(old.bits)))
           new_.bits := old.bits
@@ -271,8 +268,7 @@ class TLIMSIC(
           new_
         }
         val intFile = Module(new IntFile)
-        intFile.fromCSR.seteipnum.valid := seteipnum =/= 0.U
-        intFile.fromCSR.seteipnum.bits  := seteipnum
+        intFile.fromCSR.seteipnum := seteipnum
         intFile.fromCSR.addr            := sel(fromCSR.addr)
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(ii)
@@ -280,7 +276,10 @@ class TLIMSIC(
         toCSR.pendings(ii)              := intFile.toCSR.pending
         topeis_forEachIntFiles(ii)      := intFile.toCSR.topei
         illegals_forEachIntFiles(ii)    := intFile.toCSR.illegal
-        (thisNode_ii * pow2(params.intFileMemWidth).toInt -> Seq(RegField(32, seteipnum)))
+        (thisNode_ii * pow2(params.intFileMemWidth).toInt -> Seq(RegField(32, 0.U,
+          RegWriteFn((valid, data) => {
+            when (valid) { seteipnum.bits := data; seteipnum.valid := true.B }; true.B
+        }))))
       }}
       tlNode.regmap((maps): _*)
     }}
