@@ -204,7 +204,8 @@ class Domain(
       val (tl, edge) = toIMSIC.out(0)
       tl.d.ready := true.B
       def getMSIAddr(HartIndex:UInt, guestID:UInt): UInt = {
-        val groupID = HartIndex(imsic_params.groupsWidth+imsic_params.membersWidth-1, imsic_params.membersWidth)
+        val groupID = if (imsic_params.groupsWidth == 0) 0.U
+          else HartIndex(imsic_params.groupsWidth+imsic_params.membersWidth-1, imsic_params.membersWidth)
         val memberID = HartIndex(imsic_params.membersWidth-1, 0)
         // It is recommended to hardwire *msiaddrcfg* by the manual:
         // "For any given system, these addresses are fixed and should be hardwired into the APLIC if possible."
