@@ -117,6 +117,7 @@ class TLIMSIC(
     val topeis  = Vec(params.privNum, UInt(32.W))
   }
   class IntFile extends Module {
+    override def desiredName = "IntFile"
     val fromCSR = IO(Input(new Bundle {
       val seteipnum = ValidIO(UInt(32.W))
       val addr = ValidIO(UInt(params.iselectWidth.W))

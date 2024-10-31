@@ -35,6 +35,7 @@ class Domain(
   imsicMemberStrideWidth: Int, // C, D: stride between each interrupt files
   imsicGeilen: Int, // number of guest interrupt files, it is 0 for machine-level domain
 )(implicit p: Parameters) extends LazyModule {
+  override lazy val desiredName = "Domain"
   val fromCPU = TLRegisterNode(
     address = Seq(AddressSet(baseAddr, pow2(params.domainMemWidth)-1)),
     device = new SimpleDevice(
