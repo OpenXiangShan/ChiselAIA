@@ -1,4 +1,4 @@
-# APLIC
+# 🧶APLIC
 
 <!-- vim-markdown-toc GFM -->
 
