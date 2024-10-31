@@ -1,8 +1,1 @@
-* doc
-* aplic
-* parallel exec cocotb
-* move ulimit and cocotb env to a Makefile?
-* test corner case
-  * mem write and intSrc common at the same time
-  * mDomain and sgDomain send MSI at the same time
 * deduplicate gen/*.sv: eg. LazyModule.sv and LazyModule_1.sv

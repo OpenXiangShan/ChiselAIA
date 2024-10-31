@@ -26,7 +26,7 @@ import xs.utils._
 class TLAPLIC(
   params: APLICParams,
   imsic_params: IMSICParams,
-  beatBytes: Int = 8, // TODO: remove? and IMSIC's beatBytes
+  beatBytes: Int = 8,
 )(implicit p: Parameters) extends LazyModule {
 
 class Domain(
