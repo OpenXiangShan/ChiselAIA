@@ -4,11 +4,11 @@
 
 * [概览（Overview）](#概览overview)
 * [参数（Parameters）](#参数parameters)
-* [实力化（Instantiation）](#实力化instantiation)
+* [实例化（Instantiation）](#实例化instantiation)
   * [<span style="color:red;">关于hartIndex（About hartIndex）</span>](#span-stylecolorred关于hartindexabout-hartindexspan)
 * [示例（Examples）](#示例examples)
-  * [简单的4核系统（A Simple 4 Harts System）](#简单的4核系统a-simple-4-harts-system)
-  * [分组的4核系统（A Grouped 4 Hart System）](#分组的4核系统a-grouped-4-hart-system)
+  * [简单的4核系统（A Simple 4-Hart System）](#简单的4核系统a-simple-4-hart-system)
+  * [分组的4核系统（A Grouped 4-Hart System）](#分组的4核系统a-grouped-4-hart-system)
 
 <!-- vim-markdown-toc -->
 
@@ -21,20 +21,19 @@ This guide introduces the integration process of ChiselAIA into a RISC-V system.
 
 集成涉及3个Scala文件和4个Scala类：
 
-Integration involves 3 scala files and 4 scala classes:
-
-![](images/integration_files.svg)
-
-
 * `TLAPLIC`（@`APLIC.scala`）：基于Tilelink的APLIC模块，每个系统需要一个实例
 * `TLIMSIC`（@`IMSIC.scala`）：基于Tilelink的IMSIC模块，每个处理器核心需要一个实例
 * `APLICParams`和`IMSICParams`（@`Params.scala`）：用于配置APLIC和IMSIC实例的参数类
 
-**注意**：`TLAPLIC`需要同时使用`APLICParams`和`IMSICParams`的参数来确定MSI发送地址，而`TLIMSIC`只需要`IMSICParams`的参数。
+Integration involves 3 scala files and 4 scala classes:
 
 * `TLAPLIC` (@`APLIC.scala`): The Tilelink-based APLIC module, requiring one instance per system,
 * `TLIMSIC` (@`IMSIC.scala`): The Tilelink-based IMSIC module, requiring one instance per hart,
 * `APLICParams` and `IMSICParams` (@`Params.scala`): Parameter classes for configuring APLIC and IMSIC instances.
+
+![](images/integration_files.svg)
+
+**注意**：`TLAPLIC`需要同时使用`APLICParams`和`IMSICParams`的参数来确定MSI发送地址，而`TLIMSIC`只需要`IMSICParams`的参数。
 
 **Note**: `TLAPLIC` requires parameters from both `APLICParams` and `IMSICParams` to determine MSI sending addresses, while `TLIMSIC` only needs `IMSICParams`.
 
@@ -42,7 +41,7 @@ Integration involves 3 scala files and 4 scala classes:
 
 {{#include ./Params.md}}
 
-## 实力化（Instantiation）
+## 实例化（Instantiation）
 
 * `APLICParams`和`IMSICParams`：
   * 每个类一个实例，
@@ -87,7 +86,7 @@ In ChiselAIA, the hartIndex is encoded as a concatenation of `groupID` and `memb
 
 ## 示例（Examples）
 
-### 简单的4核系统（A Simple 4 Harts System）
+### 简单的4核系统（A Simple 4-Hart System）
 
 对于一个简单的未分组系统，设置groupsNum=1，则可以将hart ID复用作为AIA的`hartIndex：
 
@@ -101,7 +100,7 @@ val imsics = (0 until 4).map( i => {
 val aplic = LazyModule(new TLAPLIC(aplic_params, imsic_params)(Parameters.empty))
 ```
 
-### 分组的4核系统（A Grouped 4 Hart System）
+### 分组的4核系统（A Grouped 4-Hart System）
 
 为了单元测试，在`src/main/scala/ChiselAIA.scala`中，我们实例化了一个每组2个成员的2组系统：
 
