@@ -1,3 +1,4 @@
+//MC{hide}
 /***************************************************************************************
 * Copyright (c) 2024 Beijing Institute of Open Source Chip (BOSC)
 *
@@ -21,32 +22,69 @@ object pow2 {
   def apply(n: Int): Long = 1L << n
 }
 
+//MC 本节概述了APLIC和IMSIC的可配置参数。
+//MC 虽然提供了默认值，但我们强烈建议根据具体的集成需求，自定义带有👉标记的参数。
+//MC 其他参数要么是派生的，要么是硬编码的（详情参见`Params.scala`）。
+//MC
+//MC This section outlines the configurable parameters for APLIC and IMSIC.
+//MC While defaul values are provided,
+//MC we strongly recommend customizing parameters marked with 👉 to suit your specific integration needs.
+//MC Other parameters are either derived or hard-coded, (see `Params.scala` for details).
+//MC
+//MC 命名约定：
+//MC * `Num`后缀：某实体的数量，
+//MC * `Width`后缀：某实体的位宽（通常是`log2(实体数量)`），
+//MC * `Addr`后缀：某实体的地址。
+//MC
+//MC Naming conventions:
+//MC
+//MC * `Num` suffix: Number of the items.
+//MC * `Width` suffix: Bit width of an item (typically `log2(number of the item)`).
+//MC * `Addr` suffix: Address of an item.
+//MC
+//MC ### Class `IMSICParams`
 case class IMSICParams(
-  // # IMSICParams Arguments
-  xlen            : Int  = 64          ,
-  intSrcWidth     : Int  = 8          ,// log2(number of interrupt sources)
-  // ## Arguments for interrupt file's memory region
-  // For detailed explainations of these memory region arguments,
-  // please refer to the manual *The RISC-V Advanced Interrupt Architeture*: 3.6. Arrangement of the memory regions of multiple interrupt files
-  membersNum      : Int  = 2           ,// h_max: members number with in a group
-  mBaseAddr       : Long = 0x61000000L ,// A: base addr for machine-level interrupt files
-  sgBaseAddr      : Long = 0x82900000L ,// B: base addr for supervisor- and guest-level interrupt files
-  geilen          : Int  = 4           ,// number of guest interrupt files
-  groupsNum       : Int  = 1           ,// g_max: groups number
-  // ## Arguments for CSRs
+  //MC
+  //MC log2(IMSIC中断源的数量)
+  //MC 默认值8表示IMSIC支持最多256（2^8）个中断源：
+  //MC
+  //MC log2(number of interrupt sources to IMSIC).
+  //MC The default 8 means IMSIC support at most 256 (2^8) interrupt sources:
+  //MC{visible}
+  intSrcWidth     : Int  = 8          ,
+  //MC
+  //MC #### 中断文件的参数（Parameters for interrupt file）
+  //MC
+  //MC **注意**：中括号内的变量与AIA规范中的一致（第3.6节：用于多个中断文件的内存区域排列）。
+  //MC
+  //MC **Note**: The variables in bracket align with the AIA specification (Section 3.6: Memory Region Arrangement for Multiple Interrupt Files).
+  //MC
+  //MC 👉 每个组的成员数量（Number of members per group）[\\(h_{max}\\)]：
+  membersNum      : Int  = 2           ,
+  //MC 👉 机器态中断文件的基地址（Base address of machine-level interrupt files）[\\(A\\)]：
+  mBaseAddr       : Long = 0x61000000L ,
+  //MC 👉 监管态和客户态中断文件的基地址（Base addr for supervisor-level and guest-level interrupt files ）[\\(B\\)]:
+  sgBaseAddr      : Long = 0x82900000L ,
+  //MC 👉 客户中断文件的数量（Number of guest interrupt files）:
+  geilen          : Int  = 4           ,
+  //MC 👉 组的数量（Number of groups ）[\\(g_{max}\\)]:
+  groupsNum       : Int  = 1           ,
+  //MC
+  //MC #### 控制状态寄存器的参数（Parameters for CSRs）
+  //MC
+  //MC vgein信号的位宽（The width of the vgein signal）:
   vgeinWidth      : Int  = 6           ,
-  // ### Arguments for indirect accessed CSRs, aka, CSRs accessed by *iselect and *ireg
+  //MC iselect信号的位宽(The width of iselect signal):
   iselectWidth    : Int  = 12          ,
+  //MC{hide}
 ) {
-  // # IMSICParams Arguments
-  require(xlen == 64, "currently only support xlen = 64")
+  val xlen        : Int  = 64 // currently only support xlen = 64
   val xlenWidth = log2Ceil(xlen)
   require(intSrcWidth <= 11, f"intSrcWidth=${intSrcWidth}, must not greater than log2(2048)=11, as there are at most 2048 eip/eie bits")
   val privNum     : Int  = 3            // number of privilege modes: machine, supervisor, virtualized supervisor
   val intFilesNum : Int  = 2 + geilen   // number of interrupt files, m, s, vs0, vs1, ...
   val eixNum      : Int  = pow2(intSrcWidth).toInt / xlen // number of eip/eie registers
 
-  // ## Arguments for interrupt file's memory region
   val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
   val membersWidth    : Int = log2Ceil(membersNum) // k
   // require(mStrideWidth >= intFileMemWidth)
@@ -72,9 +110,7 @@ case class IMSICParams(
   println(f"IMSICParams.groupsNum:         ${groupsNum       }%d")
   println(f"IMSICParams.groupStrideWidth:  ${groupStrideWidth}%d")
 
-  // ## Arguments for CSRs
   require(vgeinWidth >= log2Ceil(geilen))
-  // ### Arguments for indirect accessed CSRs, aka, CSRs accessed by *iselect and *ireg
   require(iselectWidth >=8, f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63")
 
   def hartIndex_to_gh(hartIndex: Int): (Int, Int) = {
@@ -87,9 +123,24 @@ case class IMSICParams(
   }
 }
 
+//MC ### Class `APLICParams`
 case class APLICParams(
-  intSrcWidth: Int = 7, // Noted: APLIC's int source num is LESS THAN IMSIC's
+  //MC log2(APLIC接收的中断源数量)。
+  //MC 默认值7表示APLIC支持最多128（2^7）个中断源。
+  //MC **注意**：APLIC的`intSrcWidth`必须小于IMSIC的`intSrcWidth`，
+  //MC 因为APLIC的中断源将被转换为MSI，
+  //MC 而APLIC转换成的MSI是IMSIC中断源的子集。
+  //MC
+  //MC log2(number of interrupt sources to APLIC):
+  //MC The default 7 means APLIC support at most 128 (2^7) interrupt sources.
+  //MC **Note**: APLIC's `intSrcWidth` must be **less than** IMSIC's `intSrcWidth`,
+  //MC as APLIC interrupt sources are converted to MSIs,
+  //MC which are a subset of IMSIC's interrupt sources.
+  //MC{visible}
+  intSrcWidth: Int = 7,
+  //MC 👉 APLIC域的基地址（Base address of APLIC domains）:
   baseAddr: Long = 0x19960000L,
+  //MC{hide}
 ) {
   require(intSrcWidth <= 10, f"intSrcWidth=${intSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")
   val intSrcNum: Int = pow2(intSrcWidth).toInt

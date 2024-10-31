@@ -25,6 +25,12 @@ let
   _h_ = pkgs.writeShellScriptBin "h" ''
     ${pkgs.glow}/bin/glow ${h_content}
   '';
+  markcode = pkgs.callPackage (pkgs.fetchFromGitHub {
+    owner = "xieby1";
+    repo = "markcode";
+    rev = "bec9fa8279a23e387825b2a79b66ec77ed52220c";
+    hash = "sha256-VzqERMEs/8dOz3n4YfNADLrdA2keqxUek62tqID9TnM=";
+  }){};
 in pkgs.mkShell {
   inherit name;
 
@@ -40,6 +46,7 @@ in pkgs.mkShell {
     pkgs.graphviz
     pkgs.mdbook
     pkgs.drawio-headless
+    markcode
   ];
 
   shellHook = let
