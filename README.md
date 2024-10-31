@@ -48,27 +48,17 @@ For more detailed information, please refer to the [documentation](https://openx
 Dependencies are managed by `nix`.
 If you haven't installed `nix`, you can refer to [nix official installation](https://nixos.org/download/).
 
-进入nix shell（推荐使用direnv自动进入nix shell）：
-
-Enter the nix shell (direnv is recommended for auto entering the nix shell):
-
 ```bash
+# 进入nix shell（推荐使用direnv自动进入nix shell）：
+# Enter the nix shell (direnv is recommended for auto entering the nix shell):
 nix-shell
-```
 
-生成Verilog并运行单元测试：
-
-Generate Verilog and run unit tests:
-
-```bash
+# 生成Verilog并运行单元测试：
+# Generate Verilog and run unit tests:
 make -j
-```
 
-显示帮助信息：
-
-Display help information:
-
-```bahs
+# 显示帮助信息：
+# Display help information:
 h
 ```
 
