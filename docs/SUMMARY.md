@@ -1,6 +1,6 @@
 # Summary
 
-# OpenAIA.scala
+# ChiselAIA
 
 * [AIA](./index.md)
 * [IMSIC](./imsic.md)

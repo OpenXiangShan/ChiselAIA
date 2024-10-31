@@ -4,7 +4,7 @@ testcases=$(shell ls test/*/main.py | awk -F '/' '{print $$2}')
 default: $(addprefix run-,$(testcases))
 gen=gen/filelist.f
 $(gen)&: $(wildcard src/main/scala/*)
-	mill OpenAIA
+	mill ChiselAIA
 compile=test/sim_build/Vtop
 $(compile): $(gen)
 	make -C test/dir ../sim_build/Vtop

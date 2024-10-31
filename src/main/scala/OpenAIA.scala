@@ -1,7 +1,7 @@
 /***************************************************************************************
 * Copyright (c) 2024 Beijing Institute of Open Source Chip (BOSC)
 *
-* OpenAIA.scala is licensed under Mulan PSL v2.
+* ChiselAIA is licensed under Mulan PSL v2.
 * You can use this software according to the terms and conditions of the Mulan PSL v2.
 * You may obtain a copy of Mulan PSL v2 at:
 *          http://license.coscl.org.cn/MulanPSL2
@@ -23,7 +23,7 @@ import freechips.rocketchip.tilelink._
 // _root_ disambiguates from package chisel3.util.circt if user imports chisel3.util._
 import _root_.circt.stage.ChiselStage
 
-class OpenAIA()(implicit p: Parameters) extends LazyModule {
+class ChiselAIA()(implicit p: Parameters) extends LazyModule {
   // Here we create 2 imsic groups, each group contains two 2 CPUs
   val imsic_params = IMSICParams(groupsNum=2, membersNum=2)
   val aplic_params = APLICParams()
@@ -77,9 +77,9 @@ class OpenAIA()(implicit p: Parameters) extends LazyModule {
 /**
  * Generate Verilog sources
  */
-object OpenAIA extends App {
+object ChiselAIA extends App {
   val top = DisableMonitors(p => LazyModule(
-    new OpenAIA()(Parameters.empty))
+    new ChiselAIA()(Parameters.empty))
   )(Parameters.empty)
 
   ChiselStage.emitSystemVerilog(

@@ -61,7 +61,7 @@ For detailed register specifications, refer to the AIA specification[^aplic_mem_
 
 `ip`寄存器可以被多个来源修改，从而产生潜在的竞争条件。
 AIA规范没有规定APLIC在这种竞争条件下的行为。
-OpenAIA实现了一个基于优先级的解决机制。
+ChiselAIA实现了一个基于优先级的解决机制。
 优先级(从高到低):
 
 * APLIC内部操作：发送MSI后清除`ip`，
@@ -70,7 +70,7 @@ OpenAIA实现了一个基于优先级的解决机制。
 
 The `ip` registers can be modified by multiple sources, creating potential race conditions.
 The AIA specification does not specify the APLIC behaviors under this race condition.
-OpenAIA implements a priority-based resolution mechanism.
+ChiselAIA implements a priority-based resolution mechanism.
 Priority levels (highest to lowest):
 
 *  APLIC internal operations: Clearing `ip` after sending an MSI,

@@ -3,8 +3,8 @@ authors = ["xieby1"]
 language = "en"
 multilingual = false
 src = "docs/"
-title = "OpenAIA.scala"
+title = "ChiselAIA"
 
 [output.html]
-git-repository-url = "https://github.com/OpenXiangShan-Nanhu/OpenAIA.scala"
+git-repository-url = "https://github.com/OpenXiangShan-Nanhu/ChiselAIA"
 mathjax-support = true

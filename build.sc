@@ -57,7 +57,7 @@ with HasChisel {
   }
 }
 
-object OpenAIA extends SbtModule { m =>
+object ChiselAIA extends SbtModule { m =>
   override def millSourcePath = os.pwd
   override def scalaVersion = defaultScalaVersion
   override def scalacOptions = Seq(

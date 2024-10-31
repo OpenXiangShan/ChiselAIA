@@ -1,4 +1,4 @@
-# OpenAIA.scala
+# ChiselAIA
 
 <!-- vim-markdown-toc GFM -->
 
@@ -8,13 +8,13 @@
 
 <!-- vim-markdown-toc -->
 
-OpenAIA.scala是RISC-V高级中断架构(Advanced Interrupt Architecture, AIA)的开源Chisel实现。
+ChiselAIA是RISC-V高级中断架构(Advanced Interrupt Architecture, AIA)的开源Chisel实现。
 现有的开源AIA实现主要是用Verilog编写的[相关工作](#相关工作related-works)。
-OpenAIA.scala旨在将Chisel敏捷开发的方法应用于AIA的实现。
+ChiselAIA旨在将Chisel敏捷开发的方法应用于AIA的实现。
 
-`OpenAIA.scala` is an open-sourced Chisel implementation of the RISC-V Advanced Interrupt Architecture (AIA).
+`ChiselAIA` is an open-sourced Chisel implementation of the RISC-V Advanced Interrupt Architecture (AIA).
 Existing open-sourced AIA implementations are primarily written in Verilog (see [Related Works](#相关工作related-works)).
-`OpenAIA.scala` aims to leverage Chisel's agile development methodology for AIA implementation.
+`ChiselAIA` aims to leverage Chisel's agile development methodology for AIA implementation.
 
 ## 简介（Introduction）
 
@@ -27,7 +27,7 @@ Existing open-sourced AIA implementations are primarily written in Verilog (see 
   * 暂不支持直接传递模式(domaincfg.DM=0)
 * IMSIC和APLIC的单元测试: test/*/main.py
 
-更多信息，请参阅[文档](https://openxiangshan-nanhu.github.io/OpenAIA.scala/)。
+更多信息，请参阅[文档](https://openxiangshan-nanhu.github.io/ChiselAIA/)。
 
 This implementation includes:
 
@@ -38,7 +38,7 @@ This implementation includes:
   * Direct delivery mode is currently not supported (domaincfg.DM=0)
 * The unit tests for IMSIC and APLIC: `test/*/main.py`
 
-For more detailed information, please refer to the [documentation](https://openxiangshan-nanhu.github.io/OpenAIA.scala/).
+For more detailed information, please refer to the [documentation](https://openxiangshan-nanhu.github.io/ChiselAIA/).
 
 ## 使用方法（Usage）
 
@@ -74,7 +74,7 @@ h
 
 ## 相关工作（Related Works）
 
-* [OpenXiangShan/OpenAIA](https://github.com/OpenXiangShan/OpenAIA)
+* [OpenXiangShan/ChiselAIA](https://github.com/OpenXiangShan/ChiselAIA)
   * 采用Verilog（Implemented in Verilog）
   * 支持IMSIC（IMSIC supported）
   * 不支持APLIC（APLIC not supported）

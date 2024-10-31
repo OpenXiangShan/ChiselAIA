@@ -1,4 +1,4 @@
-# OpenAIA.scala
+# ChiselAIA
 
 <!-- vim-markdown-toc GFM -->
 
@@ -9,10 +9,10 @@
 
 <!-- vim-markdown-toc -->
 
-OpenAIA.scala的实现遵循RISC-V高级中断架构（Advanced Interrupt Architecture, AIA）规范。
+ChiselAIA的实现遵循RISC-V高级中断架构（Advanced Interrupt Architecture, AIA）规范。
 实现与规范之间的任何差异都应视为实现bug。
 
-The implementation of OpenAIA.scala adheres to the [RISC-V Advanced Interrupt Architecture (AIA) Specification](https://github.com/riscv/riscv-aia).
+The implementation of ChiselAIA adheres to the [RISC-V Advanced Interrupt Architecture (AIA) Specification](https://github.com/riscv/riscv-aia).
 Any discrepancies between the implementation and specification should be treated as implementation bugs.
 
 ## 简介（Introduction）

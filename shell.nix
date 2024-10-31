@@ -1,5 +1,5 @@
 let
-  name = "OpenAIA.scala";
+  name = "ChiselAIA";
   # pin nixpkgs to latest nixos-24.05
   pkgs = import (fetchTarball {
     url = "https://github.com/NixOS/nixpkgs/archive/ecbc1ca8ffd6aea8372ad16be9ebbb39889e55b6.tar.gz";
