@@ -123,8 +123,8 @@ In ChiselAIA, the hartIndex is encoded as a concatenation of `groupID` and `memb
 For a simple ungrouped system, set groupsNum=1 to allow reuse of hart ID as AIA's `hartIndex`:
 
 ```scala
-val imsic_params = IMSICParams(groupsNum=1, membersNum=4)
-val aplic_params = APLICParams()
+val imsic_params = IMSICParams()
+val aplic_params = APLICParams(groupsNum=1, membersNum=4)
 val imsics = (0 until 4).map( i => {
   val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
 val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
@@ -132,20 +132,26 @@ val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
 
 ### 分组的4核系统（A Grouped 4-Hart System）
 
-为了单元测试，在`src/main/scala/ChiselAIA.scala`中，我们实例化了一个每组2个成员的2组系统：
+在`src/main/scala/Example.AIA`中，我们提供了一个如何实例化APLIC核IMSIC的示例
+（我们的单元测试也是基于该示例）。
+我们接下来展示一些关键的代码：
 
-In `src/main/scala/ChiselAIA.scala`, for unit tests, we instantiate a 2-group 2-member-per-group system:
+We provide an example of instantiating the APLIC and IMSIC, in `src/main/scala/Example.AIA`
+(Furthermore, we will use this example to conduct unit tests.).
+We provide key lines of code below:
 
 ```scala
-val imsic_params = IMSICParams(groupsNum=2, membersNum=2)
-val aplic_params = APLICParams()
+val imsic_params = IMSICParams()
+val aplic_params = APLICParams(groupsNum=2, membersNum=2)
 val imsics = (0 until 4).map( i => {
   val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
 val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
 ```
 
 此配置创建了一个2位的`hartIndex`，高位表示 groupID，低位表示 memberID。
-有关详细的IO连接，请参考`src/main/scala/ChiselAIA.scala`。
+有关详细的IO连接，请参考下图和`src/main/scala/Example.AIA`。
 
 This configuration creates a 2-bit `hartIndex` where the higher bit represents `groupID` and the lower bit represents `memberID`.
-For detailed IO connections, refer to `src/main/scala/ChiselAIA.scala`.
+For detailed IO connections, refer to the following figure and `src/main/scala/Example.AIA`.
+
+![](./images/example.svg)
