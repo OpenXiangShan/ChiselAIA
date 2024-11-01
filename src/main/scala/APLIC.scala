@@ -25,7 +25,6 @@ import xs.utils._
 
 class TLAPLIC(
   params: APLICParams,
-  imsic_params: IMSICParams,
   beatBytes: Int = 8,
 )(implicit p: Parameters) extends LazyModule {
 
@@ -102,9 +101,9 @@ class Domain(
       def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {bits(ui):=bit}
     }
     val genmsi = new Bundle {
-      val HartIndex = RegInit(0.U(imsic_params.groupsWidth.W + imsic_params.membersWidth.W))
+      val HartIndex = RegInit(0.U(params.groupsWidth.W + params.membersWidth.W))
       val Busy      = RegInit(false.B)
-      val EIID      = RegInit(0.U(imsic_params.intSrcWidth.W))
+      val EIID      = RegInit(0.U(params.imsicIntSrcWidth.W))
       def r = Mux(domaincfg.DM, HartIndex<<18 | Busy<<12 | EIID, 0.U)
       def w(data:UInt) = {
         when (domaincfg.DM && ~Busy) { HartIndex:=data(31,18); Busy:=true.B; EIID:=data(10,0); }
@@ -112,9 +111,9 @@ class Domain(
     }
     val targets = new Bundle {
       class Target extends Bundle {
-        val HartIndex  = UInt(imsic_params.groupsWidth.W + imsic_params.membersWidth.W)
+        val HartIndex  = UInt(params.groupsWidth.W + params.membersWidth.W)
         val GuestIndex = UInt(if (imsicGeilen==0) 0.W else log2Ceil(imsicGeilen).W)
-        val EIID       = UInt(imsic_params.intSrcWidth.W)
+        val EIID       = UInt(params.imsicIntSrcWidth.W)
       }
       val regs = RegInit(VecInit.fill(params.intSrcNum){0.U.asTypeOf(new Target)})
       def rI(i:Int): UInt = Mux(sourcecfgs.actives(i),
@@ -135,16 +134,16 @@ class Domain(
     // For more details about how ip-writing priority is achieved,
     // see FIRRTL Specification's chapter Conditional Last Connect Semantics.
     locally {
-      val intSrcsRectified32 = Wire(Vec(pow2(params.intSrcWidth-5).toInt, UInt(32.W)))
+      val intSrcsRectified32 = Wire(Vec(pow2(params.aplicIntSrcWidth-5).toInt, UInt(32.W)))
       intSrcsRectified32.zipWithIndex.map { case (rect32:UInt, i:Int) => {
         rect32 := Cat(intSrcsRectified.slice(i*32, i*32+32).reverse)
       }}
       def RWF_setixs(i:Int, ixs:IXs) = RegWriteFn((valid, data) => {
         when(valid) {ixs.w32I(i, ixs.r32I(i) | data)}; true.B })
       def RWF_setipnum = RegWriteFn((valid, data) => {
-        when (valid && data=/=0.U) { ips.wBitUI(data(params.intSrcWidth-1,0), true.B) }; true.B })
+        when (valid && data=/=0.U) { ips.wBitUI(data(params.aplicIntSrcWidth-1,0), true.B) }; true.B })
       def RWF_setclrixnum(setclr:Bool, ixs:IXs) = RegWriteFn((valid, data) => {
-        when (valid && data=/=0.U) { ixs.wBitUI(data(params.intSrcWidth-1,0), setclr) }; true.B })
+        when (valid && data=/=0.U) { ixs.wBitUI(data(params.aplicIntSrcWidth-1,0), setclr) }; true.B })
       def RWF_clrixs(i:Int, ixs:IXs) = RegWriteFn((valid, data) => {
         when (valid) { ixs.w32I(i, ixs.r32I(i) & ~data) }; true.B })
       fromCPU.regmap(
@@ -193,7 +192,7 @@ class Domain(
     //  If do not append true.B, then we need to check whether the ip & ie are empty,
     //  otherwise, the returned topei will become the max index, that is 2^aplicIntSrcWidth-1
     //  [0,     2^aplicIntSrcWidth-1] :+ 2^aplicIntSrcWidth
-    val topi = Wire(UInt(params.intSrcWidth.W)); /*for debug*/dontTouch(topi)
+    val topi = Wire(UInt(params.aplicIntSrcWidth.W)); /*for debug*/dontTouch(topi)
     topi := ParallelPriorityMux((
       (ips.bits0:+true.B) zip (ies.bits0:+true.B)
     ).zipWithIndex.map {
@@ -204,15 +203,15 @@ class Domain(
       val (tl, edge) = toIMSIC.out(0)
       tl.d.ready := true.B
       def getMSIAddr(HartIndex:UInt, guestID:UInt): UInt = {
-        val groupID = if (imsic_params.groupsWidth == 0) 0.U
-          else HartIndex(imsic_params.groupsWidth+imsic_params.membersWidth-1, imsic_params.membersWidth)
-        val memberID = HartIndex(imsic_params.membersWidth-1, 0)
+        val groupID = if (params.groupsWidth == 0) 0.U
+          else HartIndex(params.groupsWidth+params.membersWidth-1, params.membersWidth)
+        val memberID = HartIndex(params.membersWidth-1, 0)
         // It is recommended to hardwire *msiaddrcfg* by the manual:
         // "For any given system, these addresses are fixed and should be hardwired into the APLIC if possible."
         imsicBaseAddr.U |
-          (groupID<<imsic_params.groupStrideWidth) |
+          (groupID<<params.groupStrideWidth) |
           (memberID<<imsicMemberStrideWidth) |
-          (guestID<<imsic_params.intFileMemWidth)
+          (guestID<<params.intFileMemWidth)
       }
       when (genmsi.Busy) {// A pending extempore MSI (genmsi) should be sent by the APLIC with minimal delay.
         val msiAddr = getMSIAddr(genmsi.HartIndex, 0.U)
@@ -240,15 +239,15 @@ class Domain(
 
   val mDomain = LazyModule(new Domain(
     params.baseAddr,
-    imsic_params.mBaseAddr,
-    imsic_params.mStrideWidth,
+    params.mBaseAddr,
+    params.mStrideWidth,
     0,
   ))
   val sgDomain = LazyModule(new Domain(
     params.baseAddr + pow2(params.domainMemWidth),
-    imsic_params.sgBaseAddr,
-    imsic_params.sgStrideWidth,
-    imsic_params.geilen,
+    params.sgBaseAddr,
+    params.sgStrideWidth,
+    params.geilen,
   ))
   val fromCPU = LazyModule(new TLXbar).node
   val toIMSIC = LazyModule(new TLXbar).node

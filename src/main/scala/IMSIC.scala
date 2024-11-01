@@ -46,39 +46,14 @@ object RegMapDV {
 
 class TLIMSIC(
   params: IMSICParams,
-  // According AIA manual:
-  // This hart index may or may not related to the unique hart identifiers ("hart IDs") that the RISC-V Privileged Architecture assigns to harts.
-  hartIndex: Int = 1,
   beatBytes: Int = 8,
 )(implicit p: Parameters) extends LazyModule {
-  val (groupID, memberID) = params.hartIndex_to_gh(hartIndex)
-  require(groupID < params.groupsNum,    f"groupID ${groupID} should less than groupsNum ${params.groupsNum}")
-  require(memberID < params.membersNum,  f"memberID ${memberID} should less than membersNum ${params.membersNum}")
-  println(f"groupID:  0x${groupID }%x")
-  println(f"memberID: 0x${memberID}%x")
-
-  val device: SimpleDevice = new SimpleDevice(
-    "interrupt-controller",
-    Seq(f"riscv,imsic.${groupID}%d.${memberID}%d")
-  )
-
-
-  // addr for the machine-level interrupt file: g*2^E + A + h*2^C
-  val mAddr = AddressSet(
-    groupID * pow2(params.groupStrideWidth) + params.mBaseAddr + memberID * pow2(params.mStrideWidth),
-    pow2(params.intFileMemWidth) - 1
-  )
-  // addr for the supervisor-level and guest-level interrupt files: g*2^E + B + h*2^D
-  val sgAddr = AddressSet(
-    groupID * pow2(params.groupStrideWidth) + params.sgBaseAddr + memberID * pow2(params.sgStrideWidth),
-    pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1
-  )
-  println(f"mAddr:  [0x${mAddr.base }%x, 0x${mAddr.max }%x]")
-  println(f"sgAddr: [0x${sgAddr.base}%x, 0x${sgAddr.max}%x]")
-
-  val Seq(mTLNode, sgTLNode) = Seq(mAddr, sgAddr).map( addr => TLRegisterNode(
+  val Seq(mTLNode, sgTLNode) = Seq(
+    AddressSet(params.mAddr,  pow2(params.intFileMemWidth) - 1),
+    AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1),
+  ).map( addr => TLRegisterNode(
     address = Seq(addr),
-    device = device,
+    device = new SimpleDevice("interrupt-controller", Seq(f"riscv,imsic")),
     beatBytes = beatBytes,
     undefZero = true,
     concurrency = 1
@@ -131,7 +106,7 @@ class TLIMSIC(
       val rdata = ValidIO(UInt(params.xlen.W))
       val illegal = Bool()
       val pending = Bool()
-      val topei  = UInt(params.intSrcWidth.W)
+      val topei  = UInt(params.imsicIntSrcWidth.W)
     }))
 
     /// indirect CSRs
@@ -191,7 +166,7 @@ class TLIMSIC(
     } // end of scope for xiselect CSR reg map
 
     locally {
-      val index  = fromCSR.seteipnum.bits(params.intSrcWidth-1, params.xlenWidth)
+      val index  = fromCSR.seteipnum.bits(params.imsicIntSrcWidth-1, params.xlenWidth)
       val offset = fromCSR.seteipnum.bits(params.xlenWidth-1, 0)
       when ( fromCSR.seteipnum.valid & eies(index)(offset) ) {
         // set eips bit
@@ -229,7 +204,7 @@ class TLIMSIC(
     toCSR.pending := toCSR.topei =/= 0.U
 
     when(fromCSR.claim) {
-      val index  = toCSR.topei(params.intSrcWidth-1, params.xlenWidth)
+      val index  = toCSR.topei(params.imsicIntSrcWidth-1, params.xlenWidth)
       val offset = toCSR.topei(params.xlenWidth-1, 0)
       // clear the pending bit indexed by xtopei in xeip
       eips(index) := eips(index) & ~UIntToOH(offset)
@@ -250,7 +225,7 @@ class TLIMSIC(
       .elsewhen (pv === Cat(PrivType.S.asUInt,  true.B)) { intFilesSelOH := UIntToOH(2.U + fromCSR.vgein) }
       .otherwise { illegal_priv := true.B }
     }
-    val topeis_forEachIntFiles = Wire(Vec(params.intFilesNum, UInt(params.intSrcWidth.W)))
+    val topeis_forEachIntFiles = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
     val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
 
     Seq((mTLNode,1), (sgTLNode,1+params.geilen)).zipWithIndex.map {
@@ -293,7 +268,7 @@ class TLIMSIC(
       // For detailed explainations of these memory region arguments,
       // please refer to the manual *The RISC-V Advanced Interrupt Architeture*: 3.9. Top external interrupt CSRs
       def wrap(topei: UInt): UInt = {
-        val zeros = 0.U((16-params.intSrcWidth).W)
+        val zeros = 0.U((16-params.imsicIntSrcWidth).W)
         Cat(zeros, topei, zeros, topei)
       }
       toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
