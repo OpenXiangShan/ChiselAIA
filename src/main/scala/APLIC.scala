@@ -1,3 +1,4 @@
+//MC{hide}
 /***************************************************************************************
 * Copyright (c) 2024 Beijing Institute of Open Source Chip (BOSC)
 *
@@ -22,6 +23,80 @@ import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.regmapper._
 import xs.utils._
+
+object pow2 { def apply(n: Int): Long = 1L << n }
+
+case class APLICParams(
+  //MC APLIC接收的中断源数量的对数。
+  //MC 默认值7表示APLIC支持最多128（2^7）个中断源。
+  //MC **注意**：`aplicIntSrcWidth`必须小于`imsicIntSrcWidth`，
+  //MC 因为APLIC的中断源将被转换为MSI，
+  //MC 而APLIC转换成的MSI是IMSIC中断源的子集。
+  //MC （Logarithm of number of interrupt sources to APLIC:
+  //MC The default 7 means APLIC support at most 128 (2^7) interrupt sources.
+  //MC **Note**: `aplicIntSrcWidth` must be **less than** `imsicIntSrcWidth`,
+  //MC as APLIC interrupt sources are converted to MSIs,
+  //MC which are a subset of IMSIC's interrupt sources）：
+  //MC{visible}
+  aplicIntSrcWidth: Int = 7,
+  imsicIntSrcWidth: Int = 8,
+  //MC 👉 APLIC域的基地址（Base address of APLIC domains）:
+  baseAddr: Long = 0x19960000L,
+  //MC **注意**：下述中括号内的变量与AIA规范中的一致（第3.6节：用于多个中断文件的内存区域排列）。
+  //MC
+  //MC **Note**: The following variables in bracket align with the AIA specification (Section 3.6: Memory Region Arrangement for Multiple Interrupt Files).
+  //MC
+  //MC 👉 每个组的成员数量（Number of members per group）[\\(h_{max}\\)]：
+  membersNum      : Int  = 2           ,
+  //MC 👉 所有IMSIC的机器态中断文件的基地址（Base address of machine-level interrupt files for all IMSICs）[\\(A\\)]：
+  mBaseAddr       : Long = 0x61000000L ,
+  //MC 👉 所有IMSIC的监管态和客户态中断文件的基地址（Base addr for supervisor-level and guest-level interrupt files for all IMSICs）[\\(B\\)]:
+  sgBaseAddr      : Long = 0x82900000L ,
+  //MC 👉 组的数量（Number of groups ）[\\(g_{max}\\)]:
+  groupsNum       : Int  = 1           ,
+  //MC 👉 客户中断文件的数量（Number of guest interrupt files）:
+  geilen          : Int  = 4           ,
+  //MC{hide}
+) {
+  require(aplicIntSrcWidth <= 10, f"aplicIntSrcWidth=${aplicIntSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")
+  val intSrcNum: Int = pow2(aplicIntSrcWidth).toInt
+  val ixNum: Int = pow2(aplicIntSrcWidth).toInt / 32
+  val domainMemWidth : Int  = 14 // interrupt file memory region width: 14-bit width => 16KB size
+
+  val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
+  // require(mStrideWidth >= intFileMemWidth)
+  val mStrideWidth    : Int  = intFileMemWidth // C: stride between each machine-level interrupt files
+  // require(sgStrideWidth >= log2Ceil(geilen+1) + intFileMemWidth)
+  val sgStrideWidth   : Int = log2Ceil(geilen+1) + intFileMemWidth // D: stride between each supervisor- and guest-level interrupt files
+  // require(groupStrideWidth >= k + math.max(mStrideWidth, sgStrideWidth))
+  val membersWidth    : Int = log2Ceil(membersNum) // k
+  require((mBaseAddr & (pow2(membersWidth + mStrideWidth) -1)) == 0, "mBaseAddr should be aligned to a 2^(k+C)")
+  val groupStrideWidth: Int = membersWidth + math.max(mStrideWidth, sgStrideWidth) // E: stride between each interrupt file groups
+  val groupsWidth     : Int = log2Ceil(groupsNum) // j
+  require((sgBaseAddr & (pow2(membersWidth + sgStrideWidth) - 1)) == 0, "sgBaseAddr should be aligned to a 2^(k+D)")
+  require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & mBaseAddr ) == 0)
+  require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & sgBaseAddr) == 0)
+
+  println(f"APLICParams.membersWidth:      ${membersWidth    }%d")
+  println(f"APLICParams.groupsWidth:       ${groupsWidth     }%d")
+  println(f"APLICParams.membersNum:        ${membersNum      }%d")
+  println(f"APLICParams.mBaseAddr:       0x${mBaseAddr       }%x")
+  println(f"APLICParams.mStrideWidth:      ${mStrideWidth    }%d")
+  println(f"APLICParams.sgBaseAddr:      0x${sgBaseAddr      }%x")
+  println(f"APLICParams.sgStrideWidth:     ${sgStrideWidth   }%d")
+  println(f"APLICParams.geilen:            ${geilen          }%d")
+  println(f"APLICParams.groupsNum:         ${groupsNum       }%d")
+  println(f"APLICParams.groupStrideWidth:  ${groupStrideWidth}%d")
+
+  def hartIndex_to_gh(hartIndex: Int): (Int, Int) = {
+    val g = (hartIndex>>membersWidth) & (pow2(groupsWidth)-1)
+    val h = hartIndex & (pow2(membersWidth)-1)
+    (g.toInt, h.toInt)
+  }
+  def gh_to_hartIndex(g: Int, h: Int): Int = {
+    (g<<membersWidth) | h
+  }
+}
 
 class TLAPLIC(
   params: APLICParams,

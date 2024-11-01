@@ -22,7 +22,8 @@ clean:
 ################################################################################
 # doc
 ################################################################################
-MDs=$(shell find docs/ -name "*.md") docs/Params.md
+MDs=$(shell find docs/ -name "*.md") \
+		$(patsubst src/main/scala/%.scala,docs/%_scala.md,$(wildcard src/main/scala/*.scala))
 PYSVGs=$(subst _dot.py,_py.svg,$(shell find docs/ -name "*_dot.py"))
 DRAWIOSVGs=$(subst .drawio,.svg,$(shell find docs/ -name "*.drawio"))
 DOTSVGs=$(subst .dot,.svg,$(shell find docs/ -name "*.dot"))
@@ -39,5 +40,5 @@ docs/images/arch_interrupt_py.dot: docs/images/arch_common.py
 	sed -i 's/\([0-9]\+\)pt/\1px/g' $@
 %.svg: %.drawio
 	drawio -x -f svg $<
-docs/Params.md: src/main/scala/Params.scala
+docs/%_scala.md: src/main/scala/%.scala
 	markcode $< > $@

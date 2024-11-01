@@ -4,6 +4,8 @@
 
 * [概览（Overview）](#概览overview)
 * [参数（Parameters）](#参数parameters)
+  * [`IMSICParams`](#imsicparams)
+  * [`APLICParams`](#aplicparams)
 * [实例化（Instantiation）](#实例化instantiation)
   * [<span style="color:red;">关于hartIndex（About hartIndex）</span>](#span-stylecolorred关于hartindexabout-hartindexspan)
 * [示例（Examples）](#示例examples)
@@ -19,27 +21,55 @@ This guide introduces the integration process of ChiselAIA into a RISC-V system.
 
 ## 概览（Overview）
 
-集成涉及3个Scala文件和4个Scala类：
+集成涉及2个Scala文件，共4个Scala类：
 
-* `TLAPLIC`（@`APLIC.scala`）：基于Tilelink的APLIC模块，每个系统需要一个实例
-* `TLIMSIC`（@`IMSIC.scala`）：基于Tilelink的IMSIC模块，每个处理器核心需要一个实例
-* `APLICParams`和`IMSICParams`（@`Params.scala`）：用于配置APLIC和IMSIC实例的参数类
+* `APLIC.scala`：
+  * `TLAPLIC`：基于Tilelink的APLIC模块，每个系统需要一个实例
+  * `APLICParams`：用于配置APLIC实例的参数类
+* `IMSIC.scala`：
+  * `TLIMSIC`：基于Tilelink的IMSIC模块，每个处理器核心需要一个实例
+  * `IMSICParams`：用于配置IMSIC实例的参数类
 
-Integration involves 3 scala files and 4 scala classes:
+Integration involves 2 scala files, including 4 scala classes:
 
-* `TLAPLIC` (@`APLIC.scala`): The Tilelink-based APLIC module, requiring one instance per system,
-* `TLIMSIC` (@`IMSIC.scala`): The Tilelink-based IMSIC module, requiring one instance per hart,
-* `APLICParams` and `IMSICParams` (@`Params.scala`): Parameter classes for configuring APLIC and IMSIC instances.
+* `APLIC.scala`:
+  * `TLAPLIC`: The Tilelink-based APLIC module, requiring one instance per system,
+  * `APLICParams`: Parameter classes for configuring APLIC instance.
+* `IMSIC.scala`:
+  * `TLIMSIC`: The Tilelink-based IMSIC module, requiring one instance per hart,
+  * `IMSICParams`: Parameter classes for configuring IMSIC instances.
 
 ![](images/integration_files.svg)
 
-**注意**：`TLAPLIC`需要同时使用`APLICParams`和`IMSICParams`的参数来确定MSI发送地址，而`TLIMSIC`只需要`IMSICParams`的参数。
-
-**Note**: `TLAPLIC` requires parameters from both `APLICParams` and `IMSICParams` to determine MSI sending addresses, while `TLIMSIC` only needs `IMSICParams`.
-
 ## 参数（Parameters）
 
-{{#include ./Params.md}}
+本节概述了APLIC和IMSIC的可配置参数。
+虽然提供了默认值，但我们强烈建议根据具体的集成需求，自定义带有👉标记的参数。
+其他参数要么是派生的，要么是硬编码的（详情参见`Params.scala`）。
+
+This section outlines the configurable parameters for APLIC and IMSIC.
+While defaul values are provided,
+we strongly recommend customizing parameters marked with 👉 to suit your specific integration needs.
+Other parameters are either derived or hard-coded, (see `Params.scala` for details).
+
+命名约定：
+* `Num`后缀：某实体的数量，
+* `Width`后缀：某实体的位宽（通常是`log2(实体数量)`），
+* `Addr`后缀：某实体的地址。
+
+Naming conventions:
+
+* `Num` suffix: Number of the items.
+* `Width` suffix: Bit width of an item (typically `log2(number of the item)`).
+* `Addr` suffix: Address of an item.
+
+### `IMSICParams`
+
+{{#include ./IMSIC_scala.md}}
+
+### `APLICParams`
+
+{{#include ./APLIC_scala.md}}
 
 ## 实例化（Instantiation）
 
@@ -49,11 +79,9 @@ Integration involves 3 scala files and 4 scala classes:
 * `TLAPLIC`：
   * 单个实例，
   * 参数`params`：接收`APLICParams`的实例，
-  * 参数`imsic_params`：接收`IMSICParams`的实例。
 * `TLIMSIC`：
   * 每个核心一个实例，
   * 参数`params`：接收`IMSICParams`的实例，
-  * 参数`hartIndex`：接收与此IMSIC配对的核心的编号。
 
 * `APLICParams` and `IMSICParams`:
   * Single instance each,
@@ -61,11 +89,11 @@ Integration involves 3 scala files and 4 scala classes:
 * `TLAPLIC`:
   * Single instance,
   * Parameter `params`: receiving the `APLICParams`'s instance,
-  * Parameters `imsic_params`: receiving the `IMSICParams`'s instance.
 * `TLIMSIC`:
   * One instance per hart,
   * Parameter `params`: receiving the `IMSICParams`'s instance,
-  * Parameter `hartIndex`: receiving the index of hart with which this IMSIC paired to.
+
+<!-- TODO: find a right place for hartIndex -->
 
 ### <span style="color:red;">关于hartIndex（About hartIndex）</span>
 
@@ -86,6 +114,8 @@ In ChiselAIA, the hartIndex is encoded as a concatenation of `groupID` and `memb
 
 ## 示例（Examples）
 
+<!-- TODO: markcode A Grouped 4-Hart System -->
+
 ### 简单的4核系统（A Simple 4-Hart System）
 
 对于一个简单的未分组系统，设置groupsNum=1，则可以将hart ID复用作为AIA的`hartIndex：
@@ -96,8 +126,8 @@ For a simple ungrouped system, set groupsNum=1 to allow reuse of hart ID as AIA'
 val imsic_params = IMSICParams(groupsNum=1, membersNum=4)
 val aplic_params = APLICParams()
 val imsics = (0 until 4).map( i => {
-  val imsic = LazyModule(new TLIMSIC(imsic_params, i)(Parameters.empty))
-val aplic = LazyModule(new TLAPLIC(aplic_params, imsic_params)(Parameters.empty))
+  val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
+val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
 ```
 
 ### 分组的4核系统（A Grouped 4-Hart System）
@@ -110,8 +140,8 @@ In `src/main/scala/ChiselAIA.scala`, for unit tests, we instantiate a 2-group 2-
 val imsic_params = IMSICParams(groupsNum=2, membersNum=2)
 val aplic_params = APLICParams()
 val imsics = (0 until 4).map( i => {
-  val imsic = LazyModule(new TLIMSIC(imsic_params, i)(Parameters.empty))
-val aplic = LazyModule(new TLAPLIC(aplic_params, imsic_params)(Parameters.empty))
+  val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
+val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
 ```
 
 此配置创建了一个2位的`hartIndex`，高位表示 groupID，低位表示 memberID。

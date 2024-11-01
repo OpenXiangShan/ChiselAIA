@@ -1,0 +1,4 @@
+* IO: combinational to reg
+* AXI support
+* Test integrated IMSICs and APLIC
+* Rename ChiselAIA.scala to Test.scala

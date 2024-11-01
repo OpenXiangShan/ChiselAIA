@@ -1,3 +1,4 @@
+//MC{hide}
 /***************************************************************************************
 * Copyright (c) 2024 Beijing Institute of Open Source Chip (BOSC)
 *
@@ -72,6 +73,36 @@ class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
   val illegal = Bool()
   val pendings = Vec(params.intFilesNum, Bool())
   val topeis  = Vec(params.privNum, UInt(32.W))
+}
+
+case class IMSICParams(
+  //MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多256（2^8）个中断源
+  //MC （Logarithm of number of interrupt sources to IMSIC.
+  //MC The default 8 means IMSIC support at most 256 (2^8) interrupt sources）:
+  //MC{visible}
+  imsicIntSrcWidth     : Int  = 8          ,
+  //MC 👉 本IMSIC的机器态中断文件的地址（Address of machine-level interrupt files for this IMSIC）：
+  mAddr           : Long = 0x00000L ,
+  //MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
+  sgAddr          : Long = 0x10000L ,
+  //MC 👉 客户中断文件的数量（Number of guest interrupt files）:
+  geilen          : Int  = 4           ,
+  //MC vgein信号的位宽（The width of the vgein signal）:
+  vgeinWidth      : Int  = 6           ,
+  //MC iselect信号的位宽(The width of iselect signal):
+  iselectWidth    : Int  = 12          ,
+  //MC{hide}
+) {
+  val xlen        : Int  = 64 // currently only support xlen = 64
+  val xlenWidth = log2Ceil(xlen)
+  require(imsicIntSrcWidth <= 11, f"imsicIntSrcWidth=${imsicIntSrcWidth}, must not greater than log2(2048)=11, as there are at most 2048 eip/eie bits")
+  val privNum     : Int  = 3            // number of privilege modes: machine, supervisor, virtualized supervisor
+  val intFilesNum : Int  = 2 + geilen   // number of interrupt files, m, s, vs0, vs1, ...
+  val eixNum      : Int  = pow2(imsicIntSrcWidth).toInt / xlen // number of eip/eie registers
+  val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
+  println(f"IMSICParams.geilen:            ${geilen          }%d")
+  require(vgeinWidth >= log2Ceil(geilen))
+  require(iselectWidth >=8, f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63")
 }
 
 class TLIMSIC(

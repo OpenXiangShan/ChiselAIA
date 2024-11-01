@@ -22,4 +22,4 @@ sim_build
 *.svg
 *.bkp
 book
-docs/Params.md
+*_scala.md
