@@ -44,6 +44,36 @@ object RegMapDV {
     wen: Bool, wdata: UInt, wmask: UInt):Unit = generate(default, mapping, addr, rdata, rvalid, addr, wen, wdata, wmask)
 }
 
+// Based on Xiangshan NewCSR
+object OpType extends ChiselEnum {
+  val ILLEGAL = Value(0.U)
+  val CSRRW   = Value(1.U)
+  val CSRRS   = Value(2.U)
+  val CSRRC   = Value(3.U)
+}
+object PrivType extends ChiselEnum {
+  val U = Value(0.U)
+  val S = Value(1.U)
+  val M = Value(3.U)
+}
+class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
+  val addr = ValidIO(UInt(params.iselectWidth.W))
+  val virt = Bool()
+  val priv = PrivType()
+  val vgein = UInt(params.vgeinWidth.W)
+  val wdata = ValidIO(new Bundle {
+    val op = OpType()
+    val data = UInt(params.xlen.W)
+  })
+  val claims = Vec(params.privNum, Bool())
+}
+class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
+  val rdata = ValidIO(UInt(params.xlen.W))
+  val illegal = Bool()
+  val pendings = Vec(params.intFilesNum, Bool())
+  val topeis  = Vec(params.privNum, UInt(32.W))
+}
+
 class TLIMSIC(
   params: IMSICParams,
   beatBytes: Int = 8,
@@ -62,35 +92,6 @@ class TLIMSIC(
   mTLNode := fromMem
   sgTLNode := fromMem
 
-  // Based on Xiangshan NewCSR
-  object OpType extends ChiselEnum {
-    val ILLEGAL = Value(0.U)
-    val CSRRW   = Value(1.U)
-    val CSRRS   = Value(2.U)
-    val CSRRC   = Value(3.U)
-  }
-  object PrivType extends ChiselEnum {
-    val U = Value(0.U)
-    val S = Value(1.U)
-    val M = Value(3.U)
-  }
-  class CSRToIMSICBundle extends Bundle {
-    val addr = ValidIO(UInt(params.iselectWidth.W))
-    val virt = Bool()
-    val priv = PrivType()
-    val vgein = UInt(params.vgeinWidth.W)
-    val wdata = ValidIO(new Bundle {
-      val op = OpType()
-      val data = UInt(params.xlen.W)
-    })
-    val claims = Vec(params.privNum, Bool())
-  }
-  class IMSICToCSRBundle extends Bundle {
-    val rdata = ValidIO(UInt(params.xlen.W))
-    val illegal = Bool()
-    val pendings = Vec(params.intFilesNum, Bool())
-    val topeis  = Vec(params.privNum, UInt(32.W))
-  }
   class IntFile extends Module {
     override def desiredName = "IntFile"
     val fromCSR = IO(Input(new Bundle {
@@ -213,8 +214,8 @@ class TLIMSIC(
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
-    val toCSR = IO(Output(new IMSICToCSRBundle))
-    val fromCSR = IO(Input(new CSRToIMSICBundle))
+    val toCSR = IO(Output(new IMSICToCSRBundle(params)))
+    val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
 
     val illegal_priv = WireDefault(false.B)
     val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
