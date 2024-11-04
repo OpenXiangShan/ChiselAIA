@@ -18,88 +18,99 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge
 from common import *
 
-# imsic_1 base addresses and CSR addresses
-mBaseAddr = imsic_m_base_addr + 0x1000
-sgBaseAddr = imsic_sg_base_addr + 0x8000
-
-async def m_int(dut, intnum):
+async def m_int(dut, intnum, imsicID=1):
   """Issue an interrupt to the M-mode interrupt file."""
-  await a_put_full32(dut, mBaseAddr, intnum)
+  await a_put_full32(dut, imsic_m_base_addr+0x1000*imsicID, intnum)
   await RisingEdge(dut.clock)
 
-async def s_int(dut, intnum):
+async def s_int(dut, intnum, imsicID=1):
   """Issue an interrupt to the S-mode interrupt file."""
-  await a_put_full32(dut, sgBaseAddr, intnum)
+  await a_put_full32(dut, imsic_sg_base_addr+0x8000*imsicID, intnum)
   await RisingEdge(dut.clock)
 
-async def v_int_vgein2(dut, intnum):
+async def v_int_vgein(dut, intnum, imsicID=1, guestID=2):
   """Issue an interrupt to the VS-mode interrupt file with vgein2."""
-  await a_put_full32(dut, sgBaseAddr + 0x1000*(1+2), intnum)
+  await a_put_full32(dut, imsic_sg_base_addr+0x8000*imsicID + 0x1000*(1+guestID), intnum)
   await RisingEdge(dut.clock)
 
-async def claim(dut):
+async def claim(dut, imsicID=1):
   """Claim the highest pending interrupt."""
+  fromCSRx_claims_0 = getattr(dut, f"fromCSR{imsicID}_claims_0")
   await FallingEdge(dut.clock)
-  dut.fromCSR1_claims_0.value = 1
+  fromCSRx_claims_0.value = 1
   await FallingEdge(dut.clock)
-  dut.fromCSR1_claims_0.value = 0
+  fromCSRx_claims_0.value = 0
 
 def wrap_topei(in_):
   extract = in_ & 0x7ff
   out = extract | (extract << 16)
   return out
 
-async def write_csr_op(dut, miselect, data, op):
+async def write_csr_op(dut, miselect, data, op, imsicID=1):
+  fromCSRx_addr_valid      = getattr(dut, f"fromCSR{imsicID}_addr_valid"     )
+  fromCSRx_addr_bits       = getattr(dut, f"fromCSR{imsicID}_addr_bits"      )
+  fromCSRx_wdata_valid     = getattr(dut, f"fromCSR{imsicID}_wdata_valid"    )
+  fromCSRx_wdata_bits_op   = getattr(dut, f"fromCSR{imsicID}_wdata_bits_op"  )
+  fromCSRx_wdata_bits_data = getattr(dut, f"fromCSR{imsicID}_wdata_bits_data")
   await FallingEdge(dut.clock)
-  dut.fromCSR1_addr_valid.value = 1
-  dut.fromCSR1_addr_bits.value = miselect
-  dut.fromCSR1_wdata_valid.value = 1
-  dut.fromCSR1_wdata_bits_op.value = op
-  dut.fromCSR1_wdata_bits_data.value = data
+  fromCSRx_addr_valid.value = 1
+  fromCSRx_addr_bits.value = miselect
+  fromCSRx_wdata_valid.value = 1
+  fromCSRx_wdata_bits_op.value = op
+  fromCSRx_wdata_bits_data.value = data
   await FallingEdge(dut.clock)
-  dut.fromCSR1_addr_valid.value = 0
-  dut.fromCSR1_wdata_valid.value = 0
+  fromCSRx_addr_valid.value = 0
+  fromCSRx_wdata_valid.value = 0
 
-async def write_csr(dut, miselect, data):
-  await write_csr_op(dut, miselect, data, op_csrrw)
+async def write_csr(dut, miselect, data, imsicID=1):
+  await write_csr_op(dut, miselect, data, op_csrrw, imsicID)
 
-async def read_csr(dut, miselect):
+async def read_csr(dut, miselect, imsicID=1):
+  fromCSRx_addr_valid = getattr(dut, f"fromCSR{imsicID}_addr_valid")
+  fromCSRx_addr_bits  = getattr(dut, f"fromCSR{imsicID}_addr_bits" )
   await FallingEdge(dut.clock)
-  dut.fromCSR1_addr_valid.value = 1
-  dut.fromCSR1_addr_bits.value = miselect
+  fromCSRx_addr_valid.value = 1
+  fromCSRx_addr_bits.value = miselect
   await FallingEdge(dut.clock)
-  dut.fromCSR1_addr_valid.value = 0
+  fromCSRx_addr_valid.value = 0
 
-async def select_m_intfile(dut):
+async def select_m_intfile(dut, imsicID=1):
+  fromCSRx_priv = getattr(dut, f"fromCSR{imsicID}_priv")
+  fromCSRx_virt = getattr(dut, f"fromCSR{imsicID}_virt")
   await FallingEdge(dut.clock)
-  dut.fromCSR1_priv.value = 3
-  dut.fromCSR1_virt.value = 0
+  fromCSRx_priv.value = 3
+  fromCSRx_virt.value = 0
 
-async def select_s_intfile(dut):
+async def select_s_intfile(dut, imsicID=1):
+  fromCSRx_priv = getattr(dut, f"fromCSR{imsicID}_priv")
+  fromCSRx_virt = getattr(dut, f"fromCSR{imsicID}_virt")
   await FallingEdge(dut.clock)
-  dut.fromCSR1_priv.value = 1
-  dut.fromCSR1_virt.value = 0
+  fromCSRx_priv.value = 1
+  fromCSRx_virt.value = 0
 
-async def select_vs_intfile(dut, vgein):
+async def select_vs_intfile(dut, vgein, imsicID=1):
+  fromCSRx_priv = getattr(dut, f"fromCSR{imsicID}_priv")
+  fromCSRx_vgein = getattr(dut, f"fromCSR{imsicID}_vgein")
+  fromCSRx_virt = getattr(dut, f"fromCSR{imsicID}_virt")
   await FallingEdge(dut.clock)
-  dut.fromCSR1_priv.value = 1
-  dut.fromCSR1_vgein.value = vgein
-  dut.fromCSR1_virt.value = 1
+  fromCSRx_priv.value = 1
+  fromCSRx_vgein.value = vgein
+  fromCSRx_virt.value = 1
 
-async def init_imsic_1(dut):
-  await select_m_intfile(dut)
-  await write_csr(dut, csr_addr_eidelivery, 1)
+async def init_imsic(dut, imsicID=1):
+  await select_m_intfile(dut, imsicID)
+  await write_csr(dut, csr_addr_eidelivery, 1, imsicID)
   for e in range(0,32):
-    await write_csr(dut, csr_addr_eie0 + 2*e, -1)
-  await select_s_intfile(dut)
-  await write_csr(dut, csr_addr_eidelivery, 1)
+    await write_csr(dut, csr_addr_eie0 + 2*e, -1, imsicID)
+  await select_s_intfile(dut, imsicID)
+  await write_csr(dut, csr_addr_eidelivery, 1, imsicID)
   for e in range(0,32):
-    await write_csr(dut, csr_addr_eie0 + 2*e, -1)
+    await write_csr(dut, csr_addr_eie0 + 2*e, -1, imsicID)
   for i in range(0,4):
-    await select_vs_intfile(dut, i)
-    await write_csr(dut, csr_addr_eidelivery, 1)
+    await select_vs_intfile(dut, i, imsicID)
+    await write_csr(dut, csr_addr_eidelivery, 1, imsicID)
     for e in range(0,32):
-      await write_csr(dut, csr_addr_eie0 + 2*e, -1)
+      await write_csr(dut, csr_addr_eie0 + 2*e, -1, imsicID)
 
 # Main test
 @cocotb.test()
@@ -120,7 +131,7 @@ async def imsic_1_test(dut):
   await RisingEdge(dut.clock)
 
   # Initialize IMSIC
-  await init_imsic_1(dut)
+  await init_imsic(dut)
 
   # Test steps
   await select_m_intfile(dut)
@@ -215,7 +226,7 @@ async def imsic_1_test(dut):
   cocotb.log.info("simple_virtualized_supervisor_level:vgein2 began")
   await select_vs_intfile(dut, 2)
   assert dut.toCSR1_topeis_2.value == wrap_topei(0)
-  await v_int_vgein2(dut, 137)
+  await v_int_vgein(dut, 137)
   assert dut.toCSR1_topeis_2.value == wrap_topei(137)
   dut.toCSR1_pendings_4.value = 1  # Assuming pendings_4 corresponds to vgein=2
   await select_m_intfile(dut)
