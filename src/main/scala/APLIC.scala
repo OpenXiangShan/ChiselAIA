@@ -275,6 +275,9 @@ class Domain(
     })
     // send MSI
     locally {
+      val idle :: waiting_ack :: Nil = Enum(2)
+      val state = RegInit(idle)
+
       val (tl, edge) = toIMSIC.out(0)
       tl.d.ready := true.B
       def getMSIAddr(HartIndex:UInt, guestID:UInt): UInt = {
@@ -291,17 +294,27 @@ class Domain(
       when (genmsi.Busy) {// A pending extempore MSI (genmsi) should be sent by the APLIC with minimal delay.
         val msiAddr = getMSIAddr(genmsi.HartIndex, 0.U)
         val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, genmsi.EIID)
-        when (tl.a.ready) { genmsi.Busy := false.B }
+        switch (state) {
+          is (idle) { when (tl.a.fire) { state := waiting_ack } }
+          is (waiting_ack) { when (tl.d.fire) {
+            state := idle; genmsi.Busy := false.B
+          }}
+        }
         tl.a.bits := pfbits
-        tl.a.valid := true.B
+        tl.a.valid := state===idle
       }.elsewhen (domaincfg.IE && topi=/=0.U) {
         val target = targets.regs(topi)
         val msiAddr = getMSIAddr(target.HartIndex, target.GuestIndex)
         val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, target.EIID)
         // clear corresponding ip
-        when (tl.a.ready) { ips.wBitUI(topi, false.B) }
+        switch (state) {
+          is (idle) { when (tl.a.fire) { state := waiting_ack } }
+          is (waiting_ack) { when (tl.d.fire) {
+            state := idle; ips.wBitUI(topi, false.B)
+          }}
+        }
         tl.a.bits := pfbits
-        tl.a.valid := true.B
+        tl.a.valid := state===idle
       }.otherwise {
         tl.a.valid := false.B
       }

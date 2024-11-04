@@ -54,19 +54,9 @@ class ChiselAIA()(implicit p: Parameters) extends LazyModule {
     Seq(TLMasterPortParameters.v1(
       Seq(TLMasterParameters.v1("aplic_tl", IdRange(0, 16)))
   )))
-  val aplic_toIMSIC = TLManagerNode(Seq(TLSlavePortParameters.v1(
-    Seq(TLSlaveParameters.v1(
-      address = Seq(
-        AddressSet(aplic_params.mBaseAddr, pow2(aplic_params.groupStrideWidth + aplic_params.groupsWidth)-1),
-        AddressSet(aplic_params.sgBaseAddr,pow2(aplic_params.groupStrideWidth + aplic_params.groupsWidth)-1),
-      ),
-      supportsPutFull = TransferSizes(1, 8),
-    )),
-    beatBytes = 8
-  )))
   val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
   aplic.fromCPU := aplic_fromCPU
-  aplic_toIMSIC := aplic.toIMSIC
+  imsics_fromMem_xbar := aplic.toIMSIC
 
   lazy val module = new LazyModuleImp(this) {
     imsics_fromMem.makeIOs()(ValName("intfile"))
@@ -78,7 +68,6 @@ class ChiselAIA()(implicit p: Parameters) extends LazyModule {
     })
 
     aplic_fromCPU.makeIOs()(ValName("domain"))
-    aplic_toIMSIC.makeIOs()(ValName("toimsic"))
     val intSrcs = IO(Input(chiselTypeOf(aplic.module.intSrcs)))
     intSrcs <> aplic.module.intSrcs
   }

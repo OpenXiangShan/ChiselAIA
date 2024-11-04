@@ -20,7 +20,6 @@ digraph {
   imsics_fromMem_xbar -> map10 -> imsic10;
   imsics_fromMem_xbar -> map11 -> imsic11;
   aplic_fromCPU[label="aplic_fromCPU\nTLClientNode"];
-  aplic_toIMSIC[label="aplic_toIMSIC\nTLManagerNode"];
   aplic[label="aplic\nTLAPLIC", style="filled", fillcolor="#F8CECC", color="#B85450"];
-  aplic_fromCPU -> aplic -> aplic_toIMSIC;
+  aplic_fromCPU -> aplic -> imsics_fromMem_xbar;
 }
