@@ -58,7 +58,8 @@ in pkgs.mkShell {
     }){}).circt;
   in ''
     export CHISEL_FIRTOOL_PATH=${circt_1_62_0}/bin/
-    export PYTHONPATH+=${my-python3}/lib/${my-python3.libPrefix}/site-packages
+    export PYTHONPATH+=:${my-python3}/lib/${my-python3.libPrefix}/site-packages
+    export PYTHONPATH+=:$(realpath ./test)
     # To enable pdb when cocotb test failed
     export COCOTB_PDB_ON_EXCEPTION=1
     h
