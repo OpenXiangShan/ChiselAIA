@@ -277,9 +277,8 @@ class Domain(
     locally {
       val idle :: waiting_ack :: Nil = Enum(2)
       val state = RegInit(idle)
-
       val (tl, edge) = toIMSIC.out(0)
-      tl.d.ready := true.B
+
       def getMSIAddr(HartIndex:UInt, guestID:UInt): UInt = {
         val groupID = if (params.groupsWidth == 0) 0.U
           else HartIndex(params.groupsWidth+params.membersWidth-1, params.membersWidth)
@@ -291,33 +290,21 @@ class Domain(
           (memberID<<imsicMemberStrideWidth) |
           (guestID<<params.intFileMemWidth)
       }
-      when (genmsi.Busy) {// A pending extempore MSI (genmsi) should be sent by the APLIC with minimal delay.
-        val msiAddr = getMSIAddr(genmsi.HartIndex, 0.U)
-        val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, genmsi.EIID)
-        switch (state) {
-          is (idle) { when (tl.a.fire) { state := waiting_ack } }
-          is (waiting_ack) { when (tl.d.fire) {
-            state := idle; genmsi.Busy := false.B
-          }}
-        }
-        tl.a.bits := pfbits
-        tl.a.valid := state===idle
-      }.elsewhen (domaincfg.IE && topi=/=0.U) {
-        val target = targets.regs(topi)
-        val msiAddr = getMSIAddr(target.HartIndex, target.GuestIndex)
-        val (_, pfbits) = edge.Put(0.U, msiAddr, 2.U, target.EIID)
-        // clear corresponding ip
-        switch (state) {
-          is (idle) { when (tl.a.fire) { state := waiting_ack } }
-          is (waiting_ack) { when (tl.d.fire) {
-            state := idle; ips.wBitUI(topi, false.B)
-          }}
-        }
-        tl.a.bits := pfbits
-        tl.a.valid := state===idle
-      }.otherwise {
-        tl.a.valid := false.B
-      }
+      val (_, genmsiBits) = edge.Put(0.U, getMSIAddr(genmsi.HartIndex, 0.U), 2.U, genmsi.EIID)
+      val target = targets.regs(topi)
+      val (_, topiBits) = edge.Put(0.U, getMSIAddr(target.HartIndex, target.GuestIndex), 2.U, target.EIID)
+
+      // A pending extempore MSI (genmsi) should be sent by the APLIC with minimal delay.
+      tl.a.bits := Mux(genmsi.Busy, genmsiBits, topiBits)
+      tl.a.valid := (state===idle) && (genmsi.Busy || (domaincfg.IE && topi=/=0.U))
+      tl.d.ready := true.B
+
+      switch (state) {
+        is (idle) { when (tl.a.fire) { state := waiting_ack } }
+        is (waiting_ack) { when (tl.d.fire) { state := idle
+          when (genmsi.Busy) { genmsi.Busy := false.B }
+          .otherwise { ips.wBitUI(topi, false.B) }
+      }}}
     }
 
     // delegate
