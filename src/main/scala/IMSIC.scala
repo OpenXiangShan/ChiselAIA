@@ -100,7 +100,6 @@ case class IMSICParams(
   val intFilesNum : Int  = 2 + geilen   // number of interrupt files, m, s, vs0, vs1, ...
   val eixNum      : Int  = pow2(imsicIntSrcWidth).toInt / xlen // number of eip/eie registers
   val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
-  println(f"IMSICParams.geilen:            ${geilen          }%d")
   require(vgeinWidth >= log2Ceil(geilen))
   require(iselectWidth >=8, f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63")
 }
@@ -109,6 +108,8 @@ class TLIMSIC(
   params: IMSICParams,
   beatBytes: Int = 8,
 )(implicit p: Parameters) extends LazyModule {
+  println(f"IMSICParams.geilen:            ${params.geilen          }%d")
+
   val Seq(mTLNode, sgTLNode) = Seq(
     AddressSet(params.mAddr,  pow2(params.intFileMemWidth) - 1),
     AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1),

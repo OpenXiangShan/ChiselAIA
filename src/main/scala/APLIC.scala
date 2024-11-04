@@ -77,17 +77,6 @@ case class APLICParams(
   require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & mBaseAddr ) == 0)
   require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & sgBaseAddr) == 0)
 
-  println(f"APLICParams.membersWidth:      ${membersWidth    }%d")
-  println(f"APLICParams.groupsWidth:       ${groupsWidth     }%d")
-  println(f"APLICParams.membersNum:        ${membersNum      }%d")
-  println(f"APLICParams.mBaseAddr:       0x${mBaseAddr       }%x")
-  println(f"APLICParams.mStrideWidth:      ${mStrideWidth    }%d")
-  println(f"APLICParams.sgBaseAddr:      0x${sgBaseAddr      }%x")
-  println(f"APLICParams.sgStrideWidth:     ${sgStrideWidth   }%d")
-  println(f"APLICParams.geilen:            ${geilen          }%d")
-  println(f"APLICParams.groupsNum:         ${groupsNum       }%d")
-  println(f"APLICParams.groupStrideWidth:  ${groupStrideWidth}%d")
-
   def hartIndex_to_gh(hartIndex: Int): (Int, Int) = {
     val g = (hartIndex>>membersWidth) & (pow2(groupsWidth)-1)
     val h = hartIndex & (pow2(membersWidth)-1)
@@ -102,6 +91,16 @@ class TLAPLIC(
   params: APLICParams,
   beatBytes: Int = 8,
 )(implicit p: Parameters) extends LazyModule {
+  println(f"APLICParams.membersWidth:      ${params.membersWidth    }%d")
+  println(f"APLICParams.groupsWidth:       ${params.groupsWidth     }%d")
+  println(f"APLICParams.membersNum:        ${params.membersNum      }%d")
+  println(f"APLICParams.mBaseAddr:       0x${params.mBaseAddr       }%x")
+  println(f"APLICParams.mStrideWidth:      ${params.mStrideWidth    }%d")
+  println(f"APLICParams.sgBaseAddr:      0x${params.sgBaseAddr      }%x")
+  println(f"APLICParams.sgStrideWidth:     ${params.sgStrideWidth   }%d")
+  println(f"APLICParams.geilen:            ${params.geilen          }%d")
+  println(f"APLICParams.groupsNum:         ${params.groupsNum       }%d")
+  println(f"APLICParams.groupStrideWidth:  ${params.groupStrideWidth}%d")
 
 class Domain(
   baseAddr: Long, // base address for this aplic domain
