@@ -16,10 +16,7 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge
-
-# Constants for TileLink opcodes
-tl_a_putFullData = 0
-tl_a_get = 4
+from common import *
 
 # Base addresses and CSR addresses
 mBaseAddr = 0x61001000
@@ -36,74 +33,19 @@ op_csrrw = 1
 op_csrrs = 2
 op_csrrc = 3
 
-# Functions to interact with the DUT
-async def a_put_full(dut, addr, mask, size, data):
-  """Send a PutFullData message on the TileLink 'a' channel."""
-  await FallingEdge(dut.clock)
-  # Wait until the interface is ready
-  while not dut.toaia_0_a_ready.value:
-    await RisingEdge(dut.clock)
-
-  # Send the transaction
-  dut.toaia_0_a_valid.value = 1
-  dut.toaia_0_a_bits_opcode.value = tl_a_putFullData
-  dut.toaia_0_a_bits_address.value = addr
-  dut.toaia_0_a_bits_mask.value = mask
-  dut.toaia_0_a_bits_size.value = size
-  dut.toaia_0_a_bits_data.value = data
-  await FallingEdge(dut.clock)
-  dut.toaia_0_a_valid.value = 0
-
-async def a_get(dut, addr, mask, size):
-  """Send a Get message on the TileLink 'a' channel."""
-  await FallingEdge(dut.clock)
-  # Wait until the interface is ready
-  while not dut.toaia_0_a_ready.value:
-    await RisingEdge(dut.clock)
-
-  # Send the transaction
-  dut.toaia_0_a_valid.value = 1
-  dut.toaia_0_a_bits_opcode.value = tl_a_get
-  dut.toaia_0_a_bits_address.value = addr
-  dut.toaia_0_a_bits_mask.value = mask
-  dut.toaia_0_a_bits_size.value = size
-  await FallingEdge(dut.clock)
-  dut.toaia_0_a_valid.value = 0
-
 async def m_int(dut, intnum):
   """Issue an interrupt to the M-mode interrupt file."""
-  await a_put_full(dut, mBaseAddr, 0xf, 2, intnum)
-  for _ in range(10):
-    await RisingEdge(dut.clock)
-    seteipnum = dut.imsic_1.seteipnum_bits.value
-    if seteipnum == intnum:
-      break
-  else:
-    assert False, f"Timeout waiting for seteipnum == {intnum}"
+  await a_put_full32(dut, mBaseAddr, intnum)
   await RisingEdge(dut.clock)
 
 async def s_int(dut, intnum):
   """Issue an interrupt to the S-mode interrupt file."""
-  await a_put_full(dut, sgBaseAddr, 0xf, 2, intnum)
-  for _ in range(10):
-    await RisingEdge(dut.clock)
-    seteipnum = dut.imsic_1.seteipnum_1_bits.value
-    if seteipnum == intnum:
-      break
-  else:
-    assert False, f"Timeout waiting for seteipnum_1_bits == {intnum}"
+  await a_put_full32(dut, sgBaseAddr, intnum)
   await RisingEdge(dut.clock)
 
 async def v_int_vgein2(dut, intnum):
   """Issue an interrupt to the VS-mode interrupt file with vgein2."""
-  await a_put_full(dut, sgBaseAddr + 0x1000*(1+2), 0xf, 2, intnum)
-  for _ in range(10):
-    await RisingEdge(dut.clock)
-    seteipnum = dut.imsic_1.seteipnum_4_bits.value
-    if seteipnum == intnum:
-      break
-  else:
-    assert False, f"Timeout waiting for seteipnum_4_bits == {intnum}"
+  await a_put_full32(dut, sgBaseAddr + 0x1000*(1+2), intnum)
   await RisingEdge(dut.clock)
 
 async def claim(dut):
