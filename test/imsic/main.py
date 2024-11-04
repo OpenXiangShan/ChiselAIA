@@ -18,20 +18,9 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge
 from common import *
 
-# Base addresses and CSR addresses
-mBaseAddr = 0x61001000
-sgBaseAddr = 0x82908000
-csr_addr_eidelivery = 0x70
-csr_addr_eithreshold = 0x72
-csr_addr_eip0 = 0x80
-csr_addr_eip2 = 0x82
-csr_addr_eie0 = 0xC0
-
-# CSR operation codes
-op_illegal = 0
-op_csrrw = 1
-op_csrrs = 2
-op_csrrc = 3
+# imsic_1 base addresses and CSR addresses
+mBaseAddr = imsic_m_base_addr + 0x1000
+sgBaseAddr = imsic_sg_base_addr + 0x8000
 
 async def m_int(dut, intnum):
   """Issue an interrupt to the M-mode interrupt file."""

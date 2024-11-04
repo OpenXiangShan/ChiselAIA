@@ -59,11 +59,27 @@ async def a_get32(dut, addr) -> int:
   res = odata if addr%8==0 else odata>>32
   return res & 0xffffffff
 
-base_addr           = 0x19960000
-m_base_addr         = base_addr
-sg_base_addr        = base_addr + 0x4000
+################################################################################
+# IMSIC
+################################################################################
 imsic_m_base_addr   = 0x61000000
 imsic_sg_base_addr  = 0x82900000
+csr_addr_eidelivery = 0x70
+csr_addr_eithreshold = 0x72
+csr_addr_eip0 = 0x80
+csr_addr_eip2 = 0x82
+csr_addr_eie0 = 0xC0
+# CSR operation codes
+op_illegal = 0
+op_csrrw = 1
+op_csrrs = 2
+op_csrrc = 3
+
+################################################################################
+# APLIC
+################################################################################
+aplic_m_base_addr   = 0x19960000
+aplic_sg_base_addr  = aplic_m_base_addr + 0x4000
 offset_domaincfg    = 0
 offset_sourcecfg    = 0x0004
 offset_readonly0    = 0x1000
