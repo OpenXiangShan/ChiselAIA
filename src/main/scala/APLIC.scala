@@ -59,20 +59,20 @@ case class APLICParams(
   //MC{hide}
 ) {
   require(aplicIntSrcWidth <= 10, f"aplicIntSrcWidth=${aplicIntSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")
-  val intSrcNum: Int = pow2(aplicIntSrcWidth).toInt
-  val ixNum: Int = pow2(aplicIntSrcWidth).toInt / 32
-  val domainMemWidth : Int  = 14 // interrupt file memory region width: 14-bit width => 16KB size
+  lazy val intSrcNum: Int = pow2(aplicIntSrcWidth).toInt
+  lazy val ixNum: Int = pow2(aplicIntSrcWidth).toInt / 32
+  lazy val domainMemWidth : Int  = 14 // interrupt file memory region width: 14-bit width => 16KB size
 
-  val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
+  lazy val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
   // require(mStrideWidth >= intFileMemWidth)
-  val mStrideWidth    : Int  = intFileMemWidth // C: stride between each machine-level interrupt files
+  lazy val mStrideWidth    : Int  = intFileMemWidth // C: stride between each machine-level interrupt files
   // require(sgStrideWidth >= log2Ceil(geilen+1) + intFileMemWidth)
-  val sgStrideWidth   : Int = log2Ceil(geilen+1) + intFileMemWidth // D: stride between each supervisor- and guest-level interrupt files
+  lazy val sgStrideWidth   : Int = log2Ceil(geilen+1) + intFileMemWidth // D: stride between each supervisor- and guest-level interrupt files
   // require(groupStrideWidth >= k + math.max(mStrideWidth, sgStrideWidth))
-  val membersWidth    : Int = log2Ceil(membersNum) // k
+  lazy val membersWidth    : Int = log2Ceil(membersNum) // k
   require((mBaseAddr & (pow2(membersWidth + mStrideWidth) -1)) == 0, "mBaseAddr should be aligned to a 2^(k+C)")
-  val groupStrideWidth: Int = membersWidth + math.max(mStrideWidth, sgStrideWidth) // E: stride between each interrupt file groups
-  val groupsWidth     : Int = log2Ceil(groupsNum) // j
+  lazy val groupStrideWidth: Int = membersWidth + math.max(mStrideWidth, sgStrideWidth) // E: stride between each interrupt file groups
+  lazy val groupsWidth     : Int = log2Ceil(groupsNum) // j
   require((sgBaseAddr & (pow2(membersWidth + sgStrideWidth) - 1)) == 0, "sgBaseAddr should be aligned to a 2^(k+D)")
   require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & mBaseAddr ) == 0)
   require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & sgBaseAddr) == 0)

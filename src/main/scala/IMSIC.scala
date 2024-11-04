@@ -93,13 +93,13 @@ case class IMSICParams(
   iselectWidth    : Int  = 12          ,
   //MC{hide}
 ) {
-  val xlen        : Int  = 64 // currently only support xlen = 64
-  val xlenWidth = log2Ceil(xlen)
+  lazy val xlen        : Int  = 64 // currently only support xlen = 64
+  lazy val xlenWidth = log2Ceil(xlen)
   require(imsicIntSrcWidth <= 11, f"imsicIntSrcWidth=${imsicIntSrcWidth}, must not greater than log2(2048)=11, as there are at most 2048 eip/eie bits")
-  val privNum     : Int  = 3            // number of privilege modes: machine, supervisor, virtualized supervisor
-  val intFilesNum : Int  = 2 + geilen   // number of interrupt files, m, s, vs0, vs1, ...
-  val eixNum      : Int  = pow2(imsicIntSrcWidth).toInt / xlen // number of eip/eie registers
-  val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
+  lazy val privNum     : Int  = 3            // number of privilege modes: machine, supervisor, virtualized supervisor
+  lazy val intFilesNum : Int  = 2 + geilen   // number of interrupt files, m, s, vs0, vs1, ...
+  lazy val eixNum      : Int  = pow2(imsicIntSrcWidth).toInt / xlen // number of eip/eie registers
+  lazy val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
   require(vgeinWidth >= log2Ceil(geilen))
   require(iselectWidth >=8, f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63")
 }
