@@ -24,15 +24,18 @@ import freechips.rocketchip.tilelink._
 import _root_.circt.stage.ChiselStage
 
 class ChiselAIA()(implicit p: Parameters) extends LazyModule {
+  val toAIA = TLClientNode(
+    Seq(TLMasterPortParameters.v1(
+      Seq(TLMasterParameters.v1("aia_tl", IdRange(0, 16)))
+  )))
+  val toAIA_xbar = LazyModule(new TLXbar).node
+  toAIA_xbar := toAIA
+
   // Here we create 2 imsic groups, each group contains two 2 CPUs
   val imsic_params = IMSICParams()
   val aplic_params = APLICParams(groupsNum=2, membersNum=2)
-  val imsics_fromMem = TLClientNode(
-    Seq(TLMasterPortParameters.v1(
-      Seq(TLMasterParameters.v1("imsic_tl", IdRange(0, 16)))
-  )))
   val imsics_fromMem_xbar = LazyModule(new TLXbar).node
-  imsics_fromMem_xbar := imsics_fromMem
+  imsics_fromMem_xbar := toAIA_xbar
 
   val imsics = (0 until 4).map( i => {
     val (groupID,memberID) = aplic_params.hartIndex_to_gh(i)
@@ -50,24 +53,18 @@ class ChiselAIA()(implicit p: Parameters) extends LazyModule {
     imsic
   })
 
-  val aplic_fromCPU = TLClientNode(
-    Seq(TLMasterPortParameters.v1(
-      Seq(TLMasterParameters.v1("aplic_tl", IdRange(0, 16)))
-  )))
   val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
-  aplic.fromCPU := aplic_fromCPU
+  aplic.fromCPU := toAIA_xbar
   imsics_fromMem_xbar := aplic.toIMSIC
 
   lazy val module = new LazyModuleImp(this) {
-    imsics_fromMem.makeIOs()(ValName("intfile"))
+    toAIA.makeIOs()(ValName("toaia"))
     (0 until 4).map (i => {
       val toCSR = IO(Output(chiselTypeOf(imsics(i).module.toCSR))).suggestName(f"toCSR${i}")
       val fromCSR = IO(Input(chiselTypeOf(imsics(i).module.fromCSR))).suggestName(f"fromCSR${i}")
       toCSR   <> imsics(i).module.toCSR
       fromCSR <> imsics(i).module.fromCSR
     })
-
-    aplic_fromCPU.makeIOs()(ValName("domain"))
     val intSrcs = IO(Input(chiselTypeOf(aplic.module.intSrcs)))
     intSrcs <> aplic.module.intSrcs
   }

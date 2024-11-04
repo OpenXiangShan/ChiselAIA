@@ -41,34 +41,34 @@ async def a_put_full(dut, addr, mask, size, data):
   """Send a PutFullData message on the TileLink 'a' channel."""
   await FallingEdge(dut.clock)
   # Wait until the interface is ready
-  while not dut.intfile_0_a_ready.value:
+  while not dut.toaia_0_a_ready.value:
     await RisingEdge(dut.clock)
 
   # Send the transaction
-  dut.intfile_0_a_valid.value = 1
-  dut.intfile_0_a_bits_opcode.value = tl_a_putFullData
-  dut.intfile_0_a_bits_address.value = addr
-  dut.intfile_0_a_bits_mask.value = mask
-  dut.intfile_0_a_bits_size.value = size
-  dut.intfile_0_a_bits_data.value = data
+  dut.toaia_0_a_valid.value = 1
+  dut.toaia_0_a_bits_opcode.value = tl_a_putFullData
+  dut.toaia_0_a_bits_address.value = addr
+  dut.toaia_0_a_bits_mask.value = mask
+  dut.toaia_0_a_bits_size.value = size
+  dut.toaia_0_a_bits_data.value = data
   await FallingEdge(dut.clock)
-  dut.intfile_0_a_valid.value = 0
+  dut.toaia_0_a_valid.value = 0
 
 async def a_get(dut, addr, mask, size):
   """Send a Get message on the TileLink 'a' channel."""
   await FallingEdge(dut.clock)
   # Wait until the interface is ready
-  while not dut.intfile_0_a_ready.value:
+  while not dut.toaia_0_a_ready.value:
     await RisingEdge(dut.clock)
 
   # Send the transaction
-  dut.intfile_0_a_valid.value = 1
-  dut.intfile_0_a_bits_opcode.value = tl_a_get
-  dut.intfile_0_a_bits_address.value = addr
-  dut.intfile_0_a_bits_mask.value = mask
-  dut.intfile_0_a_bits_size.value = size
+  dut.toaia_0_a_valid.value = 1
+  dut.toaia_0_a_bits_opcode.value = tl_a_get
+  dut.toaia_0_a_bits_address.value = addr
+  dut.toaia_0_a_bits_mask.value = mask
+  dut.toaia_0_a_bits_size.value = size
   await FallingEdge(dut.clock)
-  dut.intfile_0_a_valid.value = 0
+  dut.toaia_0_a_valid.value = 0
 
 async def m_int(dut, intnum):
   """Issue an interrupt to the M-mode interrupt file."""
@@ -184,7 +184,7 @@ async def imsic_1_test(dut):
   dut.reset.value = 0
 
   # Initialize ready signals
-  dut.intfile_0_d_ready.value = 1
+  dut.toaia_0_d_ready.value = 1
 
   await RisingEdge(dut.clock)
 

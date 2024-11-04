@@ -28,7 +28,7 @@ async def aplic_write_read_test(dut):
     await RisingEdge(dut.clock)
   dut.reset.value = 0
   # Initialize ready signals
-  dut.domain_0_d_ready.value = 1
+  dut.toaia_0_d_ready.value = 1
   await RisingEdge(dut.clock)
 
   async def write_read_check_2(dut, addr, idata, odata):

@@ -4,9 +4,11 @@ digraph {
   splines=ortho;
   node [shape=box];
 
-  imsics_fromMem[label="imsics_fromMem\nTLClientNode"];
+  toAIA[label="toAIA\nTLClientNode"];
+  toAIA_xbar[label="toAIA_xbar\nTLXbar", width=5];
+  toAIA -> toAIA_xbar;
   imsics_fromMem_xbar[label="imsics_fromMem_xbar\nTLXbar", width=10];
-  imsics_fromMem -> imsics_fromMem_xbar;
+  toAIA_xbar -> imsics_fromMem_xbar;
   imsic00[label="imsic00\nTLIMSIC", style="filled", fillcolor="#F8CECC", color="#B85450"];
   imsic01[label="imsic01\nTLIMSIC", style="filled", fillcolor="#F8CECC", color="#B85450"];
   imsic10[label="imsic10\nTLIMSIC", style="filled", fillcolor="#F8CECC", color="#B85450"];
@@ -19,7 +21,6 @@ digraph {
   imsics_fromMem_xbar -> map01 -> imsic01;
   imsics_fromMem_xbar -> map10 -> imsic10;
   imsics_fromMem_xbar -> map11 -> imsic11;
-  aplic_fromCPU[label="aplic_fromCPU\nTLClientNode"];
   aplic[label="aplic\nTLAPLIC", style="filled", fillcolor="#F8CECC", color="#B85450"];
-  aplic_fromCPU -> aplic -> imsics_fromMem_xbar;
+  toAIA_xbar -> aplic -> imsics_fromMem_xbar;
 }
