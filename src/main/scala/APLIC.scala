@@ -21,6 +21,8 @@ import chisel3.util._
 import freechips.rocketchip.diplomacy._
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.tilelink._
+import freechips.rocketchip.devices.tilelink._
+import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.regmapper._
 import xs.utils._
 
@@ -337,5 +339,65 @@ class Domain(
 
     mDomain.module.intSrcs := intSrcs
     sgDomain.module.intSrcs := mDomain.module.intSrcsDelegated
+  }
+}
+
+class AXI4APLIC(
+  params: APLICParams,
+  beatBytes: Int = 8,
+  AXI_ID_WIDTH: Int = 5,
+)(implicit p: Parameters) extends LazyModule {
+  private val tlaplic = LazyModule(new TLAPLIC(params, beatBytes))
+
+  val fromCPU = AXI4IdentityNode()
+  locally {
+    object SeqAddressSet_Subtract_SeqAddressSet {
+      def apply(op1s: Seq[AddressSet], op2s: Seq[AddressSet]): Seq[AddressSet] = {
+        if (op2s.size == 0) { op1s }
+        else { SeqAddressSet_Subtract_SeqAddressSet(
+          op1s.map(_.subtract(op2s.head)).flatten,
+          op2s.drop(1)
+    )}}}
+    val tlerror = LazyModule(new TLError(
+      params = DevNullParams(
+        address = SeqAddressSet_Subtract_SeqAddressSet(
+          Seq(AddressSet(0, (BigInt(1)<<64)-1)),
+          // tlaplic.fromCPU.in.head._2.manager.managers.map(p=>p.address).flatten,
+          Seq(AddressSet(params.baseAddr, pow2(params.domainMemWidth)-1),
+              AddressSet(params.baseAddr + pow2(params.domainMemWidth), pow2(params.domainMemWidth)-1),
+        )),
+        maxAtomic = 8,
+        maxTransfer = 64,
+      ),
+      beatBytes = 8,
+    ))
+    val xbar = TLXbar()
+    tlerror.node := xbar
+    tlaplic.fromCPU := xbar
+    (xbar
+      := TLFIFOFixer()
+      := TLWidthWidget(beatBytes)
+      := TLBuffer()
+      := AXI4ToTL()
+      := AXI4UserYanker(Some(1))
+      := AXI4Fragmenter()
+      := AXI4IdIndexer(AXI_ID_WIDTH)
+      := fromCPU)
+  }
+
+  val toIMSIC = AXI4IdentityNode()
+  (toIMSIC
+    := AXI4IdIndexer(AXI_ID_WIDTH)
+    := AXI4Buffer()
+    := AXI4UserYanker(Some(1))
+    := TLToAXI4()
+    := TLWidthWidget(beatBytes)
+    := TLFIFOFixer()
+    := tlaplic.toIMSIC)
+
+  lazy val module = new Imp
+  class Imp extends LazyModuleImp(this) {
+    val intSrcs = IO(Flipped(tlaplic.module.intSrcs.cloneType))
+    tlaplic.module.intSrcs := intSrcs
   }
 }

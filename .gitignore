@@ -5,7 +5,7 @@ out
 .bloop
 
 # for chisel generated files
-gen
+gen*
 *.fir
 
 # for cocotb

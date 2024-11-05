@@ -20,9 +20,11 @@ import chisel3.util._
 import freechips.rocketchip.diplomacy._
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.tilelink._
+import freechips.rocketchip.amba.axi4._
 // _root_ disambiguates from package chisel3.util.circt if user imports chisel3.util._
 import _root_.circt.stage.ChiselStage
 
+// TODO: rename to TLAIA
 class ChiselAIA()(implicit p: Parameters) extends LazyModule {
   val toAIA = TLClientNode(
     Seq(TLMasterPortParameters.v1(
@@ -70,6 +72,36 @@ class ChiselAIA()(implicit p: Parameters) extends LazyModule {
   }
 }
 
+class AXI4AIA()(implicit p: Parameters) extends LazyModule {
+  val aplic_params = APLICParams(groupsNum=2, membersNum=2)
+
+  val aplic_fromCPU = AXI4MasterNode(
+    Seq(AXI4MasterPortParameters(
+      Seq(AXI4MasterParameters("aplic_axi4", IdRange(0, 16)))
+  )))
+  val aplic_toIMSIC = AXI4SlaveNode(Seq(AXI4SlavePortParameters(
+    Seq(AXI4SlaveParameters(
+      address = Seq(
+        AddressSet(aplic_params.mBaseAddr, pow2(aplic_params.groupStrideWidth + aplic_params.groupsWidth)-1),
+        AddressSet(aplic_params.sgBaseAddr,pow2(aplic_params.groupStrideWidth + aplic_params.groupsWidth)-1),
+      ),
+      supportsWrite = TransferSizes(1, 8),
+      interleavedId = Some(0),
+    )),
+    beatBytes = 8
+  )))
+  val aplic = LazyModule(new AXI4APLIC(aplic_params)(Parameters.empty))
+  aplic.fromCPU := aplic_fromCPU
+  aplic_toIMSIC := aplic.toIMSIC
+
+  lazy val module = new LazyModuleImp(this) {
+    aplic_fromCPU.makeIOs()(ValName("domain"))
+    aplic_toIMSIC.makeIOs()(ValName("toimsic"))
+    val intSrcs = IO(Input(chiselTypeOf(aplic.module.intSrcs)))
+    intSrcs <> aplic.module.intSrcs
+  }
+}
+
 /**
  * Generate Verilog sources
  */
@@ -89,6 +121,24 @@ object ChiselAIA extends App {
       "--disable-annotation-unknown",
       "--lowering-options=explicitBitcast,disallowLocalVariables,disallowPortDeclSharing,locationInfoStyle=none",
       "--split-verilog", "-o=gen",
+    )
+  )
+
+  val axi4top = DisableMonitors(p => LazyModule(
+    new AXI4AIA()(Parameters.empty))
+  )(Parameters.empty)
+
+  ChiselStage.emitSystemVerilog(
+    axi4top.module,
+    args = Array("--dump-fir"),
+    // more opts see: $CHISEL_FIRTOOL_PATH/firtool -h
+    firtoolOpts = Array(
+      "-disable-all-randomization",
+      "-strip-debug-info",
+      // without this, firtool will exit with error: Unhandled annotation
+      "--disable-annotation-unknown",
+      "--lowering-options=explicitBitcast,disallowLocalVariables,disallowPortDeclSharing,locationInfoStyle=none",
+      "--split-verilog", "-o=gen_axi",
     )
   )
 }
