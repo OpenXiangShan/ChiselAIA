@@ -21,6 +21,8 @@ import chisel3.util._
 import freechips.rocketchip.diplomacy._
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.tilelink._
+import freechips.rocketchip.amba.axi4._
+import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.regmapper._
 import freechips.rocketchip.prci.{ClockSinkDomain}
 import freechips.rocketchip.util._
@@ -316,5 +318,52 @@ class TLIMSIC(
       fromCSR.vgein >= params.geilen.asUInt,
       illegal_priv,
     ).reduce(_|_)
+  }
+}
+
+class AXI4IMSIC(
+  params: IMSICParams,
+  beatBytes: Int = 8,
+  AXI_ID_WIDTH: Int = 5,
+)(implicit p: Parameters) extends LazyModule {
+  private val tlimsic = LazyModule(new TLIMSIC(params, beatBytes))
+
+  val fromMem = AXI4IdentityNode()
+  locally {
+    val tlerror = LazyModule(new TLError(
+      params = DevNullParams(
+        address = SeqAddressSet_Subtract_SeqAddressSet(
+          // Seq(AddressSet(0, (BigInt(1)<<64)-1)),
+          Seq(AddressSet(0x123000, 0x1000-1)),
+          Seq(AddressSet(params.mAddr,  pow2(params.intFileMemWidth) - 1),
+              AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1),
+        )),
+        maxAtomic = 8,
+        maxTransfer = 64,
+      ),
+      beatBytes = 8,
+    ))
+    val xbar = TLXbar()
+    tlerror.node := xbar
+    tlimsic.fromMem := xbar
+    (xbar
+    // (tlimsic.fromMem
+      := TLFIFOFixer()
+      := TLWidthWidget(beatBytes)
+      := TLBuffer()
+      // := AXI4ToTLNoTLError()
+      := AXI4ToTL()
+      := AXI4UserYanker(Some(1))
+      := AXI4Fragmenter()
+      := AXI4IdIndexer(AXI_ID_WIDTH)
+      := fromMem)
+  }
+
+  lazy val module = new Imp
+  class Imp extends LazyModuleImp(this) {
+    val toCSR = IO(Output(tlimsic.module.toCSR.cloneType))
+    val fromCSR = IO(Input(tlimsic.module.fromCSR.cloneType))
+    toCSR := tlimsic.module.toCSR
+    tlimsic.module.fromCSR := fromCSR
   }
 }

@@ -73,7 +73,30 @@ class ChiselAIA()(implicit p: Parameters) extends LazyModule {
 }
 
 class AXI4AIA()(implicit p: Parameters) extends LazyModule {
+  val imsic_params = IMSICParams()
   val aplic_params = APLICParams(groupsNum=2, membersNum=2)
+  val imsics_fromMem = AXI4MasterNode(
+    Seq(AXI4MasterPortParameters(
+      Seq(AXI4MasterParameters("aplic_axi4", IdRange(0, 16)))
+  )))
+  val imsics_fromMem_xbar = LazyModule(new AXI4Xbar).node
+  imsics_fromMem_xbar := imsics_fromMem
+
+  val imsics = (0 until 4).map( i => {
+    val (groupID,memberID) = aplic_params.hartIndex_to_gh(i)
+    require(groupID < aplic_params.groupsNum,    f"groupID ${groupID} should less than groupsNum ${aplic_params.groupsNum}")
+    require(memberID < aplic_params.membersNum,  f"memberID ${memberID} should less than membersNum ${aplic_params.membersNum}")
+    println(f"Generating IMSIC groupID=0x${groupID }%x memberID=0x${memberID}%x")
+    val map = LazyModule(new AXI4Map( addrSet => addrSet.base.toLong match {
+      case imsic_params.mAddr => groupID * pow2(aplic_params.groupStrideWidth) + aplic_params.mBaseAddr + memberID * pow2(aplic_params.mStrideWidth)
+      case imsic_params.sgAddr=> groupID * pow2(aplic_params.groupStrideWidth) + aplic_params.sgBaseAddr+ memberID * pow2(aplic_params.sgStrideWidth)
+      case _ => addrSet.base + groupID * pow2(aplic_params.groupStrideWidth) + aplic_params.mBaseAddr + memberID * pow2(aplic_params.mStrideWidth) // tlerror
+    })(Parameters.empty)).node
+
+    val imsic = LazyModule(new AXI4IMSIC(imsic_params)(Parameters.empty))
+    imsic.fromMem := map := imsics_fromMem_xbar
+    imsic
+  })
 
   val aplic_fromCPU = AXI4MasterNode(
     Seq(AXI4MasterPortParameters(
@@ -97,6 +120,12 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
   lazy val module = new LazyModuleImp(this) {
     aplic_fromCPU.makeIOs()(ValName("domain"))
     aplic_toIMSIC.makeIOs()(ValName("toimsic"))
+    (0 until 4).map (i => {
+      val toCSR = IO(Output(chiselTypeOf(imsics(i).module.toCSR))).suggestName(f"toCSR${i}")
+      val fromCSR = IO(Input(chiselTypeOf(imsics(i).module.fromCSR))).suggestName(f"fromCSR${i}")
+      toCSR   <> imsics(i).module.toCSR
+      fromCSR <> imsics(i).module.fromCSR
+    })
     val intSrcs = IO(Input(chiselTypeOf(aplic.module.intSrcs)))
     intSrcs <> aplic.module.intSrcs
   }

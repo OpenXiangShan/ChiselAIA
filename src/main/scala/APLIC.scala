@@ -26,8 +26,6 @@ import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.regmapper._
 import xs.utils._
 
-object pow2 { def apply(n: Int): Long = 1L << n }
-
 case class APLICParams(
   //MC APLIC接收的中断源数量的对数。
   //MC 默认值7表示APLIC支持最多128（2^7）个中断源。
@@ -351,13 +349,6 @@ class AXI4APLIC(
 
   val fromCPU = AXI4IdentityNode()
   locally {
-    object SeqAddressSet_Subtract_SeqAddressSet {
-      def apply(op1s: Seq[AddressSet], op2s: Seq[AddressSet]): Seq[AddressSet] = {
-        if (op2s.size == 0) { op1s }
-        else { SeqAddressSet_Subtract_SeqAddressSet(
-          op1s.map(_.subtract(op2s.head)).flatten,
-          op2s.drop(1)
-    )}}}
     val tlerror = LazyModule(new TLError(
       params = DevNullParams(
         address = SeqAddressSet_Subtract_SeqAddressSet(
