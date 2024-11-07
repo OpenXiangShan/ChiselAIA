@@ -57,6 +57,7 @@ case class APLICParams(
   //MC 👉 客户中断文件的数量（Number of guest interrupt files）:
   geilen          : Int  = 4           ,
   //MC{hide}
+  //MC{hide}
 ) {
   require(aplicIntSrcWidth <= 10, f"aplicIntSrcWidth=${aplicIntSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")
   lazy val intSrcNum: Int = pow2(aplicIntSrcWidth).toInt
