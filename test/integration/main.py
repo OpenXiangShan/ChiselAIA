@@ -44,18 +44,5 @@ async def integration_simple_test(dut):
   # Init IMSIC0
   await init_imsic(dut, 0)
 
-  async def int(i):
-    intSrcs_x = getattr(dut, f"intSrcs_{i}")
-    await FallingEdge(dut.clock)
-    intSrcs_x.value = 0
-    await FallingEdge(dut.clock)
-    intSrcs_x.value = 1
-    for _ in range(10):
-      await FallingEdge(dut.clock)
-      if dut.toCSR0_topeis_0 == wrap_topei(i):
-        break
-    else:
-      assert False, f"Timeout waiting for toCSR0_topeis_0 == wrap_topei({i})"
-
-  await int(19)
-  await int(2)
+  await interrupt(dut, 19)
+  await interrupt(dut, 2)

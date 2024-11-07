@@ -59,6 +59,19 @@ async def a_get32(dut, addr) -> int:
   res = odata if addr%8==0 else odata>>32
   return res & 0xffffffff
 
+async def interrupt(dut, i):
+  intSrcs_x = getattr(dut, f"intSrcs_{i}")
+  await FallingEdge(dut.clock)
+  intSrcs_x.value = 0
+  await FallingEdge(dut.clock)
+  intSrcs_x.value = 1
+  for _ in range(10):
+    await FallingEdge(dut.clock)
+    if dut.toCSR0_topeis_0 == wrap_topei(i):
+      break
+  else:
+    assert False, f"Timeout waiting for toCSR0_topeis_0 == wrap_topei({i})"
+
 ################################################################################
 # IMSIC
 ################################################################################

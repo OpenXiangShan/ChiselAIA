@@ -73,14 +73,17 @@ class ChiselAIA()(implicit p: Parameters) extends LazyModule {
 }
 
 class AXI4AIA()(implicit p: Parameters) extends LazyModule {
+  val toAIA = AXI4MasterNode(
+    Seq(AXI4MasterPortParameters(
+      Seq(AXI4MasterParameters("aia_axi4", IdRange(0, 16)))
+  )))
+  val toAIA_xbar = LazyModule(new AXI4Xbar).node
+  toAIA_xbar := toAIA
+
   val imsic_params = IMSICParams()
   val aplic_params = APLICParams(groupsNum=2, membersNum=2)
-  val imsics_fromMem = AXI4MasterNode(
-    Seq(AXI4MasterPortParameters(
-      Seq(AXI4MasterParameters("aplic_axi4", IdRange(0, 16)))
-  )))
   val imsics_fromMem_xbar = LazyModule(new AXI4Xbar).node
-  imsics_fromMem_xbar := imsics_fromMem
+  imsics_fromMem_xbar := toAIA_xbar
 
   val imsics = (0 until 4).map( i => {
     val (groupID,memberID) = aplic_params.hartIndex_to_gh(i)
@@ -98,29 +101,12 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
     imsic
   })
 
-  val aplic_fromCPU = AXI4MasterNode(
-    Seq(AXI4MasterPortParameters(
-      Seq(AXI4MasterParameters("aplic_axi4", IdRange(0, 16)))
-  )))
-  val aplic_toIMSIC = AXI4SlaveNode(Seq(AXI4SlavePortParameters(
-    Seq(AXI4SlaveParameters(
-      address = Seq(
-        AddressSet(aplic_params.mBaseAddr, pow2(aplic_params.groupStrideWidth + aplic_params.groupsWidth)-1),
-        AddressSet(aplic_params.sgBaseAddr,pow2(aplic_params.groupStrideWidth + aplic_params.groupsWidth)-1),
-      ),
-      supportsWrite = TransferSizes(1, 8),
-      interleavedId = Some(0),
-    )),
-    beatBytes = 8
-  )))
   val aplic = LazyModule(new AXI4APLIC(aplic_params)(Parameters.empty))
-  aplic.fromCPU := aplic_fromCPU
-  aplic_toIMSIC := aplic.toIMSIC
+  aplic.fromCPU := toAIA_xbar
+  imsics_fromMem_xbar := AXI4Deinterleaver(8) := aplic.toIMSIC
 
   lazy val module = new LazyModuleImp(this) {
-    imsics_fromMem.makeIOs()(ValName("intfile"))
-    aplic_fromCPU.makeIOs()(ValName("domain"))
-    aplic_toIMSIC.makeIOs()(ValName("toimsic"))
+    toAIA.makeIOs()(ValName("toaia"))
     (0 until 4).map (i => {
       val toCSR = IO(Output(chiselTypeOf(imsics(i).module.toCSR))).suggestName(f"toCSR${i}")
       val fromCSR = IO(Input(chiselTypeOf(imsics(i).module.fromCSR))).suggestName(f"fromCSR${i}")

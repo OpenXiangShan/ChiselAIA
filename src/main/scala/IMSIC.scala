@@ -352,7 +352,7 @@ class AXI4IMSIC(
       := TLWidthWidget(beatBytes)
       := TLBuffer()
       // := AXI4ToTLNoTLError()
-      := AXI4ToTL()
+      := AXI4ToTL(wcorrupt=false)
       := AXI4UserYanker(Some(1))
       := AXI4Fragmenter()
       := AXI4IdIndexer(AXI_ID_WIDTH)
