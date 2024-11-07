@@ -330,29 +330,11 @@ class AXI4IMSIC(
 
   val fromMem = AXI4IdentityNode()
   locally {
-    val tlerror = LazyModule(new TLError(
-      params = DevNullParams(
-        address = SeqAddressSet_Subtract_SeqAddressSet(
-          // Seq(AddressSet(0, (BigInt(1)<<64)-1)),
-          Seq(AddressSet(0x123000, 0x1000-1)),
-          Seq(AddressSet(params.mAddr,  pow2(params.intFileMemWidth) - 1),
-              AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1),
-        )),
-        maxAtomic = 8,
-        maxTransfer = 64,
-      ),
-      beatBytes = 8,
-    ))
-    val xbar = TLXbar()
-    tlerror.node := xbar
-    tlimsic.fromMem := xbar
-    (xbar
-    // (tlimsic.fromMem
+    (tlimsic.fromMem
       := TLFIFOFixer()
       := TLWidthWidget(beatBytes)
       := TLBuffer()
-      // := AXI4ToTLNoTLError()
-      := AXI4ToTL(wcorrupt=false)
+      := AXI4ToTLNoTLError(wcorrupt=false)
       := AXI4UserYanker(Some(1))
       := AXI4Fragmenter()
       := AXI4IdIndexer(AXI_ID_WIDTH)

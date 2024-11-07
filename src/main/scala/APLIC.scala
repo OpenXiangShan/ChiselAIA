@@ -349,28 +349,11 @@ class AXI4APLIC(
 
   val fromCPU = AXI4IdentityNode()
   locally {
-    val tlerror = LazyModule(new TLError(
-      params = DevNullParams(
-        address = SeqAddressSet_Subtract_SeqAddressSet(
-          Seq(AddressSet(0x321000, 0x1000-1)),
-          // tlaplic.fromCPU.in.head._2.manager.managers.map(p=>p.address).flatten,
-          Seq(AddressSet(params.baseAddr, pow2(params.domainMemWidth)-1),
-              AddressSet(params.baseAddr + pow2(params.domainMemWidth), pow2(params.domainMemWidth)-1),
-        )),
-        maxAtomic = 8,
-        maxTransfer = 64,
-      ),
-      beatBytes = 8,
-    ))
-    val xbar = TLXbar()
-    tlerror.node := xbar
-    tlaplic.fromCPU := xbar
-    (xbar
+    (tlaplic.fromCPU
       := TLFIFOFixer()
       := TLWidthWidget(beatBytes)
       := TLBuffer()
-      := AXI4ToTL(wcorrupt=false)
-      // := AXI4ToTLNoTLError()
+      := AXI4ToTLNoTLError(wcorrupt=false)
       := AXI4UserYanker(Some(1))
       := AXI4Fragmenter()
       := AXI4IdIndexer(AXI_ID_WIDTH)
