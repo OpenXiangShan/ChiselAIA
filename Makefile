@@ -41,6 +41,8 @@ doc: $(MDs) $(PYSVGs) $(DRAWIOSVGs) $(DOTSVGs)
 	mdbook build
 docs/images/arch_configure_py.dot: docs/images/arch_common.py
 docs/images/arch_interrupt_py.dot: docs/images/arch_common.py
+docs/images/example_py.dot: docs/images/example_common.py
+docs/images/example-axi_py.dot: docs/images/example_common.py
 %_py.dot: %_dot.py
 	python3 $<
 %.svg: %.dot

@@ -11,6 +11,7 @@
 * [示例（Examples）](#示例examples)
   * [简单的4核系统（A Simple 4-Hart System）](#简单的4核系统a-simple-4-hart-system)
   * [分组的4核系统（A Grouped 4-Hart System）](#分组的4核系统a-grouped-4-hart-system)
+    * [AXI4版本（AXI4 Version）](#axi4版本axi4-version)
 
 <!-- vim-markdown-toc -->
 
@@ -155,4 +156,11 @@ This configuration creates a 2-bit `hartIndex` where the higher bit represents `
 For detailed IO connections, refer to the following figure and `src/main/scala/Example.AIA`.
 
 ![](./images/example_py.svg)
-![](./images/example.svg)
+
+#### AXI4版本（AXI4 Version）
+
+目前采用Tilelink转AXI4的方式支持了AXI4协议。
+
+AXI4 protocol support is implemented through TileLink to AXI4 protocol conversion.
+
+![](./images/example-axi_py.svg)
