@@ -94,6 +94,8 @@ async def axi_simple_test(dut):
   dut.domain_0_r_ready.value  = 1
   dut.toimsic_0_aw_ready.value = 1
   dut.toimsic_0_w_ready.value = 1
+  dut.intfile_0_b_ready.value  = 1
+  dut.intfile_0_r_ready.value  = 1
   await RisingEdge(dut.clock)
 
   # Init APLIC
@@ -124,5 +126,67 @@ async def axi_simple_test(dut):
     await receive_w(dut)
     await axi4_toimsic_b_send(dut, await task_receive_aw_id)
 
+  # Init IMSIC0
+  await init_imsic(dut, 0)
+
   await int(19)
   await int(2)
+
+  # TODO: remove
+  async def axi4_aw_send_intfile(dut, addr, prot, size):
+    await FallingEdge(dut.clock)
+    while not dut.intfile_0_aw_ready:
+      await FallingEdge(dut.clock)
+    dut.intfile_0_aw_valid.value = 1
+    dut.intfile_0_aw_bits_addr.value = addr
+    dut.intfile_0_aw_bits_prot.value = prot
+    # TODO: why need this? how to use axi4lite?
+    dut.intfile_0_aw_bits_size.value = size
+    await FallingEdge(dut.clock)
+    dut.intfile_0_aw_valid.value = 0
+  async def axi4_w_send_intfile(dut, data, strb):
+    await FallingEdge(dut.clock)
+    while not dut.intfile_0_w_ready:
+      await FallingEdge(dut.clock)
+    dut.intfile_0_w_valid.value = 1
+    dut.intfile_0_w_bits_data.value = data
+    dut.intfile_0_w_bits_strb.value = strb
+    await FallingEdge(dut.clock)
+    dut.intfile_0_w_valid.value = 0
+  async def axi4_b_receive_intfile(dut):
+    await RisingEdge(dut.intfile_0_b_valid)
+  async def axi4_ar_send_intfile(dut, addr, prot, size):
+    await FallingEdge(dut.clock)
+    while not dut.intfile_0_ar_ready:
+      await FallingEdge(dut.clock)
+    dut.intfile_0_ar_valid.value = 1
+    dut.intfile_0_ar_bits_addr.value = addr
+    dut.intfile_0_ar_bits_prot.value = prot
+    # TODO: why need this? how to use axi4lite?
+    dut.intfile_0_ar_bits_size.value = size
+    await FallingEdge(dut.clock)
+    dut.intfile_0_ar_valid.value = 0
+  async def axi4_r_receive_intfile(dut):
+    await RisingEdge(dut.intfile_0_r_valid)
+    return dut.intfile_0_r_bits_data.value
+  
+  async def axi4_write_intfile(dut, addr, data, strb, size):
+    cocotb.start_soon(axi4_aw_send_intfile(dut, addr, 0, size))
+    cocotb.start_soon(axi4_w_send_intfile(dut, data, strb))
+    await axi4_b_receive_intfile(dut)
+  async def axi4_write32_intfile(dut, addr, data):
+    await axi4_write_intfile(dut, addr,
+      data if addr%8==0 else data<<32,
+      0x0f if addr%8==0 else 0xf0,
+      2,
+    )
+
+  async def m_int_intfile(dut, intnum, imsicID=1):
+    """Issue an interrupt to the M-mode interrupt file."""
+    await axi4_write32_intfile(dut, imsic_m_base_addr+0x1000*imsicID, intnum)
+    if dut.toCSR0_topeis_0.value != wrap_topei(intnum):
+      await Edge(dut.toCSR0_topeis_0)
+      assert dut.toCSR0_topeis_0.value == wrap_topei(intnum)
+
+  await m_int_intfile(dut, 19, 0)
+  await m_int_intfile(dut, 2, 0)

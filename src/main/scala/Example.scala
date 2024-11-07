@@ -118,6 +118,7 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
   aplic_toIMSIC := aplic.toIMSIC
 
   lazy val module = new LazyModuleImp(this) {
+    imsics_fromMem.makeIOs()(ValName("intfile"))
     aplic_fromCPU.makeIOs()(ValName("domain"))
     aplic_toIMSIC.makeIOs()(ValName("toimsic"))
     (0 until 4).map (i => {
