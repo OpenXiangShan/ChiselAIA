@@ -18,7 +18,8 @@ let
     * Before running, make sure git submodules have been updated.
       * `git submodule update --init --recursive`
     * Run Unit Tests: `make -j`
-      * The verilog is generated into gen/ folder.
+      * The tilelink verilog is generated into `gen/` folder.
+      * The axi4 verilog is generated into `gen_axi/` folder.
       * Run a single unit test: `make run-aplic`, `make run-imsic`, ...
         * The available unit tests are located in test/*/main.py
   '';

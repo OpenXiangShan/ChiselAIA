@@ -1,2 +1,3 @@
 * IO: combinational to reg
-* AXI support
+* native AXI support
+* combine Example.scala and Example-axi.scala

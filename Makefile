@@ -5,8 +5,10 @@ default: $(addprefix run-,$(testcases))
 
 gen=gen/filelist.f
 gen_axi=gen_axi/filelist.f
-$(gen) $(gen_axi)&: $(wildcard src/main/scala/*)
-	mill ChiselAIA
+$(gen): $(wildcard src/main/scala/*)
+	mill TLAIA
+$(gen_axi): $(wildcard src/main/scala/*)
+	mill AXI4AIA
 
 compile=test/sim_build/Vtop
 compile_axi=test/sim_build_axi/Vtop

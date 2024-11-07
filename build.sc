@@ -57,7 +57,7 @@ with HasChisel {
   }
 }
 
-object ChiselAIA extends SbtModule { m =>
+class ChiselAIA extends SbtModule { m =>
   override def millSourcePath = os.pwd
   override def scalaVersion = defaultScalaVersion
   override def scalacOptions = Seq(
@@ -74,3 +74,5 @@ object ChiselAIA extends SbtModule { m =>
   )
   def rocketModule = rocketchip
 }
+object TLAIA extends ChiselAIA { def mainClass = Some("aia.TLAIA") }
+object AXI4AIA extends ChiselAIA { def mainClass = Some("aia.AXI4AIA") }
