@@ -154,4 +154,5 @@ val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
 This configuration creates a 2-bit `hartIndex` where the higher bit represents `groupID` and the lower bit represents `memberID`.
 For detailed IO connections, refer to the following figure and `src/main/scala/Example.AIA`.
 
+![](./images/example_py.svg)
 ![](./images/example.svg)
