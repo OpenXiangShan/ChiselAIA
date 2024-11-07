@@ -349,20 +349,19 @@ class AXI4APLIC(
   private val tlaplic = LazyModule(new TLAPLIC(params, beatBytes))
 
   val fromCPU = AXI4IdentityNode()
-  locally {
-    (tlaplic.fromCPU
-      := TLFIFOFixer()
-      := TLWidthWidget(beatBytes)
-      := TLBuffer()
-      := AXI4ToTLNoTLError(wcorrupt=false)
-      := AXI4UserYanker(Some(1))
-      := AXI4Fragmenter()
-      := AXI4IdIndexer(AXI_ID_WIDTH)
-      := fromCPU)
-  }
+  (tlaplic.fromCPU
+    := TLFIFOFixer()
+    := TLWidthWidget(beatBytes)
+    := TLBuffer()
+    := AXI4ToTLNoTLError(wcorrupt=false)
+    := AXI4UserYanker(Some(1))
+    := AXI4Fragmenter()
+    := AXI4IdIndexer(AXI_ID_WIDTH)
+    := fromCPU)
 
   val toIMSIC = AXI4IdentityNode()
   (toIMSIC
+    := AXI4Deinterleaver(beatBytes)
     := AXI4IdIndexer(AXI_ID_WIDTH)
     := AXI4Buffer()
     := AXI4UserYanker(Some(1))

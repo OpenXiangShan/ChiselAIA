@@ -329,17 +329,15 @@ class AXI4IMSIC(
   private val tlimsic = LazyModule(new TLIMSIC(params, beatBytes))
 
   val fromMem = AXI4IdentityNode()
-  locally {
-    (tlimsic.fromMem
-      := TLFIFOFixer()
-      := TLWidthWidget(beatBytes)
-      := TLBuffer()
-      := AXI4ToTLNoTLError(wcorrupt=false)
-      := AXI4UserYanker(Some(1))
-      := AXI4Fragmenter()
-      := AXI4IdIndexer(AXI_ID_WIDTH)
-      := fromMem)
-  }
+  (tlimsic.fromMem
+    := TLFIFOFixer()
+    := TLWidthWidget(beatBytes)
+    := TLBuffer()
+    := AXI4ToTLNoTLError(wcorrupt=false)
+    := AXI4UserYanker(Some(1))
+    := AXI4Fragmenter()
+    := AXI4IdIndexer(AXI_ID_WIDTH)
+    := fromMem)
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {

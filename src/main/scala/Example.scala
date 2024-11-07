@@ -103,7 +103,7 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
 
   val aplic = LazyModule(new AXI4APLIC(aplic_params)(Parameters.empty))
   aplic.fromCPU := toAIA_xbar
-  imsics_fromMem_xbar := AXI4Deinterleaver(8) := aplic.toIMSIC
+  imsics_fromMem_xbar := aplic.toIMSIC
 
   lazy val module = new LazyModuleImp(this) {
     toAIA.makeIOs()(ValName("toaia"))
