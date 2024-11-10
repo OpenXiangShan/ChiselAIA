@@ -88,7 +88,6 @@ case class APLICParams(
   }
 }
 
-// TODO: add `private` modifiers
 class APLIC(
   params: APLICParams,
   beatBytes: Int = 8,
@@ -129,7 +128,7 @@ class APLIC(
     val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
     val intSrcsDelegated = IO(Output(Vec(params.intSrcNum, Bool())))
 
-    val domaincfg = new Bundle {
+    private val domaincfg = new Bundle {
       val high = 0x80.U(8.W)
       val IE   = RegInit(false.B)
       val DM   = true.B // only support MSI delivery mode
@@ -137,7 +136,7 @@ class APLIC(
       val r = high<<24 | IE<<8 | DM<<2 | BE
       def w(data:UInt):Unit = IE := data(8)
     }
-    val sourcecfgs = new Bundle {
+    private val sourcecfgs = new Bundle {
       val List(inactive, detached, reserved2, reserved3, edge1, edge0, level1, level0) = Enum(8)
       class Sourcecfg extends Bundle {
         val D = Bool()
@@ -162,7 +161,7 @@ class APLIC(
       def rBitUI(ui:UInt): Bool = bits0(ui) & sourcecfgs.actives(ui)
       def wBitUI(ui:UInt, bit:Bool): Unit
     }
-    val ips = new IXs {
+    private val ips = new IXs {
       def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {
         when (sourcecfgs.regs(ui).SM===sourcecfgs.level1 || sourcecfgs.regs(ui).SM===sourcecfgs.level0) {
           when (domaincfg.DM) {
@@ -171,11 +170,11 @@ class APLIC(
         }.otherwise { bits(ui):=bit }
       }
     }
-    val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
-    val ies = new IXs {
+    private val intSrcsRectified = Wire(Vec(params.intSrcNum, Bool()))
+    private val ies = new IXs {
       def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {bits(ui):=bit}
     }
-    val genmsi = new Bundle {
+    private val genmsi = new Bundle {
       val HartIndex = RegInit(0.U(params.groupsWidth.W + params.membersWidth.W))
       val Busy      = RegInit(false.B)
       val EIID      = RegInit(0.U(params.imsicIntSrcWidth.W))
@@ -184,7 +183,7 @@ class APLIC(
         when (domaincfg.DM && ~Busy) { HartIndex:=data(31,18); Busy:=true.B; EIID:=data(10,0); }
       }
     }
-    val targets = new Bundle {
+    private val targets = new Bundle {
       class Target extends Bundle {
         val HartIndex  = UInt(params.groupsWidth.W + params.membersWidth.W)
         val GuestIndex = UInt(if (imsicGeilen==0) 0.W else log2Ceil(imsicGeilen).W)
@@ -242,7 +241,7 @@ class APLIC(
       )
     }
 
-    val intSrcsSynced = RegNextN(intSrcs, 3)
+    private val intSrcsSynced = RegNextN(intSrcs, 3)
     intSrcsRectified(0) := false.B
     (1 until params.intSrcNum).map(i => {
       val (rect, sync, sm) = (intSrcsRectified(i), intSrcsSynced(i), sourcecfgs.regs(i).SM)
@@ -254,7 +253,7 @@ class APLIC(
         rect := false.B
       }
     })
-    val intSrcsTriggered = Wire(Vec(params.intSrcNum, Bool())); /*for debug*/dontTouch(intSrcsTriggered)
+    private val intSrcsTriggered = Wire(Vec(params.intSrcNum, Bool())); /*for debug*/dontTouch(intSrcsTriggered)
     (intSrcsTriggered zip intSrcsRectified).map { case (trigger, rect) => {
       trigger := rect && !RegNext(rect)
     }}
@@ -267,7 +266,7 @@ class APLIC(
     //  If do not append true.B, then we need to check whether the ip & ie are empty,
     //  otherwise, the returned topei will become the max index, that is 2^aplicIntSrcWidth-1
     //  [0,     2^aplicIntSrcWidth-1] :+ 2^aplicIntSrcWidth
-    val topi = Wire(UInt(params.aplicIntSrcWidth.W)); /*for debug*/dontTouch(topi)
+    private val topi = Wire(UInt(params.aplicIntSrcWidth.W)); /*for debug*/dontTouch(topi)
     topi := ParallelPriorityMux((
       (ips.bits0:+true.B) zip (ies.bits0:+true.B)
     ).zipWithIndex.map {
