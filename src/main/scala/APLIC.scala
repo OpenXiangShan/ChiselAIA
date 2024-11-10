@@ -88,7 +88,10 @@ case class APLICParams(
   }
 }
 
-class TLAPLIC(
+// TODO: change m/sgDomain, m/sgFromCPU, ... to domains, fromCPUs, ...
+// TODO: add `private` modifiers
+// TODO: remove LazyModule
+class APLIC(
   params: APLICParams,
   beatBytes: Int = 8,
 )(implicit p: Parameters) extends LazyModule {
@@ -104,28 +107,29 @@ class TLAPLIC(
   println(f"APLICParams.groupStrideWidth:  ${params.groupStrideWidth}%d")
 
 class Domain(
+  // TODO: remove arguments
   baseAddr: Long, // base address for this aplic domain
   imsicBaseAddr: Long, // base address for imsic's interrupt files
   imsicMemberStrideWidth: Int, // C, D: stride between each interrupt files
   imsicGeilen: Int, // number of guest interrupt files, it is 0 for machine-level domain
 )(implicit p: Parameters) extends LazyModule {
   override lazy val desiredName = "Domain"
-  val fromCPU = TLRegisterNode(
-    address = Seq(AddressSet(baseAddr, pow2(params.domainMemWidth)-1)),
-    device = new SimpleDevice(
-      "interrupt-controller",
-      Seq(f"riscv,aplic,0x${baseAddr}%x")
-    ),
-    beatBytes = beatBytes,
-    undefZero = true,
-    concurrency = 1,
-  )
-  val toIMSIC = TLClientNode(Seq(TLMasterPortParameters.v1(
-    Seq(TLMasterParameters.v1("toimsic", IdRange(0,16))),
-  )))
-
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
+    class MSIBundle extends Bundle {
+      val addr = Output(UInt(64.W)) // TODO: parameterization
+      val data = Output(UInt(32.W)) // TODO: parameterization
+    }
+    object MSIBundle { def apply(a: UInt, d: UInt) = {
+      val m = Wire(new MSIBundle); m.addr:=a; m.data:=d; m }}
+    val io = IO(new Bundle {
+      val msi = Decoupled(new MSIBundle)
+      val ack = Input(Bool())
+      val (regmapIn, regmapOut) = {
+        val regmapParams = RegMapperParams(params.domainMemWidth-log2Up(beatBytes), beatBytes)
+        ( Flipped(Decoupled(new RegMapperInput(regmapParams))),
+          Decoupled(new RegMapperOutput(regmapParams)) )
+    }})
     val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
     val intSrcsDelegated = IO(Output(Vec(params.intSrcNum, Bool())))
 
@@ -221,7 +225,7 @@ class Domain(
         when (valid && data=/=0.U) { ixs.wBitUI(data(params.aplicIntSrcWidth-1,0), setclr) }; true.B })
       def RWF_clrixs(i:Int, ixs:IXs) = RegWriteFn((valid, data) => {
         when (valid) { ixs.w32I(i, ixs.r32I(i) & ~data) }; true.B })
-      fromCPU.regmap(
+      io.regmapOut <> RegMapper(beatBytes, 1, true, io.regmapIn,
         /*domaincfg*/   0x0000 -> Seq(RegField(32, domaincfg.r, RegWriteFn((v, d)=>{ when(v){domaincfg.w(d)}; true.B }))),
         /*sourcecfgs*/  0x0004 -> (1 until params.intSrcNum).map(i => RegField(32, sourcecfgs.rI(i),
           RegWriteFn((v, d)=>{ when(v){sourcecfgs.wI(i, d)}; true.B }))),
@@ -277,7 +281,6 @@ class Domain(
     locally {
       val idle :: waiting_ack :: Nil = Enum(2)
       val state = RegInit(idle)
-      val (tl, edge) = toIMSIC.out(0)
 
       def getMSIAddr(HartIndex:UInt, guestID:UInt): UInt = {
         val groupID = if (params.groupsWidth == 0) 0.U
@@ -291,18 +294,17 @@ class Domain(
           (memberID<<imsicMemberStrideWidth) |
           (guestID<<params.intFileMemWidth)
       }
-      val (_, genmsiBits) = edge.Put(0.U, getMSIAddr(genmsi.HartIndex, 0.U), 2.U, genmsi.EIID)
+      val genmsiBits = MSIBundle(getMSIAddr(genmsi.HartIndex, 0.U), genmsi.EIID)
       val target = targets.regs(topi)
-      val (_, topiBits) = edge.Put(0.U, getMSIAddr(target.HartIndex, target.GuestIndex), 2.U, target.EIID)
+      val topiBits = MSIBundle(getMSIAddr(target.HartIndex, target.GuestIndex), target.EIID)
 
       // A pending extempore MSI (genmsi) should be sent by the APLIC with minimal delay.
-      tl.a.bits := Mux(genmsi.Busy, genmsiBits, topiBits)
-      tl.a.valid := (state===idle) && (genmsi.Busy || (domaincfg.IE && topi=/=0.U))
-      tl.d.ready := true.B
+      io.msi.bits := Mux(genmsi.Busy, genmsiBits, topiBits)
+      io.msi.valid := (state===idle) && (genmsi.Busy || (domaincfg.IE && topi=/=0.U))
 
       switch (state) {
-        is (idle) { when (tl.a.fire) { state := waiting_ack } }
-        is (waiting_ack) { when (tl.d.fire) { state := idle
+        is (idle) { when (io.msi.fire) { state := waiting_ack } }
+        is (waiting_ack) { when (io.ack) { state := idle
           when (genmsi.Busy) { genmsi.Busy := false.B }
           .otherwise { ips.wBitUI(topi, false.B) }
       }}}
@@ -313,6 +315,7 @@ class Domain(
   }
 }
 
+  // TODO: remove parameters
   val mDomain = LazyModule(new Domain(
     params.baseAddr,
     params.mBaseAddr,
@@ -325,19 +328,80 @@ class Domain(
     params.sgStrideWidth,
     params.geilen,
   ))
-  val fromCPU = LazyModule(new TLXbar).node
-  val toIMSIC = LazyModule(new TLXbar).node
-  mDomain.fromCPU := fromCPU
-  sgDomain.fromCPU := fromCPU
-  toIMSIC := mDomain.toIMSIC
-  toIMSIC := sgDomain.toIMSIC
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
     val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
-
     mDomain.module.intSrcs := intSrcs
     sgDomain.module.intSrcs := mDomain.module.intSrcsDelegated
+    val io = IO(new Bundle {
+      val m = mDomain.module.io.cloneType
+      val sg = sgDomain.module.io.cloneType
+    })
+    io.m <> mDomain.module.io
+    io.sg <> sgDomain.module.io
+  }
+}
+
+class TLAPLIC(
+  params: APLICParams,
+  beatBytes: Int = 8,
+)(implicit p: Parameters) extends LazyModule {
+  val fromCPU = LazyModule(new TLXbar).node
+  val toIMSIC = LazyModule(new TLXbar).node
+  private val aplic = LazyModule(new APLIC(params, beatBytes))
+  private val mFromCPU = {
+    val baseAddr = params.baseAddr
+    TLRegMapperNode(
+      address = Seq(AddressSet(baseAddr, pow2(params.domainMemWidth)-1)),
+      device = new SimpleDevice("interrupt-controller", Seq(f"riscv,aplic,0x${baseAddr}%x")),
+      beatBytes = beatBytes)
+  }
+  private val mToIMSIC = TLClientNode(Seq(TLMasterPortParameters.v1(Seq(TLMasterParameters.v1("toimsic", IdRange(0,16))))))
+  private val sgFromCPU = {
+    val baseAddr = params.baseAddr + pow2(params.domainMemWidth)
+    TLRegMapperNode(
+      address = Seq(AddressSet(baseAddr, pow2(params.domainMemWidth)-1)),
+      device = new SimpleDevice("interrupt-controller", Seq(f"riscv,aplic,0x${baseAddr}%x")),
+      beatBytes = beatBytes)
+  }
+  private val sgToIMSIC = TLClientNode(Seq(TLMasterPortParameters.v1(Seq(TLMasterParameters.v1("toimsic", IdRange(0,16))))))
+
+  // Node Connections
+  mFromCPU := fromCPU
+  sgFromCPU := fromCPU
+  toIMSIC := mToIMSIC
+  toIMSIC := sgToIMSIC
+
+  lazy val module = new Imp
+  class Imp extends LazyModuleImp(this) {
+    val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
+    aplic.module.intSrcs := intSrcs
+
+    // TODO: combine
+    locally {
+      val (tl, edge) = mToIMSIC.out.head
+      val msi = aplic.module.io.m.msi
+      val (_, bits) = edge.Put(0.U, msi.bits.addr, 2.U, msi.bits.data)
+      tl.a.bits := bits
+      tl.a.valid := msi.valid
+      msi.ready := tl.a.ready
+      tl.d.ready := true.B
+      aplic.module.io.m.ack := tl.d.valid
+    }
+    locally {
+      val (tl, edge) = sgToIMSIC.out.head
+      val msi = aplic.module.io.sg.msi
+      val (_, bits) = edge.Put(0.U, msi.bits.addr, 2.U, msi.bits.data)
+      tl.a.bits := bits
+      tl.a.valid := msi.valid
+      msi.ready := tl.a.ready
+      tl.d.ready := true.B
+      aplic.module.io.sg.ack := tl.d.valid
+    }
+
+    mFromCPU.regmap(aplic.module.io.m.regmapIn, aplic.module.io.m.regmapOut)
+    sgFromCPU.regmap(aplic.module.io.sg.regmapIn, aplic.module.io.sg.regmapOut)
   }
 }
 

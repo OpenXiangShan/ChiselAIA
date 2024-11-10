@@ -23,6 +23,7 @@ import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.util._
+import freechips.rocketchip.regmapper._
 
 object pow2 { def apply(n: Int): Long = 1L << n }
 
@@ -233,5 +234,75 @@ object AXI4ToTLNoTLError
   {
     val axi42tl = LazyModule(new AXI4ToTLNoTLError(wcorrupt))
     axi42tl.node
+  }
+}
+
+// modifications based on `rocket-chip/src/main/scala/tilelink/RegisterRouter.scala`
+case class TLRegMapperNode(
+  address:     Seq[AddressSet],
+  device:      Device,
+  beatBytes:   Int,
+)(implicit valName: ValName) extends SinkNode(TLImp)(Seq(TLSlavePortParameters.v1(
+  Seq(TLSlaveParameters.v1(
+    address            = address,
+    resources          = Seq(Resource(device, "reg/control")),
+    executable         = false,
+    supportsGet        = TransferSizes(1, beatBytes),
+    supportsPutPartial = TransferSizes(1, beatBytes),
+    supportsPutFull    = TransferSizes(1, beatBytes),
+    fifoId             = Some(0), // requests are handled in order
+  )),
+  beatBytes  = beatBytes,
+  minLatency = 1,
+))) with TLFormatNode {
+  val size = 1 << log2Ceil(1 + address.map(_.max).max - address.map(_.base).min)
+  require (size >= beatBytes)
+  address.foreach { case a =>
+    require (a.widen(size-1).base == address.head.widen(size-1).base,
+      s"TLRegMapperNode addresses (${address}) must be aligned to its size ${size}")
+  }
+
+  def regmap(in: DecoupledIO[RegMapperInput], out: DecoupledIO[RegMapperOutput]) = {
+    val (bundleIn, edge) = this.in(0)
+    val a = bundleIn.a
+    val d = bundleIn.d
+
+    in.bits.read  := a.bits.opcode === TLMessages.Get
+    in.bits.index := edge.addr_hi(a.bits)
+    in.bits.data  := a.bits.data
+    in.bits.mask  := a.bits.mask
+    Connectable.waiveUnmatched(in.bits.extra, a.bits.echo) match {
+      case (lhs, rhs) => lhs :<= rhs
+    }
+
+    // copy a.bits.{source, size} to d.bits.{source, size}
+    val sourceReg = RegInit(0.U.asTypeOf(a.bits.source))
+    val sizeReg   = RegInit(0.U.asTypeOf(a.bits.size))
+    when (a.valid) {
+      sourceReg := a.bits.source
+      sizeReg   := a.bits.size
+    }
+
+    // No flow control needed
+    in.valid  := a.valid
+    a.ready   := in.ready
+    d.valid   := out.valid
+    out.ready := d.ready
+
+    // We must restore the size to enable width adapters to work
+    d.bits := edge.AccessAck(toSource = sourceReg, lgSize = sizeReg)
+
+    // avoid a Mux on the data bus by manually overriding two fields
+    d.bits.data := out.bits.data
+    Connectable.waiveUnmatched(d.bits.echo, out.bits.extra) match {
+      case (lhs, rhs) => lhs :<= rhs
+    }
+
+    d.bits.opcode := Mux(out.bits.read, TLMessages.AccessAckData, TLMessages.AccessAck)
+
+    // Tie off unused channels
+    bundleIn.b.valid := false.B
+    bundleIn.c.ready := true.B
+    bundleIn.e.ready := true.B
   }
 }
