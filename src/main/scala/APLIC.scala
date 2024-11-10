@@ -88,7 +88,6 @@ case class APLICParams(
   }
 }
 
-// TODO: change m/sgDomain, m/sgFromCPU, ... to domains, fromCPUs, ...
 // TODO: add `private` modifiers
 // TODO: remove LazyModule
 class APLIC(
@@ -316,30 +315,25 @@ class Domain(
 }
 
   // TODO: remove parameters
-  val mDomain = LazyModule(new Domain(
+  // domain(0) is m domain, domain(1) is sg domain
+  val domains = Seq(LazyModule(new Domain(
     params.baseAddr,
     params.mBaseAddr,
     params.mStrideWidth,
     0,
-  ))
-  val sgDomain = LazyModule(new Domain(
+  )), LazyModule(new Domain(
     params.baseAddr + pow2(params.domainMemWidth),
     params.sgBaseAddr,
     params.sgStrideWidth,
     params.geilen,
-  ))
+  )))
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
     val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
-    mDomain.module.intSrcs := intSrcs
-    sgDomain.module.intSrcs := mDomain.module.intSrcsDelegated
-    val io = IO(new Bundle {
-      val m = mDomain.module.io.cloneType
-      val sg = sgDomain.module.io.cloneType
-    })
-    io.m <> mDomain.module.io
-    io.sg <> sgDomain.module.io
+    domains(0).module.intSrcs := intSrcs
+    domains(1).module.intSrcs := domains(0).module.intSrcsDelegated
+    val ios = domains.map(d => { val io = IO(d.module.io.cloneType); io <> d.module.io; io })
   }
 }
 
@@ -350,58 +344,39 @@ class TLAPLIC(
   val fromCPU = LazyModule(new TLXbar).node
   val toIMSIC = LazyModule(new TLXbar).node
   private val aplic = LazyModule(new APLIC(params, beatBytes))
-  private val mFromCPU = {
-    val baseAddr = params.baseAddr
-    TLRegMapperNode(
+  private val domainFromCPUs = Seq(
+    params.baseAddr, params.baseAddr + pow2(params.domainMemWidth) 
+  ).map ( baseAddr => {
+    val domainFromCPU = TLRegMapperNode(
       address = Seq(AddressSet(baseAddr, pow2(params.domainMemWidth)-1)),
       device = new SimpleDevice("interrupt-controller", Seq(f"riscv,aplic,0x${baseAddr}%x")),
       beatBytes = beatBytes)
-  }
-  private val mToIMSIC = TLClientNode(Seq(TLMasterPortParameters.v1(Seq(TLMasterParameters.v1("toimsic", IdRange(0,16))))))
-  private val sgFromCPU = {
-    val baseAddr = params.baseAddr + pow2(params.domainMemWidth)
-    TLRegMapperNode(
-      address = Seq(AddressSet(baseAddr, pow2(params.domainMemWidth)-1)),
-      device = new SimpleDevice("interrupt-controller", Seq(f"riscv,aplic,0x${baseAddr}%x")),
-      beatBytes = beatBytes)
-  }
-  private val sgToIMSIC = TLClientNode(Seq(TLMasterPortParameters.v1(Seq(TLMasterParameters.v1("toimsic", IdRange(0,16))))))
-
-  // Node Connections
-  mFromCPU := fromCPU
-  sgFromCPU := fromCPU
-  toIMSIC := mToIMSIC
-  toIMSIC := sgToIMSIC
+    domainFromCPU := fromCPU; domainFromCPU
+  })
+  private val domainToIMSICs = (0 until 2).map (_ => {
+    val domainToIMSIC = TLClientNode(Seq(TLMasterPortParameters.v1(Seq(TLMasterParameters.v1("toimsic", IdRange(0,16))))))
+    toIMSIC := domainToIMSIC; domainToIMSIC
+  })
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
     val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
     aplic.module.intSrcs := intSrcs
 
-    // TODO: combine
-    locally {
-      val (tl, edge) = mToIMSIC.out.head
-      val msi = aplic.module.io.m.msi
+    (domainToIMSICs zip aplic.module.ios).map { case (domainToIMSIC, aplicIO) => {
+      val (tl, edge) = domainToIMSIC.out.head
+      val msi = aplicIO.msi
       val (_, bits) = edge.Put(0.U, msi.bits.addr, 2.U, msi.bits.data)
       tl.a.bits := bits
       tl.a.valid := msi.valid
       msi.ready := tl.a.ready
       tl.d.ready := true.B
-      aplic.module.io.m.ack := tl.d.valid
-    }
-    locally {
-      val (tl, edge) = sgToIMSIC.out.head
-      val msi = aplic.module.io.sg.msi
-      val (_, bits) = edge.Put(0.U, msi.bits.addr, 2.U, msi.bits.data)
-      tl.a.bits := bits
-      tl.a.valid := msi.valid
-      msi.ready := tl.a.ready
-      tl.d.ready := true.B
-      aplic.module.io.sg.ack := tl.d.valid
-    }
+      aplicIO.ack := tl.d.valid
+    }}
 
-    mFromCPU.regmap(aplic.module.io.m.regmapIn, aplic.module.io.m.regmapOut)
-    sgFromCPU.regmap(aplic.module.io.sg.regmapIn, aplic.module.io.sg.regmapOut)
+    (domainFromCPUs zip aplic.module.ios).map { case (domainFromCPU, aplicIO) => {
+      domainFromCPU.regmap(aplicIO.regmapIn, aplicIO.regmapOut)
+    }}
   }
 }
 

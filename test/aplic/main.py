@@ -125,7 +125,7 @@ async def aplic_triggered_int_test(dut):
   async def expect_intSrcsTriggered_2(dut, value):
     for _ in range(10):
       await RisingEdge(dut.clock)
-      if dut.aplic.aplic_mDomain_intSrcsTriggered_2 == value:
+      if dut.aplic.aplic.domains_0.intSrcsTriggered_2 == value:
         break
     else:
       assert False, f"Timeout waiting for dut.aplic.intSrcsTriggered_2"
@@ -134,7 +134,7 @@ async def aplic_triggered_int_test(dut):
   await a_put_full32(dut, aplic_m_base_addr+offset_sourcecfg+1*4, sourcecfg_sm_edge1)
   await FallingEdge(dut.clock)
   dut.intSrcs_2.value = 0
-  assert dut.aplic.aplic_mDomain_intSrcsTriggered_2 == 0
+  assert dut.aplic.aplic.domains_0.intSrcsTriggered_2 == 0
   await FallingEdge(dut.clock)
   dut.intSrcs_2.value = 1
   await expect_intSrcsTriggered_2(dut, 1)
