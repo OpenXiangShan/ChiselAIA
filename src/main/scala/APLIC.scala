@@ -89,11 +89,10 @@ case class APLICParams(
 }
 
 // TODO: add `private` modifiers
-// TODO: remove LazyModule
 class APLIC(
   params: APLICParams,
   beatBytes: Int = 8,
-)(implicit p: Parameters) extends LazyModule {
+)(implicit p: Parameters) extends Module {
   println(f"APLICParams.membersWidth:      ${params.membersWidth    }%d")
   println(f"APLICParams.groupsWidth:       ${params.groupsWidth     }%d")
   println(f"APLICParams.membersNum:        ${params.membersNum      }%d")
@@ -105,16 +104,14 @@ class APLIC(
   println(f"APLICParams.groupsNum:         ${params.groupsNum       }%d")
   println(f"APLICParams.groupStrideWidth:  ${params.groupStrideWidth}%d")
 
-class Domain(
-  // TODO: remove arguments
-  baseAddr: Long, // base address for this aplic domain
-  imsicBaseAddr: Long, // base address for imsic's interrupt files
-  imsicMemberStrideWidth: Int, // C, D: stride between each interrupt files
-  imsicGeilen: Int, // number of guest interrupt files, it is 0 for machine-level domain
-)(implicit p: Parameters) extends LazyModule {
-  override lazy val desiredName = "Domain"
-  lazy val module = new Imp
-  class Imp extends LazyModuleImp(this) {
+  class Domain(
+    // TODO: remove arguments
+    baseAddr: Long, // base address for this aplic domain
+    imsicBaseAddr: Long, // base address for imsic's interrupt files
+    imsicMemberStrideWidth: Int, // C, D: stride between each interrupt files
+    imsicGeilen: Int, // number of guest interrupt files, it is 0 for machine-level domain
+  )(implicit p: Parameters) extends Module {
+    override val desiredName = "Domain"
     class MSIBundle extends Bundle {
       val addr = Output(UInt(64.W)) // TODO: parameterization
       val data = Output(UInt(32.W)) // TODO: parameterization
@@ -312,29 +309,25 @@ class Domain(
     // delegate
     intSrcsDelegated := (sourcecfgs.regs zip intSrcs).map {case (r, i:Bool) => r.D&i}
   }
-}
 
   // TODO: remove parameters
   // domain(0) is m domain, domain(1) is sg domain
-  val domains = Seq(LazyModule(new Domain(
+  private val domains = Seq(Module(new Domain(
     params.baseAddr,
     params.mBaseAddr,
     params.mStrideWidth,
     0,
-  )), LazyModule(new Domain(
+  )), Module(new Domain(
     params.baseAddr + pow2(params.domainMemWidth),
     params.sgBaseAddr,
     params.sgStrideWidth,
     params.geilen,
   )))
+  val ios = domains.map(d => { val io = IO(d.io.cloneType); io <> d.io; io })
 
-  lazy val module = new Imp
-  class Imp extends LazyModuleImp(this) {
-    val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
-    domains(0).module.intSrcs := intSrcs
-    domains(1).module.intSrcs := domains(0).module.intSrcsDelegated
-    val ios = domains.map(d => { val io = IO(d.module.io.cloneType); io <> d.module.io; io })
-  }
+  val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
+  domains(0).intSrcs := intSrcs
+  domains(1).intSrcs := domains(0).intSrcsDelegated
 }
 
 class TLAPLIC(
@@ -343,7 +336,6 @@ class TLAPLIC(
 )(implicit p: Parameters) extends LazyModule {
   val fromCPU = LazyModule(new TLXbar).node
   val toIMSIC = LazyModule(new TLXbar).node
-  private val aplic = LazyModule(new APLIC(params, beatBytes))
   private val domainFromCPUs = Seq(
     params.baseAddr, params.baseAddr + pow2(params.domainMemWidth) 
   ).map ( baseAddr => {
@@ -361,9 +353,10 @@ class TLAPLIC(
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
     val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
-    aplic.module.intSrcs := intSrcs
+    private val aplic = Module(new APLIC(params, beatBytes))
+    aplic.intSrcs := intSrcs
 
-    (domainToIMSICs zip aplic.module.ios).map { case (domainToIMSIC, aplicIO) => {
+    (domainToIMSICs zip aplic.ios).map { case (domainToIMSIC, aplicIO) => {
       val (tl, edge) = domainToIMSIC.out.head
       val msi = aplicIO.msi
       val (_, bits) = edge.Put(0.U, msi.bits.addr, 2.U, msi.bits.data)
@@ -374,7 +367,7 @@ class TLAPLIC(
       aplicIO.ack := tl.d.valid
     }}
 
-    (domainFromCPUs zip aplic.module.ios).map { case (domainFromCPU, aplicIO) => {
+    (domainFromCPUs zip aplic.ios).map { case (domainFromCPU, aplicIO) => {
       domainFromCPU.regmap(aplicIO.regmapIn, aplicIO.regmapOut)
     }}
   }
