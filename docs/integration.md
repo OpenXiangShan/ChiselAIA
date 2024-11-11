@@ -11,7 +11,6 @@
 * [示例（Examples）](#示例examples)
   * [简单的4核系统（A Simple 4-Hart System）](#简单的4核系统a-simple-4-hart-system)
   * [分组的4核系统（A Grouped 4-Hart System）](#分组的4核系统a-grouped-4-hart-system)
-    * [AXI4版本（AXI4 Version）](#axi4版本axi4-version)
 
 <!-- vim-markdown-toc -->
 
@@ -25,20 +24,32 @@ This guide introduces the integration process of ChiselAIA into a RISC-V system.
 集成涉及2个Scala文件，共4个Scala类：
 
 * `APLIC.scala`：
-  * `TLAPLIC`：基于Tilelink的APLIC模块，每个系统需要一个实例
   * `APLICParams`：用于配置APLIC实例的参数类
+  * `APLIC`：APLIC模块的核心逻辑
+  * 每个系统需要一个实例：
+    * `TLAPLIC`：对`APLIC`模块的Tilelink协议包装
+    * `AXI4APLIC`：对`APLIC`模块的AXI4协议包装
 * `IMSIC.scala`：
-  * `TLIMSIC`：基于Tilelink的IMSIC模块，每个处理器核心需要一个实例
   * `IMSICParams`：用于配置IMSIC实例的参数类
+  * `IMSIC`：IMSIC模块的核心逻辑
+  * 每个处理器核心需要一个实例：
+    * `TLIMSIC`：对`IMSIC`模块的Tilelink协议包装
+    * `AXI4IMSIC`：对`IMSIC`模块的AXI4协议包装
 
 Integration involves 2 scala files, including 4 scala classes:
 
 * `APLIC.scala`:
-  * `TLAPLIC`: The Tilelink-based APLIC module, requiring one instance per system,
   * `APLICParams`: Parameter classes for configuring APLIC instance.
+  * `APLIC`: The main logic of APLIC module.
+  * Requiring one instance per system:
+    * `TLAPLIC`: The `APLIC` module wrapped by Tilelink protocol,
+    * `AXI4APLIC`: The `APLIC` module wrapped by AXI4 protocol.
 * `IMSIC.scala`:
-  * `TLIMSIC`: The Tilelink-based IMSIC module, requiring one instance per hart,
   * `IMSICParams`: Parameter classes for configuring IMSIC instances.
+  * `IMSIC`: The main logic of IMSIC module.
+  * Requiring one instance per hart:
+    * `TLIMSIC`: The `IMSIC` module wrapped by Tilelink protocol,
+    * `AXI4IMSIC`: The `IMSIC` module wrapped by AXI4 protocol.
 
 ![](images/integration_files.svg)
 
@@ -77,20 +88,20 @@ Naming conventions:
 * `APLICParams`和`IMSICParams`：
   * 每个类一个实例，
   * 根据[参数](#参数parameters)部分的说明，实例化参数。
-* `TLAPLIC`：
+* `TLAPLIC`/`AXI4APLIC`：
   * 单个实例，
   * 参数`params`：接收`APLICParams`的实例，
-* `TLIMSIC`：
+* `TLIMSIC`/`AXI4IMSIC`：
   * 每个核心一个实例，
   * 参数`params`：接收`IMSICParams`的实例，
 
 * `APLICParams` and `IMSICParams`:
   * Single instance each,
   * Instantiation parameters according to [Parameters](#参数parameters) section.
-* `TLAPLIC`:
+* `TLAPLIC`/`AXI4APLIC`:
   * Single instance,
   * Parameter `params`: receiving the `APLICParams`'s instance,
-* `TLIMSIC`:
+* `TLIMSIC`/`AXI4IMSIC`:
   * One instance per hart,
   * Parameter `params`: receiving the `IMSICParams`'s instance,
 
@@ -133,13 +144,13 @@ val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
 
 ### 分组的4核系统（A Grouped 4-Hart System）
 
-在`src/main/scala/Example.AIA`中，我们提供了一个如何实例化APLIC核IMSIC的示例
+在`src/main/scala/Example.AIA`和`src/main/scala/Example-axi.scala`中，我们提供了一个如何实例化APLIC核IMSIC的示例
 （我们的单元测试也是基于该示例）。
-我们接下来展示一些关键的代码：
+以Tilelink为例，我们接下来展示一些关键的代码：
 
-We provide an example of instantiating the APLIC and IMSIC, in `src/main/scala/Example.AIA`
+We provide an example of instantiating the APLIC and IMSIC, in `src/main/scala/Example.AIA` and `src/main/scala/Example-axi.scala`
 (Furthermore, we will use this example to conduct unit tests.).
-We provide key lines of code below:
+Take Tilelink as an example, we provide key lines of code below:
 
 ```scala
 val imsic_params = IMSICParams()
@@ -156,11 +167,3 @@ This configuration creates a 2-bit `hartIndex` where the higher bit represents `
 For detailed IO connections, refer to the following figure and `src/main/scala/Example.AIA`.
 
 ![](./images/example_py.svg)
-
-#### AXI4版本（AXI4 Version）
-
-目前采用Tilelink转AXI4的方式支持了AXI4协议。
-
-AXI4 protocol support is implemented through TileLink to AXI4 protocol conversion.
-
-![](./images/example-axi_py.svg)
