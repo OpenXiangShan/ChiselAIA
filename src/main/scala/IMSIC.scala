@@ -255,32 +255,31 @@ class IMSIC(
     private val topeis_forEachIntFiles = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
     private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
 
-    // TODO: better naming, e.g. remove "node"
     (regmapIOs zip Seq(1, 1+params.geilen)).zipWithIndex.map {
-      case ((regmapIO: (DecoupledIO[RegMapperInput], DecoupledIO[RegMapperOutput]), thisNodeintFilesNum: Int), nodei: Int)
+      case ((regmapIO: (DecoupledIO[RegMapperInput], DecoupledIO[RegMapperOutput]), intFilesNum: Int), i: Int)
     => {
-      // thisNode_ii: index for intFiles in this node: S, G1, G2, ...
-      val maps = (0 until thisNodeintFilesNum).map { thisNode_ii => {
-        val ii = nodei + thisNode_ii
-        val pi = if(ii>2) 2 else ii // index for privileges: M, S, VS.
+      // j: index for S intFile: S, G1, G2, ...
+      val maps = (0 until intFilesNum).map { j => {
+        val flati = i + j
+        val pi = if(flati>2) 2 else flati // index for privileges: M, S, VS.
 
         val seteipnum = WireInit(0.U.asTypeOf(Valid(UInt(32.W)))); /*for debug*/dontTouch(seteipnum)
         def sel[T<:Data](old: Valid[T]): Valid[T] = {
           val new_ = Wire(Valid(chiselTypeOf(old.bits)))
           new_.bits := old.bits
-          new_.valid := old.valid & intFilesSelOH(ii)
+          new_.valid := old.valid & intFilesSelOH(flati)
           new_
         }
         val intFile = Module(new IntFile)
-        intFile.fromCSR.seteipnum := seteipnum
+        intFile.fromCSR.seteipnum       := seteipnum
         intFile.fromCSR.addr            := sel(fromCSR.addr)
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
-        intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(ii)
+        intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
         toCSR.rdata                     := intFile.toCSR.rdata
-        toCSR.pendings(ii)              := intFile.toCSR.pending
-        topeis_forEachIntFiles(ii)      := intFile.toCSR.topei
-        illegals_forEachIntFiles(ii)    := intFile.toCSR.illegal
-        (thisNode_ii * pow2(params.intFileMemWidth).toInt -> Seq(RegField(32, 0.U,
+        toCSR.pendings(flati)           := intFile.toCSR.pending
+        topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
+        illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
+        (j * pow2(params.intFileMemWidth).toInt -> Seq(RegField(32, 0.U,
           RegWriteFn((valid, data) => {
             when (valid) { seteipnum.bits := data; seteipnum.valid := true.B }; true.B
         }))))
