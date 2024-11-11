@@ -106,25 +106,13 @@ case class IMSICParams(
   require(iselectWidth >=8, f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63")
 }
 
-class TLIMSIC(
+// TODO: add private modifiers
+// TODO: IMSIC: LazyModule to Module
+class IMSIC(
   params: IMSICParams,
   beatBytes: Int = 8,
 )(implicit p: Parameters) extends LazyModule {
   println(f"IMSICParams.geilen:            ${params.geilen          }%d")
-
-  val Seq(mTLNode, sgTLNode) = Seq(
-    AddressSet(params.mAddr,  pow2(params.intFileMemWidth) - 1),
-    AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1),
-  ).map( addr => TLRegisterNode(
-    address = Seq(addr),
-    device = new SimpleDevice("interrupt-controller", Seq(f"riscv,imsic")),
-    beatBytes = beatBytes,
-    undefZero = true,
-    concurrency = 1
-  ))
-  val fromMem = LazyModule(new TLXbar).node
-  mTLNode := fromMem
-  sgTLNode := fromMem
 
   class IntFile extends Module {
     override def desiredName = "IntFile"
@@ -250,6 +238,14 @@ class TLIMSIC(
   class Imp extends LazyModuleImp(this) {
     val toCSR = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
+    val Seq(mRegmapIO, sgRegmapIO) = Seq(
+      params.intFileMemWidth,
+      params.intFileMemWidth + log2Ceil(1+params.geilen)
+    ).map(width => {
+      val regmapParams = RegMapperParams(width-log2Up(beatBytes), beatBytes)
+      ( IO(Flipped(Decoupled(new RegMapperInput(regmapParams)))),
+        IO(Decoupled(new RegMapperOutput(regmapParams))) )
+    })
 
     val illegal_priv = WireDefault(false.B)
     val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
@@ -263,8 +259,9 @@ class TLIMSIC(
     val topeis_forEachIntFiles = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
     val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
 
-    Seq((mTLNode,1), (sgTLNode,1+params.geilen)).zipWithIndex.map {
-      case ((tlNode: TLRegisterNode, thisNodeintFilesNum: Int), nodei: Int)
+    // TODO: better naming, e.g. remove "node"
+    Seq((mRegmapIO,1), (sgRegmapIO,1+params.geilen)).zipWithIndex.map {
+      case ((regmapIO: (DecoupledIO[RegMapperInput], DecoupledIO[RegMapperOutput]), thisNodeintFilesNum: Int), nodei: Int)
     => {
       // thisNode_ii: index for intFiles in this node: S, G1, G2, ...
       val maps = (0 until thisNodeintFilesNum).map { thisNode_ii => {
@@ -292,7 +289,7 @@ class TLIMSIC(
             when (valid) { seteipnum.bits := data; seteipnum.valid := true.B }; true.B
         }))))
       }}
-      tlNode.regmap((maps): _*)
+      regmapIO._2 <> RegMapper(beatBytes, 1, true, regmapIO._1, maps: _*)
     }}
 
     locally {
@@ -318,6 +315,37 @@ class TLIMSIC(
       fromCSR.vgein >= params.geilen.asUInt,
       illegal_priv,
     ).reduce(_|_)
+  }
+}
+
+class TLIMSIC(
+  params: IMSICParams,
+  beatBytes: Int = 8,
+)(implicit p: Parameters) extends LazyModule {
+  val fromMem = LazyModule(new TLXbar).node
+  private val intfileFromMems = Seq(
+    AddressSet(params.mAddr,  pow2(params.intFileMemWidth) - 1),
+    AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1),
+  ).map ( addrset => {
+    val intfileFromMem = TLRegMapperNode (
+      address = Seq(addrset),
+      device = new SimpleDevice("interrupt-controller", Seq(f"riscv,imsic")),
+      beatBytes = beatBytes)
+    intfileFromMem := fromMem; intfileFromMem
+  })
+
+  private val imsic = LazyModule(new IMSIC(params, beatBytes))
+
+  lazy val module = new Imp
+  class Imp extends LazyModuleImp(this) {
+    val toCSR = IO(Output(new IMSICToCSRBundle(params)))
+    val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
+    toCSR := imsic.module.toCSR
+    imsic.module.fromCSR := fromCSR
+
+    // TODO: combine m and sg
+    intfileFromMems(0).regmap(imsic.module.mRegmapIO._1,  imsic.module.mRegmapIO._2)
+    intfileFromMems(1).regmap(imsic.module.sgRegmapIO._1, imsic.module.sgRegmapIO._2)
   }
 }
 

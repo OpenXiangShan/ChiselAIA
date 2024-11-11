@@ -70,10 +70,10 @@ async def imsic_1_test(dut):
   # write_csr:op began
   cocotb.log.info("write_csr:op began")
   await write_csr_op(dut, csr_addr_eidelivery, 0xc0, op_csrrs)
-  assert dut.imsic_1.intFile.eidelivery.value == 0xc1
+  assert dut.imsic_1.imsic_intFile.eidelivery.value == 0xc1
   assert dut.toCSR1_illegal == 0
   await write_csr_op(dut, csr_addr_eidelivery, 0xc0, op_csrrc)
-  assert dut.imsic_1.intFile.eidelivery.value == 0x1
+  assert dut.imsic_1.imsic_intFile.eidelivery.value == 0x1
   cocotb.log.info("write_csr:op passed")
 
   # write_csr:eidelivery began
@@ -114,7 +114,7 @@ async def imsic_1_test(dut):
   await read_csr(dut, csr_addr_eie0)
   await RisingEdge(dut.clock)
   toCSR1_rdata_bits = dut.toCSR1_rdata_bits.value
-  eies_0 = dut.imsic_1.intFile.eies_0.value
+  eies_0 = dut.imsic_1.imsic_intFile.eies_0.value
   assert toCSR1_rdata_bits == eies_0
   cocotb.log.info("read_csr:eie passed")
 
