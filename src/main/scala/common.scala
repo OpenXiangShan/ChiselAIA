@@ -240,13 +240,10 @@ object AXI4ToTLNoTLError
 // modifications based on `rocket-chip/src/main/scala/tilelink/RegisterRouter.scala`
 case class TLRegMapperNode(
   address:     Seq[AddressSet],
-  // TODO: necessary?
-  device:      Device,
   beatBytes:   Int,
 )(implicit valName: ValName) extends SinkNode(TLImp)(Seq(TLSlavePortParameters.v1(
   Seq(TLSlaveParameters.v1(
     address            = address,
-    resources          = Seq(Resource(device, "reg/control")),
     executable         = false,
     supportsGet        = TransferSizes(1, beatBytes),
     supportsPutPartial = TransferSizes(1, beatBytes),

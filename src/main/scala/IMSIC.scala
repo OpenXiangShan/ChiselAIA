@@ -324,7 +324,6 @@ class TLIMSIC(
   ).map ( addrset => {
     val intfileFromMem = TLRegMapperNode (
       address = Seq(addrset),
-      device = new SimpleDevice("interrupt-controller", Seq(f"riscv,imsic")),
       beatBytes = beatBytes)
     intfileFromMem := fromMem; intfileFromMem
   })

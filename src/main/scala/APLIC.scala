@@ -340,7 +340,6 @@ class TLAPLIC(
   ).map ( baseAddr => {
     val domainFromCPU = TLRegMapperNode(
       address = Seq(AddressSet(baseAddr, pow2(params.domainMemWidth)-1)),
-      device = new SimpleDevice("interrupt-controller", Seq(f"riscv,aplic,0x${baseAddr}%x")),
       beatBytes = beatBytes)
     domainFromCPU := fromCPU; domainFromCPU
   })
