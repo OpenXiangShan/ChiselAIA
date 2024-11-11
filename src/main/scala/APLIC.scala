@@ -104,7 +104,6 @@ class APLIC(
   println(f"APLICParams.groupStrideWidth:  ${params.groupStrideWidth}%d")
 
   class Domain(
-    // TODO: remove arguments
     baseAddr: Long, // base address for this aplic domain
     imsicBaseAddr: Long, // base address for imsic's interrupt files
     imsicMemberStrideWidth: Int, // C, D: stride between each interrupt files
@@ -112,8 +111,8 @@ class APLIC(
   )(implicit p: Parameters) extends Module {
     override val desiredName = "Domain"
     class MSIBundle extends Bundle {
-      val addr = Output(UInt(64.W)) // TODO: parameterization
-      val data = Output(UInt(32.W)) // TODO: parameterization
+      val addr = Output(UInt(64.W))
+      val data = Output(UInt(32.W))
     }
     object MSIBundle { def apply(a: UInt, d: UInt) = {
       val m = Wire(new MSIBundle); m.addr:=a; m.data:=d; m }}
@@ -309,7 +308,6 @@ class APLIC(
     intSrcsDelegated := (sourcecfgs.regs zip intSrcs).map {case (r, i:Bool) => r.D&i}
   }
 
-  // TODO: remove parameters
   // domain(0) is m domain, domain(1) is sg domain
   private val domains = Seq(Module(new Domain(
     params.baseAddr,
