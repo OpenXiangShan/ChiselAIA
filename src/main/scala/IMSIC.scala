@@ -352,26 +352,29 @@ class TLIMSIC(
 class AXI4IMSIC(
   params: IMSICParams,
   beatBytes: Int = 8,
-  AXI_ID_WIDTH: Int = 5,
 )(implicit p: Parameters) extends LazyModule {
-  private val tlimsic = LazyModule(new TLIMSIC(params, beatBytes))
+  val fromMem = LazyModule(new AXI4Xbar).node
+  private val intfileFromMems = Seq(
+    AddressSet(params.mAddr,  pow2(params.intFileMemWidth) - 1),
+    AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1),
+  ).map ( addrset => {
+    val intfileFromMem = AXI4RegMapperNode (
+      address = addrset,
+      beatBytes = beatBytes)
+    intfileFromMem := fromMem; intfileFromMem
+  })
 
-  val fromMem = AXI4IdentityNode()
-  (tlimsic.fromMem
-    := TLFIFOFixer()
-    := TLWidthWidget(beatBytes)
-    := TLBuffer()
-    := AXI4ToTLNoTLError(wcorrupt=false)
-    := AXI4UserYanker(Some(1))
-    := AXI4Fragmenter()
-    := AXI4IdIndexer(AXI_ID_WIDTH)
-    := fromMem)
+  private val imsic = LazyModule(new IMSIC(params, beatBytes))
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
-    val toCSR = IO(Output(tlimsic.module.toCSR.cloneType))
-    val fromCSR = IO(Input(tlimsic.module.fromCSR.cloneType))
-    toCSR := tlimsic.module.toCSR
-    tlimsic.module.fromCSR := fromCSR
+    val toCSR = IO(Output(new IMSICToCSRBundle(params)))
+    val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
+    toCSR := imsic.module.toCSR
+    imsic.module.fromCSR := fromCSR
+
+    // TODO: combine m and sg
+    intfileFromMems(0).regmap(imsic.module.mRegmapIO._1,  imsic.module.mRegmapIO._2)
+    intfileFromMems(1).regmap(imsic.module.sgRegmapIO._1, imsic.module.sgRegmapIO._2)
   }
 }
