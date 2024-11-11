@@ -106,7 +106,6 @@ case class IMSICParams(
   require(iselectWidth >=8, f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63")
 }
 
-// TODO: add private modifiers
 class IMSIC(
   params: IMSICParams,
   beatBytes: Int = 8,
@@ -244,8 +243,8 @@ class IMSIC(
         IO(Decoupled(new RegMapperOutput(regmapParams))) )
     })
 
-    val illegal_priv = WireDefault(false.B)
-    val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
+    private val illegal_priv = WireDefault(false.B)
+    private val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
     locally {
       val pv = Cat(fromCSR.priv.asUInt, fromCSR.virt)
       when      (pv === Cat(PrivType.M.asUInt, false.B)) { intFilesSelOH := UIntToOH(0.U) }
@@ -253,8 +252,8 @@ class IMSIC(
       .elsewhen (pv === Cat(PrivType.S.asUInt,  true.B)) { intFilesSelOH := UIntToOH(2.U + fromCSR.vgein) }
       .otherwise { illegal_priv := true.B }
     }
-    val topeis_forEachIntFiles = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
-    val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
+    private val topeis_forEachIntFiles = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
+    private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
 
     // TODO: better naming, e.g. remove "node"
     Seq((mRegmapIO,1), (sgRegmapIO,1+params.geilen)).zipWithIndex.map {
