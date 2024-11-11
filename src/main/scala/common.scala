@@ -240,6 +240,7 @@ object AXI4ToTLNoTLError
 // modifications based on `rocket-chip/src/main/scala/tilelink/RegisterRouter.scala`
 case class TLRegMapperNode(
   address:     Seq[AddressSet],
+  // TODO: necessary?
   device:      Device,
   beatBytes:   Int,
 )(implicit valName: ValName) extends SinkNode(TLImp)(Seq(TLSlavePortParameters.v1(
@@ -304,5 +305,70 @@ case class TLRegMapperNode(
     bundleIn.b.valid := false.B
     bundleIn.c.ready := true.B
     bundleIn.e.ready := true.B
+  }
+}
+
+// modification based on `rocket-chip/src/main/scala/amba/axi4/RegisterRouter.scala`
+case class AXI4RegMapperNode(
+  address: AddressSet,
+  beatBytes: Int = 4,
+)(implicit valName: ValName) extends SinkNode(AXI4Imp)(Seq(AXI4SlavePortParameters(
+  Seq(AXI4SlaveParameters(
+    address       = Seq(address),
+    executable    = false,
+    supportsWrite = TransferSizes(1, beatBytes),
+    supportsRead  = TransferSizes(1, beatBytes),
+    interleavedId = Some(0))),
+  beatBytes  = beatBytes,
+  minLatency = 1,
+))) {
+  require (address.contiguous)
+
+  // Calling this method causes the matching AXI4 bundle to be
+  // configured to route all requests to the listed RegFields.
+  def regmap(in: DecoupledIO[RegMapperInput], out: DecoupledIO[RegMapperOutput]) = {
+    val (io, _) = this.in(0)
+    val ar = io.ar
+    val aw = io.aw
+    val w  = io.w
+    val r  = io.r
+    val b  = io.b
+
+    // Prefer to execute reads first
+    in.valid := ar.valid || (aw.valid && w.valid)
+    ar.ready := in.ready
+    aw.ready := in.ready && !ar.valid
+    w .ready := in.ready && !ar.valid
+
+    // copy {ar,aw}_bits.{echo,id} to {r,b}_bits.{echo,id}
+    val arEchoReg = RegInit(0.U.asTypeOf(ar.bits.echo))
+    val awEchoReg = RegInit(0.U.asTypeOf(aw.bits.echo))
+    val arIdReg   = RegInit(0.U.asTypeOf(ar.bits.id))
+    val awIdReg   = RegInit(0.U.asTypeOf(aw.bits.id))
+    when (ar.valid) { arEchoReg := ar.bits.echo; arIdReg := ar.bits.id }
+    when (aw.valid) { awEchoReg := aw.bits.echo; awIdReg := aw.bits.id }
+
+    val addr = Mux(ar.valid, ar.bits.addr, aw.bits.addr)
+    val mask = MaskGen(ar.bits.addr, ar.bits.size, beatBytes)
+
+    in.bits.read  := ar.valid
+    in.bits.index := addr >> log2Ceil(beatBytes)
+    in.bits.data  := w.bits.data
+    in.bits.mask  := Mux(ar.valid, mask, w.bits.strb)
+
+    // No flow control needed
+    out.ready := Mux(out.bits.read, r.ready, b.ready)
+    r.valid := out.valid &&  out.bits.read
+    b.valid := out.valid && !out.bits.read
+
+    r.bits.id   := arIdReg
+    r.bits.data := out.bits.data
+    r.bits.last := true.B
+    r.bits.resp := AXI4Parameters.RESP_OKAY
+    r.bits.echo :<= arEchoReg
+
+    b.bits.id   := awIdReg
+    b.bits.resp := AXI4Parameters.RESP_OKAY
+    b.bits.echo :<= awEchoReg
   }
 }

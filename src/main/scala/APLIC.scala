@@ -375,36 +375,45 @@ class TLAPLIC(
 class AXI4APLIC(
   params: APLICParams,
   beatBytes: Int = 8,
-  AXI_ID_WIDTH: Int = 5,
 )(implicit p: Parameters) extends LazyModule {
-  private val tlaplic = LazyModule(new TLAPLIC(params, beatBytes))
-
-  val fromCPU = AXI4IdentityNode()
-  (tlaplic.fromCPU
-    := TLFIFOFixer()
-    := TLWidthWidget(beatBytes)
-    := TLBuffer()
-    := AXI4ToTLNoTLError(wcorrupt=false)
-    := AXI4UserYanker(Some(1))
-    := AXI4Fragmenter()
-    := AXI4IdIndexer(AXI_ID_WIDTH)
-    := fromCPU)
-
-  val toIMSIC = AXI4IdentityNode()
-  (toIMSIC
-    := AXI4Deinterleaver(beatBytes)
-    := AXI4IdIndexer(AXI_ID_WIDTH)
-    := AXI4Buffer()
-    := AXI4UserYanker(Some(1))
-    // https://github.com/chipsalliance/rocket-chip/issues/3548
-    := TLToAXI4(wcorrupt=false)
-    := TLWidthWidget(beatBytes)
-    := TLFIFOFixer()
-    := tlaplic.toIMSIC)
+  val fromCPU = LazyModule(new AXI4Xbar).node
+  val toIMSIC = LazyModule(new AXI4Xbar).node
+  private val domainFromCPUs = Seq(
+    params.baseAddr, params.baseAddr + pow2(params.domainMemWidth) 
+  ).map ( baseAddr => {
+    val domainFromCPU = AXI4RegMapperNode(
+      address = AddressSet(baseAddr, pow2(params.domainMemWidth)-1),
+      beatBytes = beatBytes)
+    domainFromCPU := fromCPU; domainFromCPU
+  })
+  private val domainToIMSICs = (0 until 2).map (_ => {
+    val domainToIMSIC = AXI4MasterNode(Seq(AXI4MasterPortParameters(Seq(AXI4MasterParameters("toimsic", IdRange(0,16))))))
+    toIMSIC := domainToIMSIC; domainToIMSIC
+  })
 
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
-    val intSrcs = IO(Flipped(tlaplic.module.intSrcs.cloneType))
-    tlaplic.module.intSrcs := intSrcs
+    val intSrcs = IO(Input(Vec(params.intSrcNum, Bool())))
+    private val aplic = Module(new APLIC(params, beatBytes))
+    aplic.intSrcs := intSrcs
+
+    (domainToIMSICs zip aplic.ios).map { case (domainToIMSIC, aplicIO) => {
+      val (axi, edge_params) = domainToIMSIC.out.head
+      val msi = aplicIO.msi
+      axi.aw.bits.addr := msi.bits.addr
+      axi.aw.bits.size := 2.U
+      axi.aw.valid := msi.valid
+      axi.w.bits.data := msi.bits.data
+      axi.w.bits.strb := MaskGen(msi.bits.addr, 2.U, beatBytes)
+      axi.w.bits.last := true.B
+      axi.w.valid := msi.valid
+      msi.ready := axi.aw.ready & axi.w.ready
+      axi.b.ready := true.B
+      aplicIO.ack := axi.b.valid
+    }}
+
+    (domainFromCPUs zip aplic.ios).map { case (domainFromCPU, aplicIO) => {
+      domainFromCPU.regmap(aplicIO.regmapIn, aplicIO.regmapOut)
+    }}
   }
 }

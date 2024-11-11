@@ -31,7 +31,9 @@ async def axi4_aw_send(dut, addr, prot, size):
   dut.toaia_0_aw_valid.value = 0
 async def axi4_w_send(dut, data, strb):
   await FallingEdge(dut.clock)
-  while not dut.toaia_0_w_ready.value:
+  # As AXI4RegMapperNode only receives a & w within same cycle
+  # make sure a & w send within same cycle
+  while not dut.toaia_0_aw_ready.value:
     await FallingEdge(dut.clock)
   dut.toaia_0_w_valid.value = 1
   dut.toaia_0_w_bits_last.value = 1
