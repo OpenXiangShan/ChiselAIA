@@ -234,7 +234,7 @@ class IMSIC(
 
     val toCSR = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
-    val Seq(mRegmapIO, sgRegmapIO) = Seq(
+    val regmapIOs = Seq(
       params.intFileMemWidth,
       params.intFileMemWidth + log2Ceil(1+params.geilen)
     ).map(width => {
@@ -256,7 +256,7 @@ class IMSIC(
     private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
 
     // TODO: better naming, e.g. remove "node"
-    Seq((mRegmapIO,1), (sgRegmapIO,1+params.geilen)).zipWithIndex.map {
+    (regmapIOs zip Seq(1, 1+params.geilen)).zipWithIndex.map {
       case ((regmapIO: (DecoupledIO[RegMapperInput], DecoupledIO[RegMapperOutput]), thisNodeintFilesNum: Int), nodei: Int)
     => {
       // thisNode_ii: index for intFiles in this node: S, G1, G2, ...
@@ -337,9 +337,9 @@ class TLIMSIC(
     toCSR := imsic.toCSR
     imsic.fromCSR := fromCSR
 
-    // TODO: combine m and sg
-    intfileFromMems(0).regmap(imsic.mRegmapIO._1,  imsic.mRegmapIO._2)
-    intfileFromMems(1).regmap(imsic.sgRegmapIO._1, imsic.sgRegmapIO._2)
+    (intfileFromMems zip imsic.regmapIOs).map {
+      case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2)
+    }
   }
 }
 
@@ -366,8 +366,8 @@ class AXI4IMSIC(
     toCSR := imsic.toCSR
     imsic.fromCSR := fromCSR
 
-    // TODO: combine m and sg
-    intfileFromMems(0).regmap(imsic.mRegmapIO._1,  imsic.mRegmapIO._2)
-    intfileFromMems(1).regmap(imsic.sgRegmapIO._1, imsic.sgRegmapIO._2)
+    (intfileFromMems zip imsic.regmapIOs).map {
+      case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2)
+    }
   }
 }
