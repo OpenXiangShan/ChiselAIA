@@ -107,11 +107,10 @@ case class IMSICParams(
 }
 
 // TODO: add private modifiers
-// TODO: IMSIC: LazyModule to Module
 class IMSIC(
   params: IMSICParams,
   beatBytes: Int = 8,
-)(implicit p: Parameters) extends LazyModule {
+)(implicit p: Parameters) extends Module {
   println(f"IMSICParams.geilen:            ${params.geilen          }%d")
 
   class IntFile extends Module {
@@ -234,8 +233,6 @@ class IMSIC(
     }
   }
 
-  lazy val module = new Imp
-  class Imp extends LazyModuleImp(this) {
     val toCSR = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
     val Seq(mRegmapIO, sgRegmapIO) = Seq(
@@ -315,7 +312,6 @@ class IMSIC(
       fromCSR.vgein >= params.geilen.asUInt,
       illegal_priv,
     ).reduce(_|_)
-  }
 }
 
 class TLIMSIC(
@@ -334,18 +330,17 @@ class TLIMSIC(
     intfileFromMem := fromMem; intfileFromMem
   })
 
-  private val imsic = LazyModule(new IMSIC(params, beatBytes))
-
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
     val toCSR = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
-    toCSR := imsic.module.toCSR
-    imsic.module.fromCSR := fromCSR
+    private val imsic = Module(new IMSIC(params, beatBytes))
+    toCSR := imsic.toCSR
+    imsic.fromCSR := fromCSR
 
     // TODO: combine m and sg
-    intfileFromMems(0).regmap(imsic.module.mRegmapIO._1,  imsic.module.mRegmapIO._2)
-    intfileFromMems(1).regmap(imsic.module.sgRegmapIO._1, imsic.module.sgRegmapIO._2)
+    intfileFromMems(0).regmap(imsic.mRegmapIO._1,  imsic.mRegmapIO._2)
+    intfileFromMems(1).regmap(imsic.sgRegmapIO._1, imsic.sgRegmapIO._2)
   }
 }
 
@@ -364,17 +359,16 @@ class AXI4IMSIC(
     intfileFromMem := fromMem; intfileFromMem
   })
 
-  private val imsic = LazyModule(new IMSIC(params, beatBytes))
-
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
     val toCSR = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
-    toCSR := imsic.module.toCSR
-    imsic.module.fromCSR := fromCSR
+    private val imsic = Module(new IMSIC(params, beatBytes))
+    toCSR := imsic.toCSR
+    imsic.fromCSR := fromCSR
 
     // TODO: combine m and sg
-    intfileFromMems(0).regmap(imsic.module.mRegmapIO._1,  imsic.module.mRegmapIO._2)
-    intfileFromMems(1).regmap(imsic.module.sgRegmapIO._1, imsic.module.sgRegmapIO._2)
+    intfileFromMems(0).regmap(imsic.mRegmapIO._1,  imsic.mRegmapIO._2)
+    intfileFromMems(1).regmap(imsic.sgRegmapIO._1, imsic.sgRegmapIO._2)
   }
 }
