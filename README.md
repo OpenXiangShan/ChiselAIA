@@ -64,7 +64,7 @@ h
 
 ## 相关工作（Related Works）
 
-* [OpenXiangShan/ChiselAIA](https://github.com/OpenXiangShan/ChiselAIA)
+* [OpenXiangShan/OpenAIA](https://github.com/OpenXiangShan/OpenAIA)
   * 采用Verilog（Implemented in Verilog）
   * 支持IMSIC（IMSIC supported）
   * 不支持APLIC（APLIC not supported）
