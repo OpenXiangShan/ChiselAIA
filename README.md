@@ -27,7 +27,7 @@ Existing open-sourced AIA implementations are primarily written in Verilog (see 
   * 暂不支持直接传递模式(domaincfg.DM=0)
 * IMSIC和APLIC的单元测试: test/*/main.py
 
-更多信息，请参阅[文档](https://openxiangshan-nanhu.github.io/ChiselAIA/)。
+更多信息，请参阅[文档](https://openxiangshan.github.io/ChiselAIA/)。
 
 This implementation includes:
 
@@ -38,7 +38,7 @@ This implementation includes:
   * Direct delivery mode is currently not supported (domaincfg.DM=0)
 * The unit tests for IMSIC and APLIC: `test/*/main.py`
 
-For more detailed information, please refer to the [documentation](https://openxiangshan-nanhu.github.io/ChiselAIA/).
+For more detailed information, please refer to the [documentation](https://openxiangshan.github.io/ChiselAIA/).
 
 ## 使用方法（Usage）
 

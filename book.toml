@@ -6,5 +6,5 @@ src = "docs/"
 title = "ChiselAIA"
 
 [output.html]
-git-repository-url = "https://github.com/OpenXiangShan-Nanhu/ChiselAIA"
+git-repository-url = "https://openxiangshan.github.io/ChiselAIA/"
 mathjax-support = true
