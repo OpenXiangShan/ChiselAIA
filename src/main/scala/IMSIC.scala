@@ -325,7 +325,8 @@ class TLIMSIC(
     private val reggen = Module(new RegGen(params, beatBytes))
     toCSR := imsic.toCSR
     imsic.fromCSR := fromCSR
-
+    imsic.io.seteipnum := reggen.io.seteipnum
+    imsic.io.valid := reggen.io.valid
     (intfileFromMems zip reggen.regmapIOs).map {
       case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2)
     }
