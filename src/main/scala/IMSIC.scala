@@ -266,7 +266,7 @@ class IMSIC(
         }
         val intFile = Module(new IntFile)
         intFile.fromCSR.seteipnum.bits  := io.seteipnum
-        intFile.fromCSR.seteipnum.valid := io.valid(j)
+        intFile.fromCSR.seteipnum.valid := io.valid(flati)
         intFile.fromCSR.addr            := sel(fromCSR.addr)
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
