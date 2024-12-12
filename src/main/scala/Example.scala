@@ -49,7 +49,7 @@ class TLAIA()(implicit p: Parameters) extends LazyModule {
     })(Parameters.empty)).node
 
     val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
-    imsic.fromMem := map := imsics_fromMem_xbar
+    imsic.axireg.fromMem := map := imsics_fromMem_xbar
     imsic
   })
 
