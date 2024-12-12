@@ -67,6 +67,10 @@ class TLAIA()(implicit p: Parameters) extends LazyModule {
     })
     val intSrcs = IO(Input(chiselTypeOf(aplic.module.intSrcs)))
     intSrcs <> aplic.module.intSrcs
+    for (i <- 0 until 4) {
+      imsics(i).module.soc_clock := clock
+      imsics(i).module.soc_reset := reset
+    }
   }
 }
 
