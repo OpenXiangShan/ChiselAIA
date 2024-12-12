@@ -387,10 +387,10 @@ class TLIMSIC(
       source.io.enq.valid := fifo_wdata.valid
       source.io.enq.bits := fifo_wdata.bits
       sink.io.async <> source.io.async
-    imsic.io.seteipnum := reggen.io.seteipnum
-    imsic.io.valid := reggen.io.valid
-    (intfileFromMems zip reggen.regmapIOs).map {
-      case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2)
+
+    }.otherwise {
+      imsic.io.seteipnum := axireg.module.io.seteipnum
+      imsic.io.valid := axireg.module.io.valid
     }
   }
 }
