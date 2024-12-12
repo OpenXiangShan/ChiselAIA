@@ -365,7 +365,7 @@ class TLIMSIC(
       fifo_wdata.bits := Cat(axireg.module.io.valid.asUInt, axireg.module.io.seteipnum)
       fifo_wdata.valid := axireg.module.io.valid.reduce(_ | _)
       //--- instance about fifo async queue sink  ---//
-      val sink = Module(new AsyncQueueSink(UInt(FifoDataWidth.W)))
+      val sink = Module(new AsyncQueueSink(UInt(FifoDataWidth.W),AsyncQueueParams(8,3,false,false)))
       sink.io.deq.ready := true.B
       //--- fifo rdata decode ---//
       imsic.io.seteipnum := sink.io.deq.bits(params.imsicIntSrcWidth - 1, 0)
@@ -381,7 +381,7 @@ class TLIMSIC(
         imsic.io.valid := Seq.fill(params.intFilesNum)(false.B)
       }
       //--- instance about fifo async queue source  ---//
-      val source = Module(new AsyncQueueSource(UInt(FifoDataWidth.W)))
+      val source = Module(new AsyncQueueSource(UInt(FifoDataWidth.W),AsyncQueueParams(8,3,false,false)))
       source.clock := soc_clock
       source.reset := soc_reset
       source.io.enq.valid := fifo_wdata.valid
@@ -505,7 +505,7 @@ class AXI4IMSIC(
       fifo_wdata.bits := Cat(axireg.module.io.valid.asUInt, axireg.module.io.seteipnum)
       fifo_wdata.valid := axireg.module.io.valid.reduce(_|_)
       //--- instance about fifo async queue sink  ---//
-      val sink = Module(new AsyncQueueSink(UInt(FifoDataWidth.W)))
+      val sink = Module(new AsyncQueueSink(UInt(FifoDataWidth.W),AsyncQueueParams(8,3,false,false)))
       sink.io.deq.ready := true.B
       //--- fifo rdata decode ---//
       imsic.io.seteipnum := sink.io.deq.bits(params.imsicIntSrcWidth-1, 0)
@@ -521,7 +521,8 @@ class AXI4IMSIC(
          imsic.io.valid := Seq.fill(params.intFilesNum)(false.B)
        }
       //--- instance about fifo async queue source  ---//
-      val source = Module(new AsyncQueueSource(UInt(FifoDataWidth.W)))
+      val source = Module(new AsyncQueueSource(UInt(FifoDataWidth.W),AsyncQueueParams(8,3,false,false)))
+
       source.clock := soc_clock
       source.reset := soc_reset
       source.io.enq.valid := fifo_wdata.valid
