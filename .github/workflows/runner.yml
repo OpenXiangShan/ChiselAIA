@@ -1,0 +1,13 @@
+name: run-tests
+on: [push]
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: "recursive"
+    - uses: cachix/install-nix-action@v23
+      with:
+        nix_path: nixpkgs=channel:nixos-24.05
+    - run: nix-shell --run "make"

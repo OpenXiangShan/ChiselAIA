@@ -345,6 +345,7 @@ class TLIMSIC(
     val toCSR = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
     private val imsic = Module(new IMSIC(params, beatBytes))
+    private val reggen = Module(new RegGen(params, beatBytes))
     toCSR := imsic.toCSR
     imsic.fromCSR := fromCSR
     imsic.io.seteipnum := axireg.module.io.seteipnum
@@ -424,6 +425,7 @@ class RegGen(
       // j: index is 0 for m file for seq[0],index is 0~params.geilen for S intFile for seq[1]: S, G1, G2, ...
       val maps = (0 until intFilesNum).map { j => {
         val flati = i + j       //seq[0]:0+0=0;seq[1]:(0~geilen)+1
+
         val seteipnum = WireInit(0.U.asTypeOf(Valid(UInt(params.imsicIntSrcWidth.W)))); /*for debug*/dontTouch(seteipnum)
         valids(flati) := seteipnum.valid
         seteipnums(flati) := seteipnum.bits
@@ -533,5 +535,6 @@ class AXI4IMSIC(
       imsic.io.seteipnum := axireg.module.io.seteipnum
       imsic.io.valid := axireg.module.io.valid
     }
+
   }
 }

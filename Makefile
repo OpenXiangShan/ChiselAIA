@@ -37,9 +37,11 @@ clean:
 MDs=$(shell find docs/ -name "*.md") \
 		$(patsubst src/main/scala/%.scala,docs/%_scala.md,$(wildcard src/main/scala/*.scala))
 PYSVGs=$(subst _dot.py,_py.svg,$(shell find docs/ -name "*_dot.py"))
-DRAWIOSVGs=$(subst .drawio,.svg,$(shell find docs/ -name "*.drawio"))
+# DRAWIOSVGs=$(subst .drawio,.svg,$(shell find docs/ -name "*.drawio"))
 DOTSVGs=$(subst .dot,.svg,$(shell find docs/ -name "*.dot"))
-doc: $(MDs) $(PYSVGs) $(DRAWIOSVGs) $(DOTSVGs)
+# doc: $(MDs) $(PYSVGs) $(DRAWIOSVGs) $(DOTSVGs)
+# 	mdbook build
+doc: $(MDs) $(PYSVGs) $(DOTSVGs)
 	mdbook build
 docs/images/arch_configure_py.dot: docs/images/arch_common.py
 docs/images/arch_interrupt_py.dot: docs/images/arch_common.py
@@ -52,7 +54,7 @@ docs/images/example-axi_py.dot: docs/images/example_common.py
 	# css can only recognize intrinsic size in px
 	# https://developer.mozilla.org/en-US/docs/Glossary/Intrinsic_Size
 	sed -i 's/\([0-9]\+\)pt/\1px/g' $@
-%.svg: %.drawio
-	drawio -x -f svg $<
+# %.svg: %.drawio
+# 	drawio -x -f svg $<
 docs/%_scala.md: src/main/scala/%.scala
 	markcode $< > $@
