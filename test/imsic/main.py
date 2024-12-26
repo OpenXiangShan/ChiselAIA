@@ -48,6 +48,7 @@ async def imsic_1_test(dut):
   await m_int(dut, 1996%256)
   topeis_0 = wrap_topei(1996%256)
   await FallingEdge(dut.clock) ## delay one cycle caused by RegGen.
+  await delay_fifo(dut)
   assert dut.toCSR1_topeis_0.value == topeis_0
   dut.toCSR1_pendings_0.value = 1
   cocotb.log.info("mseteipnum passed")
@@ -62,9 +63,11 @@ async def imsic_1_test(dut):
   cocotb.log.info("2_mseteipnum_1_bits_mclaim began")
   await m_int(dut, 12)
   await FallingEdge(dut.clock) ## delay one cycle caused by RegGen.
+  await delay_fifo(dut)
   assert dut.toCSR1_topeis_0.value == wrap_topei(12)
   await m_int(dut, 8)
   await FallingEdge(dut.clock) ## delay one cycle caused by RegGen.
+  await delay_fifo(dut)
   assert dut.toCSR1_topeis_0.value == wrap_topei(8)
   await claim(dut)
   assert dut.toCSR1_topeis_0.value == wrap_topei(12)
@@ -132,6 +135,7 @@ async def imsic_1_test(dut):
   assert dut.toCSR1_topeis_1.value == wrap_topei(0)
   await s_int(dut, 1234%256)
   await FallingEdge(dut.clock) ## delay one cycle caused by RegGen.
+  await delay_fifo(dut)
   assert dut.toCSR1_topeis_1.value == wrap_topei(1234%256)
   dut.toCSR1_pendings_1.value = 1
   await select_m_intfile(dut)
@@ -143,6 +147,7 @@ async def imsic_1_test(dut):
   assert dut.toCSR1_topeis_2.value == wrap_topei(0)
   await v_int_vgein(dut, 137)
   await FallingEdge(dut.clock)
+  await delay_fifo(dut)
   assert dut.toCSR1_topeis_2.value == wrap_topei(137)
   dut.toCSR1_pendings_4.value = 1  # Assuming pendings_4 corresponds to vgein=2
   await select_m_intfile(dut)
