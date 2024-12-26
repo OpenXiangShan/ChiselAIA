@@ -16,17 +16,20 @@
 
 package aia
 
+import chisel3._
 import chisel3.{IO, _} 
 import chisel3.util._
 import freechips.rocketchip.diplomacy._
 import org.chipsalliance.cde.config.Parameters
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.amba.axi4._
+import freechips.rocketchip.amba.axi4.AXI4Xbar
 import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.regmapper._
 import freechips.rocketchip.prci.{ClockSinkDomain}
 import freechips.rocketchip.util._
 import xs.utils._
+
 
 // RegMap that supports Default and Valid
 object RegMapDV {
@@ -58,6 +61,11 @@ object PrivType extends ChiselEnum {
   val U = Value(0.U)
   val S = Value(1.U)
   val M = Value(3.U)
+}
+class ForCVMBundle extends Bundle {
+  val cmode = Input(Bool()) // add port: cpu mode is tee or ree
+  val notice_pending =
+    Output(Bool()) // add port: interrupt pending of ree when cmode is tee,else interrupt pending of tee.
 }
 class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
   val addr = ValidIO(UInt(params.iselectWidth.W))
@@ -94,7 +102,8 @@ case class IMSICParams(
   //MC iselect信号的位宽(The width of iselect signal):
   iselectWidth    : Int  = 12          ,
   EnableImsicAsyncBridge: Boolean = false,
-  //MC{hide}
+  HasTEEIMSIC: Boolean = false
+   //MC{hide}   
 ) {
   lazy val xlen        : Int  = 64 // currently only support xlen = 64
   lazy val xlenWidth = log2Ceil(xlen)
@@ -334,158 +343,23 @@ class TLRegIMSIC(
   }
 }
 
+//generate TLIMSIC top module:including TLRegIMSIC_WRAP and IMSIC_WRAP
 class TLIMSIC(
-  params: IMSICParams,
-  beatBytes: Int = 8,
-)(implicit p: Parameters) extends LazyModule {
-  val axireg = LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))
-
+    params:    IMSICParams,
+    beatBytes: Int = 8
+//  asyncQueueParams: AsyncQueueParams
+)(implicit p: Parameters) extends LazyModule with HasIMSICParameters {
+  val axireg = LazyModule(new TLRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
   lazy val module = new Imp
+
   class Imp extends LazyModuleImp(this) {
     val toCSR = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
-    private val imsic = Module(new IMSIC(params, beatBytes))
+    private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
     toCSR := imsic.toCSR
     imsic.fromCSR := fromCSR
-    imsic.io.seteipnum := axireg.module.io.seteipnum
-    imsic.io.valid := axireg.module.io.valid
-    /* code on when imsic has two clock domains.*/
-    //--- define soc_clock for imsic bus logic ***//
-    val soc_clock = IO(Input(Clock()))
-    val soc_reset = IO(Input(Reset()))
-    axireg.module.clock := soc_clock
-    axireg.module.reset := soc_reset
-    imsic.clock := clock
-    imsic.reset := reset
-    when(params.EnableImsicAsyncBridge.B) {
-      val FifoDataWidth = params.imsicIntSrcWidth + params.intFilesNum
-      //---- instance async fifo ----//
-      //--- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
-      val fifo_wdata = Wire(Valid(UInt(FifoDataWidth.W)))
-      fifo_wdata.bits := Cat(axireg.module.io.valid.asUInt, axireg.module.io.seteipnum)
-      fifo_wdata.valid := axireg.module.io.valid.reduce(_ | _)
-      //--- instance about fifo async queue sink  ---//
-      val sink = Module(new AsyncQueueSink(UInt(FifoDataWidth.W),AsyncQueueParams(8,3,false,false)))
-      sink.io.deq.ready := true.B
-      //--- fifo rdata decode ---//
-      imsic.io.seteipnum := sink.io.deq.bits(params.imsicIntSrcWidth - 1, 0)
-
-      val fifo_rvalids = sink.io.deq.bits(FifoDataWidth - 1, params.imsicIntSrcWidth)
-      val rvalids_tovec = VecInit(Seq.fill(params.intFilesNum)(false.B)) // bits->vector
-      for (i <- 0 until params.intFilesNum) {
-        rvalids_tovec(i) := fifo_rvalids(i)
-      }
-      when(sink.io.deq.valid) { // active when sink.valid active
-        imsic.io.valid := rvalids_tovec
-      }.otherwise {
-        imsic.io.valid := Seq.fill(params.intFilesNum)(false.B)
-      }
-      //--- instance about fifo async queue source  ---//
-      val source = Module(new AsyncQueueSource(UInt(FifoDataWidth.W),AsyncQueueParams(8,3,false,false)))
-      source.clock := soc_clock
-      source.reset := soc_reset
-      source.io.enq.valid := fifo_wdata.valid
-      source.io.enq.bits := fifo_wdata.bits
-      sink.io.async <> source.io.async
-
-    }
-  }
-}
-
-//integrated for async clock domain,kmh,zhaohong
-class RegGen(
-  params: IMSICParams,
-  beatBytes: Int = 8,
-) extends Module {
-  val regmapIOs = Seq(
-    params.intFileMemWidth,
-    params.intFileMemWidth + log2Ceil(1+params.geilen)
-  ).map(width => {
-    val regmapParams = RegMapperParams(width-log2Up(beatBytes), beatBytes)
-    ( IO(Flipped(Decoupled(new RegMapperInput(regmapParams)))),
-      IO(Decoupled(new RegMapperOutput(regmapParams))))
-  })
-  //define the output reg: seteipnum is the MSI id,vld[],valid flag for interrupt file domains: m,s,vs1~vsgeilen
-  val io = IO(Output(new Bundle {
-    val seteipnum = UInt(params.imsicIntSrcWidth.W)
-    val valid = Vec(params.intFilesNum,Bool())
-  }))
-  val valids = WireInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
-  val seteipnums = WireInit(VecInit(Seq.fill(params.intFilesNum)(0.U(params.imsicIntSrcWidth.W))))
-  val outseteipnum = RegInit(0.U(params.imsicIntSrcWidth.W))
-  val outvalids = RegInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
-
-  (regmapIOs zip Seq(1, 1+params.geilen)).zipWithIndex.map { //seq[0]: m interrupt file, seq[1]: s&vs interrupt file
-    case ((regmapIO: (DecoupledIO[RegMapperInput], DecoupledIO[RegMapperOutput]),intFilesNum: Int), i: Int)
-    => {
-      // j: index is 0 for m file for seq[0],index is 0~params.geilen for S intFile for seq[1]: S, G1, G2, ...
-      val maps = (0 until intFilesNum).map { j => {
-        val flati = i + j       //seq[0]:0+0=0;seq[1]:(0~geilen)+1
-        val seteipnum = WireInit(0.U.asTypeOf(Valid(UInt(params.imsicIntSrcWidth.W)))); /*for debug*/dontTouch(seteipnum)
-        valids(flati) := seteipnum.valid
-        seteipnums(flati) := seteipnum.bits
-        (j * pow2(params.intFileMemWidth).toInt -> Seq(RegField(32, 0.U,
-          RegWriteFn((valid, data) => {
-            when (valid) { seteipnum.bits := data(params.imsicIntSrcWidth-1,0); seteipnum.valid := true.B }; true.B
-          }))))
-          }}
-      regmapIO._2 <> RegMapper(beatBytes, 1, true, regmapIO._1, maps: _*)
-    }
-  outseteipnum := seteipnums.reduce(_|_)
-  outvalids    := valids
-  io.seteipnum := outseteipnum
-  io.valid     := outvalids
-  }
-}
-
-//generate axi42reg for IMSIC
-class AXIRegIMSIC(
-                 params: IMSICParams,
-                 beatBytes: Int = 8,
-               )(implicit p: Parameters) extends LazyModule {
-  val fromMem = AXI4Xbar()
-  private val intfileFromMems = Seq(
-    AddressSet(params.mAddr,  pow2(params.intFileMemWidth) - 1),
-    AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1+params.geilen)) - 1),
-  ).map(addrset => {
-    val intfileFromMem = AXI4RegMapperNode(
-      address = addrset,
-      beatBytes = beatBytes)
-    intfileFromMem := fromMem
-    intfileFromMem
-  })
-
-  lazy val module = new AXIRegIMSICImp(this)
-  class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
-    val io = IO(Output(new Bundle {
-      val seteipnum = UInt(params.imsicIntSrcWidth.W)
-      val valid = Vec(params.intFilesNum,Bool())
-    }))
-
-    private val reggen = Module(new RegGen(params, beatBytes))
-
-    io.seteipnum := reggen.io.seteipnum
-    io.valid     := reggen.io.valid
-    (intfileFromMems zip reggen.regmapIOs).map {
-      case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2)
-    }
-  }
-}
-
-class AXI4IMSIC(
-  params: IMSICParams,
-  beatBytes: Int = 8,
-)(implicit p: Parameters) extends LazyModule {
-  val axireg = LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))
-  lazy val module = new Imp
-  class Imp extends LazyModuleImp(this) {
-    val toCSR = IO(Output(new IMSICToCSRBundle(params)))
-    val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
-    private val imsic = Module(new IMSIC(params, beatBytes))
-    toCSR := imsic.toCSR
-    imsic.fromCSR := fromCSR
-    imsic.io.seteipnum := axireg.module.io.seteipnum
-    imsic.io.valid := axireg.module.io.valid
+    // define additional ports for cvm extention
+    val io_sec = if (GHasTEEIMSIC) Some(IO(new ForCVMBundle())) else None // include cmode input port,and o_notice_pending output port.
     /* code on when imsic has two clock domains.*/
     //--- define soc_clock for imsic bus logic ***//
     val soc_clock = IO(Input(Clock()))
@@ -525,7 +399,388 @@ class AXI4IMSIC(
       source.io.enq.valid := fifo_wdata.valid
       source.io.enq.bits := fifo_wdata.bits
       sink.io.async <> source.io.async
+    }.otherwise {
+      imsic.io.seteipnum := axireg.module.io.seteipnum
+      imsic.io.valid := axireg.module.io.valid
+    }
+    // code will be compiled only when io_sec is not None.
+    io_sec.foreach { iosec =>
+      imsic.sec.foreach { imsicsec =>
+        imsicsec <> iosec
+      }
+    }
+    // code will be compiled only when tee_axireg is not None.
+    axireg.module.teeio.foreach { tee_msi_info =>
+      // instance fifo and connect fifo
+      when(params.EnableImsicAsyncBridge.B) {
+        val cFifoDataWidth = params.imsicIntSrcWidth + params.intFilesNum
+        // ---- instance async fifo ----//
+        // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
+        val cfifo_wdata = Wire(Valid(UInt(cFifoDataWidth.W)))
+        cfifo_wdata.bits := Cat(tee_msi_info.valid.asUInt, tee_msi_info.seteipnum)
+        cfifo_wdata.valid := tee_msi_info.valid.reduce(_ | _)
+        // --- instance about fifo async queue sink  ---//
+        val csink = Module(new AsyncQueueSink(UInt(cFifoDataWidth.W), AsyncQueueParams(8, 3, false, false)))
+        csink.io.deq.ready := true.B
+        // --- fifo rdata decode ,and connect imsicwrap.teeio.setipnum---//
+        val fifo_rvalids = csink.io.deq.bits(cFifoDataWidth - 1, params.imsicIntSrcWidth)
+        val rvalids_tovec = VecInit(Seq.fill(params.intFilesNum)(false.B)) // bits->vector
+        for (i <- 0 until params.intFilesNum) {
+          rvalids_tovec(i) := fifo_rvalids(i)
+        }
+        imsic.teeio.foreach { teeio =>
+          teeio.seteipnum := csink.io.deq.bits(params.imsicIntSrcWidth - 1, 0)
+          when(csink.io.deq.valid) { // active when sink.valid active
+            teeio.valid := rvalids_tovec
+            teeio.valid(0) := false.B // machine level is only for ree,not excluded for tee
+          }.otherwise {
+            teeio.valid := Seq.fill(params.intFilesNum)(false.B)
+          }
+        }
+        // --- instance about fifo async queue source  ---//
+        val csource = Module(new AsyncQueueSource(UInt(cFifoDataWidth.W), AsyncQueueParams(8, 3, false, false)))
 
+        csource.clock := soc_clock
+        csource.reset := soc_reset
+        csource.io.enq.valid := cfifo_wdata.valid
+        csource.io.enq.bits := cfifo_wdata.bits
+        csink.io.async <> csource.io.async
+      }.otherwise {
+        imsic.teeio.foreach { teeio =>
+          teeio.seteipnum := tee_msi_info.seteipnum
+          teeio.valid := tee_msi_info.valid
+          teeio.valid(0) := false.B // machine level is only for ree,not excluded for tee
+        }
+      }
     }
   }
+}
+
+
+//integrated for async clock domain,kmh,zhaohong
+class RegGen(
+    params:    IMSICParams,
+    beatBytes: Int = 8
+) extends Module {
+  val regmapIOs = Seq(
+    params.intFileMemWidth,
+    params.intFileMemWidth + log2Ceil(1 + params.geilen)
+  ).map { width =>
+    val regmapParams = RegMapperParams(width - log2Up(beatBytes), beatBytes)
+    (IO(Flipped(Decoupled(new RegMapperInput(regmapParams)))), IO(Decoupled(new RegMapperOutput(regmapParams))))
+  }
+  // define the output reg: seteipnum is the MSI id,vld[],valid flag for interrupt file domains: m,s,vs1~vsgeilen
+  val io = IO(Output(new Bundle {
+    val seteipnum = UInt(params.imsicIntSrcWidth.W)
+    val valid     = Vec(params.intFilesNum, Bool())
+  }))
+  val valids       = WireInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
+  val seteipnums   = WireInit(VecInit(Seq.fill(params.intFilesNum)(0.U(params.imsicIntSrcWidth.W))))
+  val outseteipnum = RegInit(0.U(params.imsicIntSrcWidth.W))
+  val outvalids    = RegInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
+
+  (regmapIOs zip Seq(1, 1 + params.geilen)).zipWithIndex.map { // seq[0]: m interrupt file, seq[1]: s&vs interrupt file
+    case ((regmapIO: (DecoupledIO[RegMapperInput], DecoupledIO[RegMapperOutput]), intFilesNum: Int), i: Int) =>
+      {
+        // j: index is 0 for m file for seq[0],index is 0~params.geilen for S intFile for seq[1]: S, G1, G2, ...
+        val maps = (0 until intFilesNum).map { j =>
+          val flati     = i + j // seq[0]:0+0=0;seq[1]:(0~geilen)+1
+          val seteipnum = WireInit(0.U.asTypeOf(Valid(UInt(params.imsicIntSrcWidth.W)))); /*for debug*/
+          dontTouch(seteipnum)
+          valids(flati)     := seteipnum.valid
+          seteipnums(flati) := seteipnum.bits
+          j * pow2(params.intFileMemWidth).toInt -> Seq(RegField(
+            32,
+            0.U,
+            RegWriteFn { (valid, data) =>
+              when(valid) { seteipnum.bits := data(params.imsicIntSrcWidth - 1, 0); seteipnum.valid := true.B }; true.B
+            }
+          ))
+        }
+        regmapIO._2 <> RegMapper(beatBytes, 1, true, regmapIO._1, maps: _*)
+      }
+      outseteipnum := seteipnums.reduce(_ | _)
+      outvalids    := valids
+      io.seteipnum := outseteipnum
+      io.valid     := outvalids
+  }
+}
+
+//generate axi42reg for IMSIC
+class AXIRegIMSIC(
+    params:    IMSICParams,
+    beatBytes: Int = 8
+)(implicit p: Parameters) extends LazyModule {
+  val fromMem = AXI4Xbar()
+  private val intfileFromMems = Seq(
+    AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
+    AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)
+  ).map { addrset =>
+    val intfileFromMem = AXI4RegMapperNode(
+      address = addrset,
+      beatBytes = beatBytes
+    )
+    intfileFromMem := fromMem
+    intfileFromMem
+  }
+
+  lazy val module = new AXIRegIMSICImp(this)
+  class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val io = IO(Output(new Bundle {
+      val seteipnum = UInt(params.imsicIntSrcWidth.W)
+      val valid     = Vec(params.intFilesNum, Bool())
+    }))
+
+    private val reggen = Module(new RegGen(params, beatBytes))
+
+    io.seteipnum := reggen.io.seteipnum
+    io.valid     := reggen.io.valid
+    (intfileFromMems zip reggen.regmapIOs).map {
+      case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2)
+    }
+  }
+}
+
+class AXI4IMSIC(
+    params:    IMSICParams,
+    beatBytes: Int = 8
+)(implicit p: Parameters ) extends LazyModule with HasIMSICParameters {
+  val axireg = LazyModule(new AXIRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+  lazy val module = new Imp
+  class Imp extends LazyModuleImp(this) {
+    val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
+    val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
+    private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+    toCSR         := imsic.toCSR
+    imsic.fromCSR := fromCSR
+    // define additional ports for cvm extention
+    val io_sec = if (GHasTEEIMSIC) Some(IO(new ForCVMBundle())) else None // include cmode input port,and o_notice_pending output port.
+    /* code on when imsic has two clock domains.*/
+    // --- define soc_clock for imsic bus logic ***//
+    val soc_clock = IO(Input(Clock()))
+    val soc_reset = IO(Input(Reset()))
+    axireg.module.clock := soc_clock
+    axireg.module.reset := soc_reset
+    imsic.clock         := clock
+    imsic.reset         := reset
+    when(params.EnableImsicAsyncBridge.B) {
+      val FifoDataWidth = params.imsicIntSrcWidth + params.intFilesNum
+      // ---- instance async fifo ----//
+      // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
+      val fifo_wdata = Wire(Valid(UInt(FifoDataWidth.W)))
+      fifo_wdata.bits  := Cat(axireg.module.io.valid.asUInt, axireg.module.io.seteipnum)
+      fifo_wdata.valid := axireg.module.io.valid.reduce(_ | _)
+      // --- instance about fifo async queue sink  ---//
+      val sink = Module(new AsyncQueueSink(UInt(FifoDataWidth.W), AsyncQueueParams(8, 3, false, false)))
+      sink.io.deq.ready := true.B
+      // --- fifo rdata decode ---//
+      imsic.io.seteipnum := sink.io.deq.bits(params.imsicIntSrcWidth - 1, 0)
+
+      val fifo_rvalids  = sink.io.deq.bits(FifoDataWidth - 1, params.imsicIntSrcWidth)
+      val rvalids_tovec = VecInit(Seq.fill(params.intFilesNum)(false.B)) // bits->vector
+      for (i <- 0 until params.intFilesNum) {
+        rvalids_tovec(i) := fifo_rvalids(i)
+      }
+      when(sink.io.deq.valid) { // active when sink.valid active
+        imsic.io.valid := rvalids_tovec
+      }.otherwise {
+        imsic.io.valid := Seq.fill(params.intFilesNum)(false.B)
+      }
+      // --- instance about fifo async queue source  ---//
+      val source = Module(new AsyncQueueSource(UInt(FifoDataWidth.W), AsyncQueueParams(8, 3, false, false)))
+
+      source.clock        := soc_clock
+      source.reset        := soc_reset
+      source.io.enq.valid := fifo_wdata.valid
+      source.io.enq.bits  := fifo_wdata.bits
+      sink.io.async <> source.io.async
+    }.otherwise {
+      imsic.io.seteipnum := axireg.module.io.seteipnum
+      imsic.io.valid     := axireg.module.io.valid
+    }
+    // code will be compiled only when io_sec is not None.
+    io_sec.foreach { iosec =>
+      imsic.sec.foreach { imsicsec =>
+        imsicsec <> iosec
+      }
+    }
+    // code will be compiled only when tee_axireg is not None.
+    axireg.module.teeio.foreach { tee_msi_info =>
+      // instance fifo and connect fifo
+      when(params.EnableImsicAsyncBridge.B) {
+        val cFifoDataWidth = params.imsicIntSrcWidth + params.intFilesNum
+        // ---- instance async fifo ----//
+        // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
+        val cfifo_wdata = Wire(Valid(UInt(cFifoDataWidth.W)))
+        cfifo_wdata.bits := Cat(tee_msi_info.valid.asUInt, tee_msi_info.seteipnum)
+        cfifo_wdata.valid := tee_msi_info.valid.reduce(_ | _)
+        // --- instance about fifo async queue sink  ---//
+        val csink = Module(new AsyncQueueSink(UInt(cFifoDataWidth.W), AsyncQueueParams(8, 3, false, false)))
+        csink.io.deq.ready := true.B
+        // --- fifo rdata decode ,and connect imsicwrap.teeio.setipnum---//
+        val fifo_rvalids = csink.io.deq.bits(cFifoDataWidth - 1, params.imsicIntSrcWidth)
+        val rvalids_tovec = VecInit(Seq.fill(params.intFilesNum)(false.B)) // bits->vector
+        for (i <- 0 until params.intFilesNum) {
+          rvalids_tovec(i) := fifo_rvalids(i)
+        }
+        imsic.teeio.foreach { teeio =>
+          teeio.seteipnum := csink.io.deq.bits(params.imsicIntSrcWidth - 1, 0)
+          when(csink.io.deq.valid) { // active when sink.valid active
+            teeio.valid := rvalids_tovec
+            teeio.valid(0) := false.B // machine level is only for ree,not excluded for tee
+          }.otherwise {
+            teeio.valid := Seq.fill(params.intFilesNum)(false.B)
+          }
+        }
+        // --- instance about fifo async queue source  ---//
+        val csource = Module(new AsyncQueueSource(UInt(cFifoDataWidth.W), AsyncQueueParams(8, 3, false, false)))
+
+        csource.clock := soc_clock
+        csource.reset := soc_reset
+        csource.io.enq.valid := cfifo_wdata.valid
+        csource.io.enq.bits := cfifo_wdata.bits
+        csink.io.async <> csource.io.async
+      }.otherwise {
+        imsic.teeio.foreach { teeio =>
+          teeio.seteipnum := tee_msi_info.seteipnum
+          teeio.valid := tee_msi_info.valid
+          teeio.valid(0) := false.B // machine level is only for ree,not excluded for tee
+        }
+      }
+    }
+  }
+}
+
+// code below is for SEC IMSIC spec
+//generate TLRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one
+class TLRegIMSIC_WRAP(
+    params: IMSICParams,
+    beatBytes: Int = 8
+)(implicit p: Parameters) extends LazyModule {
+  val axireg = LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))
+  val tee_axireg = if (params.HasTEEIMSIC) Some(LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))) else None
+  lazy val module = new TLRegIMSICImp(this)
+
+  class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val io = IO(Output(new Bundle {
+      val seteipnum = UInt(params.imsicIntSrcWidth.W)
+      val valid = Vec(params.intFilesNum, Bool())
+    }))
+    val teeio = if (params.HasTEEIMSIC) Some(IO(Output(new Bundle {
+      val seteipnum = UInt(params.imsicIntSrcWidth.W)
+      val valid = Vec(params.intFilesNum, Bool())
+    }))) else None
+
+    io := axireg.module.io
+    //code below will be compiled only when teeio is not none.
+    teeio.foreach { teeio => {
+      tee_axireg.foreach { tee_axireg => {
+        teeio := tee_axireg.module.io
+      }
+      }
+    }
+    }
+  }
+}
+
+//generate AXIRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one
+class AXIRegIMSIC_WRAP(
+    params: IMSICParams,
+    beatBytes: Int = 8
+)(implicit p: Parameters) extends LazyModule {
+  val axireg = LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))
+  //  val tee_axireg = if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(IMSICParams(teemode = true), beatBytes)(Parameters.empty))) else None
+  val tee_axireg = if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))) else None
+  lazy val module = new AXIRegIMSICImp(this)
+
+  class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val io = IO(Output(new Bundle {
+      val seteipnum = UInt(params.imsicIntSrcWidth.W)
+      val valid = Vec(params.intFilesNum, Bool())
+    }))
+    val teeio = if (params.HasTEEIMSIC) Some(IO(Output(new Bundle {
+      val seteipnum = UInt(params.imsicIntSrcWidth.W)
+      val valid = Vec(params.intFilesNum, Bool())
+    }))) else None
+
+    io := axireg.module.io
+    //code below will be compiled only when teeio is not none.
+    teeio.foreach { teeio => {
+      tee_axireg.foreach { tee_axireg => {
+        teeio := tee_axireg.module.io
+      }
+      }
+    }
+    }
+  }
+}
+
+//define IMSIC_WRAP: instance one imsic when HasCVMExtention is supported, else instance two imsic modules.
+class IMSIC_WRAP(
+    params: IMSICParams,
+    beatBytes: Int = 8
+)(implicit p: Parameters) extends Module {
+  // define the ports
+  val toCSR = IO(Output(new IMSICToCSRBundle(params)))
+  val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
+  val io = IO(Input(new Bundle {
+    val seteipnum = UInt(params.imsicIntSrcWidth.W)
+    val valid = Vec(params.intFilesNum, Bool())
+  }))
+  // define additional ports when HasCVMExtention is supported.
+  val teeio = if (params.HasTEEIMSIC) Some(IO(Input(new Bundle {
+    val seteipnum = UInt(params.imsicIntSrcWidth.W)
+    val valid = Vec(params.intFilesNum, Bool())
+  }))) else None
+  val sec = if (params.HasTEEIMSIC) Some(IO(new ForCVMBundle())) else None // include cmode input port,and o_notice_pending output port.
+
+  // instance module,and body logic
+  private val imsic = Module(new IMSIC(params, beatBytes))
+  imsic.fromCSR := fromCSR
+  toCSR := imsic.toCSR
+  imsic.io := io
+
+  // define additional logic for sec extention
+  // .foreach logic only happens when sec is not none.
+  sec.foreach(secIO => {
+    //get the sec.mode, connect sec.o_notice_pending to top.
+
+    val cmode = Wire(Bool())
+    val notice_pending = Wire(Bool())
+    cmode := secIO.cmode
+    secIO.notice_pending := notice_pending
+
+    // instance tee imsic module.
+    val teeimsic = Module(new IMSIC(params, beatBytes))
+    teeio.foreach(teemsi => {
+      teeimsic.io := teemsi
+    })
+    toCSR.rdata := Mux(cmode, teeimsic.toCSR.rdata, imsic.toCSR.rdata) // toCSR needs to the selected depending cmode.
+    toCSR.illegal := Mux(cmode, teeimsic.toCSR.illegal, imsic.toCSR.illegal)
+    toCSR.pendings := Mux(cmode, teeimsic.toCSR.pendings, imsic.toCSR.pendings)
+    toCSR.pendings(0) := imsic.toCSR.pendings(0) //machine mode only from imsic.
+    //    toCSR.pendings := VecInit((0 until params.intFilesNum).map(i => pendings(i))) // uint->vector
+
+    toCSR.topeis := Mux(cmode, teeimsic.toCSR.topeis, imsic.toCSR.topeis)
+    toCSR.topeis(0) := imsic.toCSR.topeis(0) //machine mode only from imsic.
+    // to get the o_notice_pending, excluding the machine interrupt
+    val s_orpend_ree = imsic.toCSR.pendings.slice(1, params.intFilesNum) // extract the | of vector(1,N-1)
+    val s_orpend_tee = teeimsic.toCSR.pendings.slice(1, params.intFilesNum)
+    notice_pending := Mux(cmode, s_orpend_ree.reduce(_ | _), s_orpend_tee.reduce(_ | _))
+
+    teeimsic.fromCSR := fromCSR
+    teeimsic.fromCSR.addr.valid := cmode & fromCSR.addr.valid // cmode=1,controls tee csr access to interrupt file indirectly
+    teeimsic.fromCSR.wdata.valid := cmode & fromCSR.wdata.valid
+    teeimsic.fromCSR.claims(0) := false.B // machine interrupts are inactive for tee imsic.
+    for (i <- 1 until params.privNum) {
+      teeimsic.fromCSR.claims(i) := cmode & fromCSR.claims(i)
+    }
+
+    imsic.fromCSR.addr.valid := (cmode === false.B) & fromCSR.addr.valid // cmode=1,controls tee csr access to interrupt file indirectly
+    imsic.fromCSR.wdata.valid := (cmode === false.B) & fromCSR.wdata.valid
+    imsic.fromCSR.claims(0) := fromCSR.claims(0) // machine interrupts are inactive for tee imsic.
+    for (i <- 1 until params.privNum) {
+      imsic.fromCSR.claims(i) := (cmode === false.B) & fromCSR.claims(i)
+    }
+  })
 }
