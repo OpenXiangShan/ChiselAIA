@@ -388,9 +388,6 @@ class TLIMSIC(
       source.io.enq.bits := fifo_wdata.bits
       sink.io.async <> source.io.async
 
-    }.otherwise {
-      imsic.io.seteipnum := axireg.module.io.seteipnum
-      imsic.io.valid := axireg.module.io.valid
     }
   }
 }
@@ -529,9 +526,6 @@ class AXI4IMSIC(
       source.io.enq.bits := fifo_wdata.bits
       sink.io.async <> source.io.async
 
-    }.otherwise {
-      imsic.io.seteipnum := axireg.module.io.seteipnum
-      imsic.io.valid := axireg.module.io.valid
     }
   }
 }
