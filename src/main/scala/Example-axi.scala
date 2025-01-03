@@ -18,7 +18,7 @@ package aia
 import chisel3._
 import chisel3.util._
 import freechips.rocketchip.diplomacy._
-import org.chipsalliance.cde.config.Parameters
+import org.chipsalliance.cde.config.{Parameters, Config}
 import freechips.rocketchip.amba.axi4._
 // _root_ disambiguates from package chisel3.util.circt if user imports chisel3.util._
 import _root_.circt.stage.ChiselStage
@@ -33,7 +33,7 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
 
   // Here we create 2 imsic groups, each group contains two 2 CPUs
   val imsic_params = IMSICParams()
-//val imsic_params = IMSICParams(EnbleImsicAsyncBridge = true) //switch on enable IMSIC async
+//val imsic_params = IMSICParams(EnableImsicAsyncBridge = true) //switch on enable IMSIC async
   val aplic_params = APLICParams(groupsNum=2, membersNum=2)
   val imsics_fromMem_xbar = LazyModule(new AXI4Xbar).node
   imsics_fromMem_xbar := toAIA_xbar
@@ -49,8 +49,18 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
       case _ => assert(false, f"unknown address ${addrSet.base}"); 0
     })(Parameters.empty)).node
 
-    val imsic = LazyModule(new AXI4IMSIC(imsic_params)(Parameters.empty))
-    imsic.axireg.fromMem := map := imsics_fromMem_xbar
+    val teemap = LazyModule(new AXI4Map(addrSet => addrSet.base.toLong match {
+      case imsic_params.mAddr => groupID * pow2(aplic_params.groupStrideWidth) + 0x40010000L + memberID * pow2(aplic_params.mStrideWidth)
+      case imsic_params.sgAddr => groupID * pow2(aplic_params.groupStrideWidth) + 0x80010000L + memberID * pow2(aplic_params.sgStrideWidth)
+      case _ => assert(false, f"unknown address ${addrSet.base}"); 0
+    })(Parameters.empty)).node
+
+    val imsic = LazyModule(new AXI4IMSIC(imsic_params)(new Config((site, here, up) => {
+      case IMSICParameKey => IMSICParameters(HasTEEIMSIC = false)
+    })))
+
+    imsic.axireg.axireg.fromMem := map := imsics_fromMem_xbar
+    imsic.axireg.tee_axireg.foreach { tee_axireg => tee_axireg.fromMem := teemap := imsics_fromMem_xbar }
     imsic
   })
 
@@ -58,7 +68,7 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
   aplic.fromCPU := toAIA_xbar
   imsics_fromMem_xbar := aplic.toIMSIC
 
-  lazy val module = new LazyModuleImp(this) {
+  lazy val module = new LazyModuleImp(this) with HasIMSICParameters{
     toAIA.makeIOs()(ValName("toaia"))
     (0 until 4).map (i => {
       val toCSR = IO(Output(chiselTypeOf(imsics(i).module.toCSR))).suggestName(f"toCSR${i}")
@@ -68,9 +78,24 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
     })
     val intSrcs = IO(Input(chiselTypeOf(aplic.module.intSrcs)))
     intSrcs <> aplic.module.intSrcs
+    val sec_cmode = if (GHasTEEIMSIC) Some(IO(Input(Bool()))) else None
+    val sec_notice_pending = if (GHasTEEIMSIC) Some(IO(Output(Vec(4,Bool())))) else None
     for (i <- 0 until 4) {
       imsics(i).module.soc_clock := clock
       imsics(i).module.soc_reset := reset
+      sec_cmode.foreach { sec_cmode =>
+        imsics(i).module.io_sec.foreach {
+          instance_iosec =>
+            instance_iosec.cmode := sec_cmode
+        }
+      }
+
+      sec_notice_pending.foreach { sec_notice_pending =>
+        imsics(i).module.io_sec.foreach {
+          instance_iosec =>
+            sec_notice_pending(i) := instance_iosec.notice_pending
+        }
+      }
     }
   }
 }
@@ -79,9 +104,13 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
  * Generate Verilog sources
  */
 object AXI4AIA extends App {
-  val axi4top = DisableMonitors(p => LazyModule(
-    new AXI4AIA()(Parameters.empty))
-  )(Parameters.empty)
+
+  val axi4top = LazyModule(new AXI4AIA()(
+    Parameters.empty.alterPartial({
+      case IMSICParameKey => IMSICParameters(HasTEEIMSIC=false)
+    })
+  ))
+
 
   ChiselStage.emitSystemVerilog(
     axi4top.module,
