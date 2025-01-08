@@ -222,6 +222,10 @@ async def aplic_msi_test(dut):
   await a_put_full32(dut, aplic_m_base_addr+offset_setipnum, int_num)
   await expect_int_num(dut, eiid, imsic_m_base_addr) # guest_id is not worked in machine-level domain
 
+  eiid = 0x77
+  hart_index = 1
+  await a_put_full32(dut, aplic_m_base_addr+offset_genmsi, hart_index<<18|eiid)
+  await expect_int_num(dut, eiid, imsic_m_base_addr+0x1000*hart_index)
   # setipnum ip1
   int_num = 63
   eiid = 0xEF
@@ -255,7 +259,3 @@ async def aplic_msi_test(dut):
   dut.intSrcs_43.value = 0
   await expect_int_num(dut, eiid, imsic_sg_base_addr+0x1000*guest_id)
 
-  eiid = 0x77
-  hart_index = 1
-  await a_put_full32(dut, aplic_m_base_addr+offset_genmsi, hart_index<<18|eiid)
-  await expect_int_num(dut, eiid, imsic_m_base_addr+0x1000*hart_index)

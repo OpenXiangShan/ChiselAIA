@@ -150,11 +150,17 @@ class IMSIC(
     //generate the msi_vld_ack,to handle with the input msi request.
     msiio.msi_vld_ack := msi_vld_ack_cpu
     val msi_vld_ris_cpu = msi_vld_req_cpu & (~msi_vld_ack_cpu) // rising of msi_vld_req
-    val msi_data_catch = RegEnable(msi_in,0.U.asTypeOf(msi_in),msi_vld_ris_cpu)
+    val msi_data_catch = RegInit(0.U(params.imsicIntSrcWidth.W))
+    val msi_intf_valids = RegInit(0.U(params.intFilesNum.W))
     msi_data_o := msi_data_catch(params.imsicIntSrcWidth-1,0)
-    val msi_intf_valids = msi_data_catch(MSIinfoWidth - 1, params.imsicIntSrcWidth)
     for (i <- 0 until params.intFilesNum) {
       msi_valid_o(i) := msi_intf_valids(i)
+    }
+    when(msi_vld_ris_cpu){
+      msi_data_catch := msi_in(params.imsicIntSrcWidth-1,0)
+      msi_intf_valids := msi_in(MSIinfoWidth - 1, params.imsicIntSrcWidth)
+    }.otherwise{
+      msi_intf_valids := 0.U
     }
   }
   class IntFile extends Module {
@@ -419,13 +425,17 @@ class TLRegIMSIC(
     val rvalids_tovec = RegInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
     // get the msi interrupt ID info
     val msi_id_data  = RegInit(0.U(params.imsicIntSrcWidth.W))
-    val rdata_vld = RegNext(fifo_sync.io.deq.fire) // assign to fifo rdata
+    val rdata_vld = fifo_sync.io.deq.fire // assign to fifo rdata
     when(rdata_vld) { // fire: io.deq.valid & io.deq.ready
       msi_id_data := fifo_sync.io.deq.bits(params.imsicIntSrcWidth - 1, 0)
       for (i <- 0 until params.intFilesNum) {
         rvalids_tovec(i) := fifo_rvalids(i)
       }
-    }
+    }.otherwise{
+      for (i <- 0 until params.intFilesNum) {
+        rvalids_tovec(i) := 0.U
+      }
+    } 
     // port connect: io.valid is interrupt file index info.
     io.valid := rvalids_tovec
     io.seteipnum := msi_id_data
@@ -603,13 +613,17 @@ class AXIRegIMSIC(
     val rvalids_tovec = RegInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
     // get the msi interrupt ID info
     val msi_id_data  = RegInit(0.U(params.imsicIntSrcWidth.W))
-    val rdata_vld = RegNext(fifo_sync.io.deq.fire) // assign to fifo rdata
+    val rdata_vld = fifo_sync.io.deq.fire // assign to fifo rdata
     when(rdata_vld) { // fire: io.deq.valid & io.deq.ready
       msi_id_data := fifo_sync.io.deq.bits(params.imsicIntSrcWidth - 1, 0)
       for (i <- 0 until params.intFilesNum) {
         rvalids_tovec(i) := fifo_rvalids(i)
       }
-    }
+    }.otherwise{
+      for (i <- 0 until params.intFilesNum) {
+        rvalids_tovec(i) := 0.U
+      }
+    } 
     // port connect: io.valid is interrupt file index info.
     io.valid := rvalids_tovec
     io.seteipnum := msi_id_data
