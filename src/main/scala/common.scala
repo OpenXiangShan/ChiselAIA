@@ -284,7 +284,7 @@ case class TLRegMapperNode(
     // No flow control needed
     in.valid  := a.valid
     a.ready   := Mux(in.bits.read, in.ready, (backpress & in.ready))
-    d.valid   := Mux(in.bits.read, in.ready, (backpress & out.valid))
+    d.valid   := Mux(out.bits.read, out.valid, (backpress & out.valid))
     out.ready := d.ready
 
     // We must restore the size to enable width adapters to work
