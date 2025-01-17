@@ -260,7 +260,7 @@ case class TLRegMapperNode(
       s"TLRegMapperNode addresses (${address}) must be aligned to its size ${size}")
   }
 
-  def regmap(in: DecoupledIO[RegMapperInput], out: DecoupledIO[RegMapperOutput]) = {
+  def regmap(in: DecoupledIO[RegMapperInput], out: DecoupledIO[RegMapperOutput], backpress: Bool = true.B) = {
     val (bundleIn, edge) = this.in(0)
     val a = bundleIn.a
     val d = bundleIn.d
@@ -283,8 +283,8 @@ case class TLRegMapperNode(
 
     // No flow control needed
     in.valid  := a.valid
-    a.ready   := in.ready
-    d.valid   := out.valid
+    a.ready   := Mux(in.bits.read, in.ready, (backpress & in.ready))
+    d.valid   := Mux(out.bits.read, out.valid, (backpress & out.valid))
     out.ready := d.ready
 
     // We must restore the size to enable width adapters to work
@@ -323,7 +323,8 @@ case class AXI4RegMapperNode(
 
   // Calling this method causes the matching AXI4 bundle to be
   // configured to route all requests to the listed RegFields.
-  def regmap(in: DecoupledIO[RegMapperInput], out: DecoupledIO[RegMapperOutput]) = {
+  //backpress: add by zhaohong for bus backpressure
+  def regmap(in: DecoupledIO[RegMapperInput],out: DecoupledIO[RegMapperOutput], backpress: Bool = true.B) = {
     val (io, _) = this.in(0)
     val ar = io.ar
     val aw = io.aw
@@ -334,8 +335,8 @@ case class AXI4RegMapperNode(
     // Prefer to execute reads first
     in.valid := ar.valid || (aw.valid && w.valid)
     ar.ready := in.ready
-    aw.ready := in.ready && !ar.valid
-    w .ready := in.ready && !ar.valid
+    aw.ready := backpress && in.ready && !ar.valid
+    w .ready := backpress && in.ready && !ar.valid
 
     // copy {ar,aw}_bits.{echo,id} to {r,b}_bits.{echo,id}
     val arEchoReg = RegInit(0.U.asTypeOf(ar.bits.echo))
@@ -356,7 +357,7 @@ case class AXI4RegMapperNode(
     // No flow control needed
     out.ready := Mux(out.bits.read, r.ready, b.ready)
     r.valid := out.valid &&  out.bits.read
-    b.valid := out.valid && !out.bits.read
+    b.valid := backpress && out.valid && !out.bits.read // backpressure for write operation.
 
     r.bits.id   := arIdReg
     r.bits.data := out.bits.data
