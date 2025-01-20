@@ -139,13 +139,13 @@ class IMSIC(
     val msiio = IO(Flipped(new MSITransBundle))
     val io = IO(Input(new Bundle {
       val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-      val valid = UInt(params.intFilesNum.W)
+      val valid = UInt(1.W)
     }))
     val msi_data_o = IO(Output(UInt((params.imsicIntSrcWidth + params.intFilesWidth).W)))
-    val msi_valid_o = IO(Output(UInt(params.intFilesNum.W)))
+    val msi_valid_o = IO(Output(UInt(1.W)))
 
     //=== main body ===
-    private val MSIinfoWidth = params.intFilesNum + (params.intFilesWidth + params.imsicIntSrcWidth)
+    private val MSIinfoWidth = 1 + (params.intFilesWidth + params.imsicIntSrcWidth)
     val msi_in = Wire(UInt(MSIinfoWidth.W))
     msi_in := Cat(io.valid, io.seteipnum)
     val msi_vld_req_cpu = WireInit(false.B)
@@ -159,7 +159,7 @@ class IMSIC(
     msiio.msi_vld_ack := msi_vld_ack_cpu
     val msi_vld_ris_cpu = msi_vld_req_cpu & (~msi_vld_ack_cpu) // rising of msi_vld_req
     val msi_data_catch = RegInit(0.U((params.imsicIntSrcWidth + params.intFilesWidth).W))
-    val msi_intf_valids = RegInit(0.U(params.intFilesNum.W))
+    val msi_intf_valids = RegInit(0.U(1.W))
     msi_data_o := msi_data_catch(params.imsicIntSrcWidth + params.intFilesWidth - 1,0)
     // for (i <- 0 until params.intFilesNum) {
     //   msi_valid_o(i) := msi_intf_valids(i)
@@ -299,7 +299,7 @@ class IMSIC(
     val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
     val io = IO(Input(new Bundle {
       val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-      val valid = UInt(params.intFilesNum.W)
+      val valid = UInt(1.W)
     }))
     val msiio = IO(Flipped(new MSITransBundle))
     private val illegal_priv = WireDefault(false.B)
@@ -338,7 +338,7 @@ class IMSIC(
         val intFile = Module(new IntFile)
 
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o(params.imsicIntSrcWidth - 1, 0)
-        intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
+        intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o
         intFile.fromCSR.addr            := sel(fromCSR.addr)
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
@@ -395,13 +395,13 @@ class TLRegIMSIC(
   class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
     val io = IO(Output(new Bundle {
       val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-      val valid = UInt(params.intFilesNum.W)
+      val valid = UInt(1.W)
     }))
     val msiio = IO(new MSITransBundle) // backpressure signal for axi4bus, from imsic working on cpu clock
     private val reggen = Module(new RegGen(params, beatBytes))
     // ---- instance sync fifo ----//
     // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
-    val FifoDataWidth = params.intFilesNum + (params.intFilesWidth + params.imsicIntSrcWidth)
+    val FifoDataWidth = 1 + (params.intFilesWidth + params.imsicIntSrcWidth)
     val fifo_wdata = Wire(Valid(UInt(FifoDataWidth.W)))
 
     // depth:8, data width: FifoDataWidth
@@ -409,9 +409,12 @@ class TLRegIMSIC(
     // define about fifo write
     fifo_wdata.bits := Cat(reggen.io.valid, reggen.io.seteipnum)
     // The reduce here shows that as long as there exists io.valid is true, then fifo_wdata.valid is true
-    fifo_wdata.valid := reggen.io.valid.orR
+    fifo_wdata.valid := reggen.io.valid
     fifo_sync.io.enq.valid := fifo_wdata.valid
     fifo_sync.io.enq.bits := fifo_wdata.bits
+    // printf(p"_fifo_sync.io.deq.bits_${fifo_sync.io.deq.bits}_\n")
+    // printf(p"_fifo_wdata.bits_${fifo_wdata.bits}_\n")
+    // printf(p"_reggen.io.valid_${reggen.io.valid}____valid_width:${reggen.io.valid.getWidth}___reggen.io.seteipnum_${reggen.io.seteipnum}__seteipnum_width${reggen.io.seteipnum.getWidth}\n")
     //fifo rd,controlled by msi_vld_ack from imsic working on csr clock.
     //msi_vld_ack_soc: sync result with soc clock
     val msi_vld_ack_soc = WireInit(false.B)
@@ -436,8 +439,11 @@ class TLRegIMSIC(
     }.otherwise {
       msi_vld_req := msi_vld_req
     }
+    // printf(p"_fifo_rvalids_${fifo_rvalids}_\n")
+    // printf(p"_fifo_sync.io.deq.bits_${fifo_sync.io.deq.bits}_\n")
+    // printf(p"_fifo_sync.io.deq.bits_rvalids_${fifo_sync.io.deq.bits(FifoDataWidth - 1, params.imsicIntSrcWidth + params.intFilesWidth)}_\n")
     val fifo_rvalids  = fifo_sync.io.deq.bits(FifoDataWidth - 1, params.imsicIntSrcWidth + params.intFilesWidth)
-    val rvalids = RegInit(0.U(params.intFilesNum.W))
+    val rvalids = RegInit(0.U(1.W))
     // get the msi interrupt ID info
     val msi_id_data  = RegInit(0.U((params.imsicIntSrcWidth + params.intFilesWidth).W))
     val rdata_vld = fifo_sync.io.deq.fire // assign to fifo rdata
@@ -454,6 +460,8 @@ class TLRegIMSIC(
       rvalids := 0.U
     } 
     // port connect: io.valid is interrupt file index info.
+    // printf(p"_io.valid_${io.valid}____io.seteipnum_${io.seteipnum}_\n")
+    // printf(p"_rvalids_${rvalids}____msi_id_data_${msi_id_data}_\n")
     io.valid := rvalids
     io.seteipnum := msi_id_data
     val backpress = fifo_sync.io.enq.ready
@@ -489,6 +497,7 @@ class TLIMSIC(
     axireg.module.reset := soc_reset
     imsic.clock := clock
     imsic.reset := reset
+    // (p"_imsic.io.seteipnum_${imsic.io.seteipnum}_axireg.module.io.seteipnum_${axireg.module.io.seteipnum}_")
     imsic.io.seteipnum := axireg.module.io.seteipnum
     imsic.io.valid := axireg.module.io.valid
     axireg.module.msiio <> imsic.msiio // msi_req/msi_ack interconnect
@@ -502,7 +511,7 @@ class TLIMSIC(
     axireg.module.teeio.foreach { tee_msi_info =>
       imsic.teeio.foreach { teeio =>
         teeio := tee_msi_info
-        teeio.valid(0) := false.B // machine level is only for ree,not excluded for tee
+        teeio.valid := false.B // machine level is only for ree,not excluded for tee
       }
     }
     axireg.module.teemsiio.foreach { tee_msi_trans =>
@@ -529,16 +538,16 @@ class RegGen(
   // define the output reg: seteipnum is the MSI id,vld[],valid flag for interrupt file domains: m,s,vs1~vsgeilen
   val io = IO(Output(new Bundle {
     val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-    val valid = UInt(params.intFilesNum.W)
+    val valid = UInt(1.W)
   }))
   // val valids       = WireInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
   // val seteipnums   = WireInit(VecInit(Seq.fill(params.intFilesNum)(0.U(params.imsicIntSrcWidth.W))))
   // val outseteipnum = RegInit(0.U(params.imsicIntSrcWidth.W))
   // val outvalids    = RegInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
-  val valids       = WireInit(0.U(params.intFilesNum.W))
+  val valids       = WireInit(0.U(1.W))
   val seteipnums   = WireInit(0.U((params.intFilesWidth + params.imsicIntSrcWidth).W))
   val outseteipnum = RegInit(0.U((params.intFilesWidth + params.imsicIntSrcWidth).W))
-  val outvalids    = RegInit(0.U(params.intFilesNum.W))
+  val outvalids    = RegInit(0.U(1.W))
 
   (regmapIOs zip Seq(1, 1 + params.geilen)).zipWithIndex.map { // seq[0]: m interrupt file, seq[1]: s&vs interrupt file
     case ((regmapIO: (DecoupledIO[RegMapperInput], DecoupledIO[RegMapperOutput]), intFilesNum: Int), i: Int) =>
@@ -548,8 +557,7 @@ class RegGen(
           val flati     = i + j // seq[0]:0+0=0;seq[1]:(0~geilen)+1
           val seteipnum = WireInit(0.U.asTypeOf(Valid(UInt(params.imsicIntSrcWidth.W))))
           dontTouch(seteipnum)
-     
-          valids := seteipnum.valid << flati
+          valids := seteipnum.valid
           seteipnums := (seteipnum.bits << 0) // data
           seteipnums := (flati.U << params.imsicIntSrcWidth) // Corresponding intFile
           // valids(flati) := seteipnum.valid
@@ -595,20 +603,20 @@ class AXIRegIMSIC(
   class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
     val io = IO(Output(new Bundle {
       val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-      val valid = UInt(params.intFilesNum.W)
+      val valid = UInt(1.W)
     }))
     val msiio = IO(new MSITransBundle) // backpressure signal for axi4bus, from imsic working on cpu clock
     private val reggen = Module(new RegGen(params, beatBytes))
   // ---- instance sync fifo ----//
   // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
-    val FifoDataWidth = params.intFilesNum + (params.intFilesWidth + params.imsicIntSrcWidth)
+    val FifoDataWidth = 1 + (params.intFilesWidth + params.imsicIntSrcWidth)
     val fifo_wdata = Wire(Valid(UInt(FifoDataWidth.W)))
 
     // depth:8, data width: FifoDataWidth
     private val fifo_sync = Module(new Queue(UInt(FifoDataWidth.W),8))
     //define about fifo write
     fifo_wdata.bits := Cat(reggen.io.valid, reggen.io.seteipnum)
-    fifo_wdata.valid := reggen.io.valid.orR
+    fifo_wdata.valid := reggen.io.valid
     fifo_sync.io.enq.valid := fifo_wdata.valid
     fifo_sync.io.enq.bits := fifo_wdata.bits
     //fifo rd,controlled by msi_vld_ack from imsic working on csr clock.
@@ -638,7 +646,7 @@ class AXIRegIMSIC(
     //
     val fifo_rvalids  = fifo_sync.io.deq.bits(FifoDataWidth - 1, params.imsicIntSrcWidth + params.intFilesWidth)
     // val rvalids_tovec = RegInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
-    val rvalids = RegInit(0.U(params.intFilesNum.W))
+    val rvalids = RegInit(0.U(1.W))
     // get the msi interrupt ID info
     val msi_id_data  = RegInit(0.U((params.imsicIntSrcWidth + params.intFilesWidth).W))
     val rdata_vld = fifo_sync.io.deq.fire // assign to fifo rdata
@@ -655,8 +663,8 @@ class AXIRegIMSIC(
       rvalids := 0.U
     } 
     // port connect: io.valid is interrupt file index info.
-    printf(p"_rvalids:_${rvalids}_msi_id_data:_${msi_id_data}\n")
-    printf(p"_AXIRegIMSIC.io.seteipnum:_${io.seteipnum}_AXIRegIMSIC.io.valid:_${io.valid}\n")
+    // printf(p"_rvalids:_${rvalids}_msi_id_data:_${msi_id_data}\n")
+    // printf(p"_AXIRegIMSIC.io.seteipnum:_${io.seteipnum}_AXIRegIMSIC.io.valid:_${io.valid}\n")
     io.valid := rvalids 
     io.seteipnum := msi_id_data
     val backpress = fifo_sync.io.enq.ready
@@ -702,7 +710,7 @@ class AXI4IMSIC(
     axireg.module.teeio.foreach { tee_msi_info =>
         imsic.teeio.foreach { teeio =>
         teeio := tee_msi_info
-        teeio.valid(0) := false.B // machine level is only for ree,not excluded for tee
+        teeio.valid := false.B // machine level is only for ree,not excluded for tee
       }
     }
     axireg.module.teemsiio.foreach { tee_msi_trans =>
@@ -726,17 +734,18 @@ class TLRegIMSIC_WRAP(
   class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
     val io = IO(Output(new Bundle {
       val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-      val valid = UInt(params.intFilesNum.W)
+      val valid = UInt(1.W)
     }))
     val msiio = IO(new MSITransBundle) //backpressure signal for axi4bus, from imsic working on cpu clock
     msiio <> axireg.module.msiio
 
     val teeio = if (params.HasTEEIMSIC) Some(IO(Output(new Bundle {
       val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-      val valid = UInt(params.intFilesNum.W)
+      val valid = UInt(1.W)
     }))) else None
     val teemsiio =  if (params.HasTEEIMSIC) Some(IO(new MSITransBundle)) else None //backpressure signal for axi4bus, from imsic working on cpu clock
-
+    
+    // printf(p"TLRegIMSIC_WRAP.io.seteipnum:${io.seteipnum}_TLRegIMSIC.module.io.seteipnum:${axireg.module.io.seteipnum}\n")
     io.seteipnum := axireg.module.io.seteipnum
     io.valid := axireg.module.io.valid
     //code below will be compiled only when teeio is not none.
@@ -770,21 +779,21 @@ class AXIRegIMSIC_WRAP(
   class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
     val io = IO(Output(new Bundle {
       val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-      val valid = UInt(params.intFilesNum.W)
+      val valid = UInt(1.W)
     }))
     val msiio = IO(new MSITransBundle) //backpressure signal for axi4bus, from imsic working on cpu clock
     msiio <> axireg.module.msiio
 
     val teeio = if (params.HasTEEIMSIC) Some(IO(Output(new Bundle {
       val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-      val valid = UInt(params.intFilesNum.W)
+      val valid = UInt(1.W)
     }))) else None
     val teemsiio =  if (params.HasTEEIMSIC) Some(IO(new MSITransBundle)) else None //backpressure signal for axi4bus, from imsic working on cpu clock
 
     io.seteipnum := axireg.module.io.seteipnum
     io.valid := axireg.module.io.valid
     
-    printf(p"_AXIRegIMSIC_WRAP.io.seteipnum:_${io.seteipnum}_AXIRegIMSIC_WRAP.io.valid:_${io.valid}\n")
+    // printf(p"_AXIRegIMSIC_WRAP.io.seteipnum:_${io.seteipnum}_AXIRegIMSIC_WRAP.io.valid:_${io.valid}\n")
     //code below will be compiled only when teeio is not none.
     teeio.foreach { teeio => {
       tee_axireg.foreach { tee_axireg => {
@@ -813,13 +822,13 @@ class IMSIC_WRAP(
   val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
   val io = IO(Input(new Bundle {
     val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-    val valid = UInt(params.intFilesNum.W)
+    val valid = UInt(1.W)
   }))
   val msiio = IO(Flipped(new MSITransBundle))
   // define additional ports when HasCVMExtention is supported.
   val teeio = if (params.HasTEEIMSIC) Some(IO(Input(new Bundle {
     val seteipnum = UInt((params.intFilesWidth + params.imsicIntSrcWidth).W)
-    val valid = UInt(params.intFilesNum.W)
+    val valid = UInt(1.W)
   }))) else None
   val sec = if (params.HasTEEIMSIC) Some(IO(new ForCVMBundle())) else None // include cmode input port,and o_notice_pending output port.
   val teemsiio = if (params.HasTEEIMSIC) Some(IO(Flipped(new MSITransBundle))) else None
