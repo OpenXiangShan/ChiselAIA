@@ -248,8 +248,10 @@ class IMSIC(
     } // end of scope for xiselect CSR reg map
 
     locally {
+      // printf(p"____intFile.fromCSR.seteipnum.bits:_____${fromCSR.seteipnum.bits}\n")
       val index  = fromCSR.seteipnum.bits(params.imsicIntSrcWidth-1, params.xlenWidth) // bits(8-1, 6)
       val offset = fromCSR.seteipnum.bits(params.xlenWidth-1, 0) // bits(5, 0) - 64
+      // printf(p"____intFile.fromCSR.seteipnum.valid:_____${fromCSR.seteipnum.valid}\n")
       when ( fromCSR.seteipnum.valid & eies(index)(offset) ) {
         // set eips bit
         eips(index) := eips(index) | UIntToOH(offset)
@@ -313,6 +315,8 @@ class IMSIC(
     private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
   // instance and connect IMSICGateWay.
   val imsicGateWay = Module(new IMSICGateWay)
+  // printf(p"_io.valid:_${io.valid}_io.seteipnum:_${io.seteipnum}\n")
+  
   imsicGateWay.io := io //seteipnum, and vld connect
   imsicGateWay.msiio.msi_vld_req := msiio.msi_vld_req
   msiio.msi_vld_ack := imsicGateWay.msiio.msi_vld_ack
@@ -339,7 +343,8 @@ class IMSIC(
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
         toCSR.rdata                     := intFile.toCSR.rdata
-        toCSR.pendings                  := (intFile.toCSR.pending << flati) 
+        toCSR.pendings                  := (intFile.toCSR.pending << flati)
+        // printf(p"____topeis_forEachIntFiles(flati):_____${intFile.toCSR.topei}\n")
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
         illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
       }}
@@ -484,7 +489,8 @@ class TLIMSIC(
     axireg.module.reset := soc_reset
     imsic.clock := clock
     imsic.reset := reset
-    imsic.io := axireg.module.io
+    imsic.io.seteipnum := axireg.module.io.seteipnum
+    imsic.io.valid := axireg.module.io.valid
     axireg.module.msiio <> imsic.msiio // msi_req/msi_ack interconnect
     // code will be compiled only when io_sec is not None.
     io_sec.foreach { iosec =>
@@ -564,6 +570,7 @@ class RegGen(
       io.seteipnum := outseteipnum
       io.valid     := outvalids
   }
+  // printf(p"_io.valid:_${io.valid}_io.seteipnum:_${io.seteipnum}\n")
 }
 
 //generate axi42reg for IMSIC
@@ -648,6 +655,8 @@ class AXIRegIMSIC(
       rvalids := 0.U
     } 
     // port connect: io.valid is interrupt file index info.
+    printf(p"_rvalids:_${rvalids}_msi_id_data:_${msi_id_data}\n")
+    printf(p"_AXIRegIMSIC.io.seteipnum:_${io.seteipnum}_AXIRegIMSIC.io.valid:_${io.valid}\n")
     io.valid := rvalids 
     io.seteipnum := msi_id_data
     val backpress = fifo_sync.io.enq.ready
@@ -680,7 +689,9 @@ class AXI4IMSIC(
     axireg.module.reset := soc_reset
     imsic.clock         := clock
     imsic.reset         := reset
-    imsic.io := axireg.module.io
+    // printf(p"_axireg.module.io.seteipnum:_${axireg.module.io.seteipnum}_axireg.module.io.valid:_${axireg.module.io.valid}\n")
+    imsic.io.seteipnum := axireg.module.io.seteipnum
+    imsic.io.valid := axireg.module.io.valid
     // code will be compiled only when io_sec is not None.
     io_sec.foreach { iosec =>
       imsic.sec.foreach { imsicsec =>
@@ -726,7 +737,8 @@ class TLRegIMSIC_WRAP(
     }))) else None
     val teemsiio =  if (params.HasTEEIMSIC) Some(IO(new MSITransBundle)) else None //backpressure signal for axi4bus, from imsic working on cpu clock
 
-    io := axireg.module.io
+    io.seteipnum := axireg.module.io.seteipnum
+    io.valid := axireg.module.io.valid
     //code below will be compiled only when teeio is not none.
     teeio.foreach { teeio => {
       tee_axireg.foreach { tee_axireg => {
@@ -769,7 +781,10 @@ class AXIRegIMSIC_WRAP(
     }))) else None
     val teemsiio =  if (params.HasTEEIMSIC) Some(IO(new MSITransBundle)) else None //backpressure signal for axi4bus, from imsic working on cpu clock
 
-    io := axireg.module.io
+    io.seteipnum := axireg.module.io.seteipnum
+    io.valid := axireg.module.io.valid
+    
+    printf(p"_AXIRegIMSIC_WRAP.io.seteipnum:_${io.seteipnum}_AXIRegIMSIC_WRAP.io.valid:_${io.valid}\n")
     //code below will be compiled only when teeio is not none.
     teeio.foreach { teeio => {
       tee_axireg.foreach { tee_axireg => {
@@ -812,7 +827,8 @@ class IMSIC_WRAP(
   private val imsic = Module(new IMSIC(params, beatBytes))
   imsic.fromCSR := fromCSR
   toCSR := imsic.toCSR
-  imsic.io := io
+  imsic.io.seteipnum := io.seteipnum
+  imsic.io.valid := io.valid
   imsic.msiio <> msiio
 
   // define additional logic for sec extention
