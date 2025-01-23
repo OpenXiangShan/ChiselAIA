@@ -27,27 +27,79 @@ import freechips.rocketchip.regmapper._
 
 object pow2 { def apply(n: Int): Long = 1L << n }
 
-class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModule
-{
+// class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModule
+// {
+//   val node = AXI4AdapterNode(
+//     masterFn = { mp => mp },
+//     slaveFn = { sp =>
+//       sp.copy(slaves = sp.slaves.map(s =>
+//         s.copy(address = s.address.map(a =>
+//           AddressSet(fn(a), a.mask)))))})
+
+//   lazy val module = new Impl
+//   class Impl extends LazyModuleImp(this) {
+//     (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
+//       out <> in
+//       val convert = edgeIn.slave.slaves.flatMap(_.address) zip edgeOut.slave.slaves.flatMap(_.address)
+//       def forward(x: UInt) =
+//         convert.map { case (i, o) => Mux(i.contains(x), o.base.U | (x & o.mask.U), 0.U) }.reduce(_ | _)
+//       def backward(x: UInt) =
+//         convert.map { case (i, o) => Mux(o.contains(x), i.base.U | (x & i.mask.U), 0.U) }.reduce(_ | _)
+      
+//       out.aw.bits.addr := forward(in.aw.bits.addr)
+//       out.ar.bits.addr := forward(in.ar.bits.addr)
+//     }
+//   }
+// }
+
+class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModule {
   val node = AXI4AdapterNode(
     masterFn = { mp => mp },
     slaveFn = { sp =>
       sp.copy(slaves = sp.slaves.map(s =>
         s.copy(address = s.address.map(a =>
           AddressSet(fn(a), a.mask)))))})
-
+  
   lazy val module = new Impl
   class Impl extends LazyModuleImp(this) {
     (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
       out <> in
-      val convert = edgeIn.slave.slaves.flatMap(_.address) zip edgeOut.slave.slaves.flatMap(_.address)
-      def forward(x: UInt) =
-        convert.map { case (i, o) => Mux(i.contains(x), o.base.U | (x & o.mask.U), 0.U) }.reduce(_ | _)
-      def backward(x: UInt) =
-        convert.map { case (i, o) => Mux(o.contains(x), i.base.U | (x & i.mask.U), 0.U) }.reduce(_ | _)
 
-      out.aw.bits.addr := forward(in.aw.bits.addr)
-      out.ar.bits.addr := forward(in.ar.bits.addr)
+      val addrAW = in.aw.bits.addr
+      val addrAR = in.ar.bits.addr
+      val convert = edgeIn.slave.slaves.flatMap(_.address) zip edgeOut.slave.slaves.flatMap(_.address)
+
+      def forward(x: UInt) =
+        convert.map { case (i, o) => Mux(i.contains(x), o.base.U | (x & o.mask.U), 0.U)}.reduce(_ | _)
+      def backward(x: UInt) =
+        convert.map { case (i, o) => Mux(o.contains(x), i.base.U | (x & i.mask.U), 0.U)}.reduce(_ | _)
+
+      val isValidAddress = (addrAW(11, 0) === 0.U) && (addrAR(11, 0) === 0.U) // IntFile Address range check
+      val isValidAlignment = (addrAW(1, 0) === 0.U) && (addrAR(1, 0) === 0.U && (addrAW(0) === 0.U) && (addrAR(0) === 0.U)) // Address Alignment Requirements (Natural Alignment 32-bit)
+      val isAccessingValidRegister = (addrAW(11, 2) === 0.U) && (addrAR(11, 2) === 0.U) // Only the first 4 bytes are allowed to be accessed
+      val isReservedAreaAccess = !(isAccessingValidRegister) // reverse area
+      
+
+      when(!isValidAddress || !isValidAlignment || isReservedAreaAccess) {
+        // err visit: set ID and addr 0
+        out.aw.bits.addr := 0.U
+        out.ar.bits.addr := 0.U
+        out.aw.bits.id := 0.U
+        out.ar.bits.id := 0.U
+      } .otherwise {
+        // this place need to add in.aw.bits.burst logic
+        // ...
+
+        // Address mapping process when legal
+        out.aw.bits.addr := forward(addrAW)
+        out.ar.bits.addr := forward(addrAR)
+        // Response signals
+        in.b.bits.resp := out.b.bits.resp   // Slave -> Master (bresp)
+        in.r.bits.data := out.r.bits.data   // Slave -> Master (rdata)
+        out.aw.bits.len := in.aw.bits.len   // Write Request Length (master to slave)
+        out.aw.bits.size := in.aw.bits.size // Write Request Size (master to slave)
+        out.ar.bits.len := in.ar.bits.len   // Read Request Length (master to slave)
+      }
     }
   }
 }
@@ -331,7 +383,7 @@ case class AXI4RegMapperNode(
     val w  = io.w
     val r  = io.r
     val b  = io.b
-
+    
     // Prefer to execute reads first
     in.valid := ar.valid || (aw.valid && w.valid)
     ar.ready := in.ready
