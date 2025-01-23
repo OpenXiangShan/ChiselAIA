@@ -19,10 +19,10 @@ from cocotb.triggers import RisingEdge, FallingEdge
 EnableImsicAsyncBridge = 0
 async def delay_fifo(dut):
     if EnableImsicAsyncBridge ==1 :
-        for _ in range(10):
+        for _ in range(5):
             await FallingEdge(dut.clock) ## delay caused by async fifo: source and sink, when EnableImsicAsyncBridge is true
     else:
-        for _ in range(6):
+        for _ in range(10):
             await FallingEdge(dut.clock) ## delay caused by async fifo: source and sink, when EnableImsicAsyncBridge is true
         """EnableImsicAsyncbridge is 0."""
   
