@@ -41,7 +41,6 @@ async def imsic_1_test(dut):
 
   # Test steps
   await select_m_intfile(dut)
-  dut.toCSR1_pendings_0.value = 0
 
   # mseteipnum began
   cocotb.log.info("mseteipnum began")
@@ -49,8 +48,8 @@ async def imsic_1_test(dut):
   topeis_0 = wrap_topei(1996%256)
   await FallingEdge(dut.clock) ## delay one cycle caused by RegGen.
   await delay_fifo(dut)
+  print(dut.toCSR1_topeis_0.value)
   assert dut.toCSR1_topeis_0.value == topeis_0
-  dut.toCSR1_pendings_0.value = 1
   cocotb.log.info("mseteipnum passed")
 
   # mclaim began
@@ -90,7 +89,6 @@ async def imsic_1_test(dut):
   # write_csr:eidelivery began
   cocotb.log.info("write_csr:eidelivery began")
   await write_csr(dut, csr_addr_eidelivery, 0)
-  dut.toCSR1_pendings_0.value = 0
   await write_csr(dut, csr_addr_eidelivery, 1)
   cocotb.log.info("write_csr:eidelivery passed")
 
@@ -137,7 +135,6 @@ async def imsic_1_test(dut):
   await FallingEdge(dut.clock) ## delay one cycle caused by RegGen.
   await delay_fifo(dut)
   assert dut.toCSR1_topeis_1.value == wrap_topei(1234%256)
-  dut.toCSR1_pendings_1.value = 1
   await select_m_intfile(dut)
   cocotb.log.info("simple_supervisor_level end")
 
@@ -149,10 +146,8 @@ async def imsic_1_test(dut):
   await FallingEdge(dut.clock)
   await delay_fifo(dut)
   assert dut.toCSR1_topeis_2.value == wrap_topei(137)
-  dut.toCSR1_pendings_4.value = 1  # Assuming pendings_4 corresponds to vgein=2
   await select_m_intfile(dut)
   assert dut.toCSR1_topeis_2.value == wrap_topei(137)
-  dut.toCSR1_pendings_4.value = 1
   cocotb.log.info("simple_virtualized_supervisor_level:vgein2 end")
 
   # Illegal iselect test
