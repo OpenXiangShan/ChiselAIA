@@ -54,7 +54,6 @@ class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModu
       val isAccessingValidRegister = (addrAW(11, 2) === 0.U) && (addrAR(11, 2) === 0.U) // Only the first 4 bytes are allowed to be accessed
       val isReservedAreaAccess = !(isAccessingValidRegister) // reverse area
       
-
       when(!isValidAddress || !isValidAlignment || isReservedAreaAccess) {
         // err visit: set ID and addr 0
         out.aw.bits.addr := 0.U
@@ -64,6 +63,7 @@ class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModu
       } .otherwise {
         // this place need to add in.aw.bits.burst logic
         // ...
+        // len
 
         // Address mapping process when legal
         out.aw.bits.addr := forward(addrAW)
