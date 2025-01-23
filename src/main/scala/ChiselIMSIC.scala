@@ -182,11 +182,7 @@ class IMSIC(
     msi_valid_o := msi_intf_valids // multi-bis switch vector
     when(msi_vld_ris_cpu) {
       msi_data_catch := msi_in(params.imsicIntSrcWidth - 1, 0)
-      for (i <- 0 until params.intFilesNum) {
-        if (i == msi_in(params.MSI_INFO_WIDTH - 1, params.imsicIntSrcWidth)) {
-          msi_intf_valids(i) := 1.U // interrupt file index
-        }
-      }
+      msi_intf_valids := 1.U << msi_in(params.MSI_INFO_WIDTH - 1,params.imsicIntSrcWidth)
     }.otherwise {
       msi_intf_valids := 0.U
     }
@@ -333,7 +329,7 @@ class IMSIC(
   imsicGateWay.io                := io // seteipnum, and vld connect
   imsicGateWay.msiio.msi_vld_req := msiio.msi_vld_req
   msiio.msi_vld_ack              := imsicGateWay.msiio.msi_vld_ack
-
+  val pendings = Wire(Vec(params.intFilesNum,Bool()))
   Seq(1, 1 + params.geilen).zipWithIndex.map {
     case (intFilesNum: Int, i: Int) => {
       // j: index for S intFile: S, G1, G2, ...
@@ -354,13 +350,13 @@ class IMSIC(
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
         toCSR.rdata                     := intFile.toCSR.rdata
-        toCSR.pendings                  := intFile.toCSR.pending << flati
+        pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
         illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
       }
     }
   }
-
+    toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
   locally {
     // Format of *topei:
     // * bits 26:16 Interrupt identity
