@@ -56,24 +56,47 @@ class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModu
       
       when(!isValidAddress || !isValidAlignment || isReservedAreaAccess) {
         // err visit: set ID and addr 0
-        out.aw.bits.addr := 0.U
-        out.ar.bits.addr := 0.U
-        out.aw.bits.id := 0.U
-        out.ar.bits.id := 0.U
+        out.aw.bits.addr  := 0.U
+        out.ar.bits.addr  := 0.U
+        out.aw.bits.id    := 0.U
+        out.ar.bits.id    := 0.U
       } .otherwise {
-        // this place need to add in.aw.bits.burst logic
-        // ...
-        // len
+        val isWrapBurst = in.aw.bits.burst === AXI4Parameters.BURST_WRAP
+        val burstSize = 4.U
+        val burstLength = in.aw.bits.len + 1.U
+        // val wrapBoundary = (addrAW >> log2Up(burstSize)) << log2Up(burstSize)
+        val totalSize = burstSize * burstLength
+        val wrapAddr      = RegInit(0.U(32.W))
+        val isFirstBurst  = RegInit(true.B)
+        val isFinalBurst  = RegInit(false.B)
 
-        // Address mapping process when legal
-        out.aw.bits.addr := forward(addrAW)
-        out.ar.bits.addr := forward(addrAR)
-        // Response signals
-        in.b.bits.resp := out.b.bits.resp   // Slave -> Master (bresp)
-        in.r.bits.data := out.r.bits.data   // Slave -> Master (rdata)
-        out.aw.bits.len := in.aw.bits.len   // Write Request Length (master to slave)
-        out.aw.bits.size := in.aw.bits.size // Write Request Size (master to slave)
-        out.ar.bits.len := in.ar.bits.len   // Read Request Length (master to slave)
+        wrapAddr := Mux(isWrapBurst, (wrapAddr + burstSize) % totalSize, addrAW)
+        when(isWrapBurst && isFirstBurst) {
+          out.aw.bits.addr := forward(wrapAddr)
+          out.ar.bits.addr := forward(wrapAddr)
+          isFirstBurst := false.B
+          isFinalBurst := (burstLength === 1.U)
+        }.elsewhen(isWrapBurst && !isFirstBurst) {
+          // out.aw.bits.addr := 0.U
+          // out.ar.bits.addr := 0.U
+          isFinalBurst := (burstLength === 1.U)
+        }.otherwise {
+          out.aw.bits.addr := forward(wrapAddr)
+          out.ar.bits.addr := forward(wrapAddr)
+          isFinalBurst := (burstLength === 1.U)
+        }
+
+        when(isFinalBurst) {
+          in.b.bits.resp := out.b.bits.resp
+          in.r.bits.data := out.r.bits.data
+        }.otherwise {
+          // in.b.bits.resp := 0.U
+          // in.r.bits.data := 0.U
+        }
+        
+        out.aw.bits.len  := in.aw.bits.len
+        out.aw.bits.size := in.aw.bits.size
+        out.ar.bits.len  := in.ar.bits.len
       }
     }
   }
