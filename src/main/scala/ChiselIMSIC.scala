@@ -310,7 +310,7 @@ class IMSIC(
   val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
   val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
   val io = IO(Input(new Bundle {
-    val seteipnum = UInt(params.imsicIntSrcWidth.W)
+    val seteipnum = UInt(params.MSI_INFO_WIDTH.W)
   }))
   val msiio                 = IO(Flipped(new MSITransBundle))
   private val illegal_priv  = WireDefault(false.B)
@@ -447,7 +447,7 @@ class TLRegIMSIC(
     val msi_id_data = RegInit(0.U(params.MSI_INFO_WIDTH.W))
     val rdata_vld   = fifo_sync.io.deq.fire // assign to fifo rdata
     when(rdata_vld) { // fire: io.deq.valid & io.deq.ready
-      msi_id_data := fifo_sync.io.deq.bits(params.imsicIntSrcWidth - 1, 0)
+      msi_id_data := fifo_sync.io.deq.bits(params.MSI_INFO_WIDTH - 1, 0)
     }.otherwise {
       msi_id_data := msi_id_data
     }
@@ -616,7 +616,7 @@ class AXIRegIMSIC(
     val msi_id_data = RegInit(0.U(params.MSI_INFO_WIDTH.W))
     val rdata_vld   = fifo_sync.io.deq.fire // assign to fifo rdata
     when(rdata_vld) { // fire: io.deq.valid & io.deq.ready
-      msi_id_data := fifo_sync.io.deq.bits(params.imsicIntSrcWidth - 1, 0)
+      msi_id_data := fifo_sync.io.deq.bits(params.MSI_INFO_WIDTH - 1, 0)
     }.otherwise {
       msi_id_data := msi_id_data
     }
@@ -675,13 +675,13 @@ class TLRegIMSIC_WRAP(
 
   class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
     val io = IO(Output(new Bundle {
-      val seteipnum = UInt(params.imsicIntSrcWidth.W)
+      val seteipnum = UInt(params.MSI_INFO_WIDTH.W)
     }))
     val msiio = IO(new MSITransBundle) // backpressure signal for axi4bus, from imsic working on cpu clock
     msiio <> axireg.module.msiio
 
     val teeio = if (params.HasTEEIMSIC) Some(IO(Output(new Bundle {
-      val seteipnum = UInt(params.imsicIntSrcWidth.W)
+      val seteipnum = UInt(params.MSI_INFO_WIDTH.W)
     })))
     else None
     val teemsiio = if (params.HasTEEIMSIC) Some(IO(new MSITransBundle))
@@ -707,13 +707,13 @@ class AXIRegIMSIC_WRAP(
 
   class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
     val io = IO(Output(new Bundle {
-      val seteipnum = UInt(params.imsicIntSrcWidth.W)
+      val seteipnum = UInt(params.MSI_INFO_WIDTH.W)
     }))
     val msiio = IO(new MSITransBundle) // backpressure signal for axi4bus, from imsic working on cpu clock
     msiio <> axireg.module.msiio
 
     val teeio = if (params.HasTEEIMSIC) Some(IO(Output(new Bundle {
-      val seteipnum = UInt(params.imsicIntSrcWidth.W)
+      val seteipnum = UInt(params.MSI_INFO_WIDTH.W)
     })))
     else None
     val teemsiio = if (params.HasTEEIMSIC) Some(IO(new MSITransBundle))
@@ -735,12 +735,12 @@ class IMSIC_WRAP(
   val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
   val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
   val io = IO(Input(new Bundle {
-    val seteipnum = UInt(params.imsicIntSrcWidth.W)
+    val seteipnum = UInt(params.MSI_INFO_WIDTH.W)
   }))
   val msiio = IO(Flipped(new MSITransBundle))
   // define additional ports when HasCVMExtention is supported.
   val teeio = if (params.HasTEEIMSIC) Some(IO(Input(new Bundle {
-    val seteipnum = UInt(params.imsicIntSrcWidth.W)
+    val seteipnum = UInt(params.MSI_INFO_WIDTH.W)
   })))
   else None
   val sec = if (params.HasTEEIMSIC) Some(IO(new ForCVMBundle()))
