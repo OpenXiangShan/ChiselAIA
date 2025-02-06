@@ -27,127 +27,37 @@ import freechips.rocketchip.regmapper._
 
 object pow2 { def apply(n: Int): Long = 1L << n }
 
-// class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModule
-// {
-//   val node = AXI4AdapterNode(
-//     masterFn = { mp => mp },
-//     slaveFn = { sp =>
-//       sp.copy(slaves = sp.slaves.map(s =>
-//         s.copy(address = s.address.map(a =>
-//           AddressSet(fn(a), a.mask)))))})
+class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
-//   lazy val module = new Impl
-//   class Impl extends LazyModuleImp(this) {
-//     (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
-//       out <> in
-//       val convert = edgeIn.slave.slaves.flatMap(_.address) zip edgeOut.slave.slaves.flatMap(_.address)
-//       def forward(x: UInt) =
-//         convert.map { case (i, o) => Mux(i.contains(x), o.base.U | (x & o.mask.U), 0.U) }.reduce(_ | _)
-//       def backward(x: UInt) =
-//         convert.map { case (i, o) => Mux(o.contains(x), i.base.U | (x & i.mask.U), 0.U) }.reduce(_ | _)
-
-//       out.aw.bits.addr := forward(in.aw.bits.addr)
-//       out.ar.bits.addr := forward(in.ar.bits.addr)
-//     }
-//   }
-// }
-
-// class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModule {
-//   val node = AXI4AdapterNode(
-//     masterFn = { mp => mp },
-//     slaveFn = { sp =>
-//       sp.copy(slaves = sp.slaves.map(s =>
-//         s.copy(address = s.address.map(a =>
-//           AddressSet(fn(a), a.mask)))))})
-  
-//   lazy val module = new Impl
-//   class Impl extends LazyModuleImp(this) {
-//     (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
-//       out <> in
-
-//       val addrAW = in.aw.bits.addr
-//       val addrAR = in.ar.bits.addr
-//       val convert = edgeIn.slave.slaves.flatMap(_.address) zip edgeOut.slave.slaves.flatMap(_.address)
-
-//       def forward(x: UInt) =
-//         convert.map { case (i, o) => Mux(i.contains(x), o.base.U | (x & o.mask.U), 0.U)}.reduce(_ | _)
-//       def backward(x: UInt) =
-//         convert.map { case (i, o) => Mux(o.contains(x), i.base.U | (x & i.mask.U), 0.U)}.reduce(_ | _)
-
-//       val isValidAddress = (addrAW(11, 0) === 0.U) && (addrAR(11, 0) === 0.U) // IntFile Address range check
-//       val isValidAlignment = (addrAW(1, 0) === 0.U) && (addrAR(1, 0) === 0.U && (addrAW(0) === 0.U) && (addrAR(0) === 0.U)) // Address Alignment Requirements (Natural Alignment 32-bit)
-//       val isAccessingValidRegister = (addrAW(11, 2) === 0.U) && (addrAR(11, 2) === 0.U) // Only the first 4 bytes are allowed to be accessed
-//       val isReservedAreaAccess = !(isAccessingValidRegister) // reverse area
-      
-//       when(!isValidAddress || !isValidAlignment || isReservedAreaAccess) {
-//         // err visit: set ID and addr 0
-//         out.aw.bits.addr  := 0.U
-//         out.ar.bits.addr  := 0.U
-//         out.aw.bits.id    := 0.U
-//         out.ar.bits.id    := 0.U
-//       } .otherwise {
-//         val isWrapBurst = in.aw.bits.burst === AXI4Parameters.BURST_WRAP
-//         val burstSize = 4.U
-//         val burstLength = in.aw.bits.len + 1.U
-//         // val wrapBoundary = (addrAW >> log2Up(burstSize)) << log2Up(burstSize)
-//         val totalSize = burstSize * burstLength
-//         val wrapAddr      = RegInit(0.U(32.W))
-//         val isFirstBurst  = RegInit(true.B)
-//         val isFinalBurst  = RegInit(false.B)
-
-//         wrapAddr := Mux(isWrapBurst, (wrapAddr + burstSize) % totalSize, addrAW)
-//         when(isWrapBurst && isFirstBurst) {
-//           out.aw.bits.addr := forward(wrapAddr)
-//           out.ar.bits.addr := forward(wrapAddr)
-//           isFirstBurst := false.B
-//           isFinalBurst := (burstLength === 1.U)
-//         }.elsewhen(isWrapBurst && !isFirstBurst) {
-//           // out.aw.bits.addr := 0.U
-//           // out.ar.bits.addr := 0.U
-//           isFinalBurst := (burstLength === 1.U)
-//         }.otherwise {
-//           out.aw.bits.addr := forward(wrapAddr)
-//           out.ar.bits.addr := forward(wrapAddr)
-//           isFinalBurst := (burstLength === 1.U)
-//         }
-
-//         when(isFinalBurst) {
-//           in.b.bits.resp := out.b.bits.resp
-//           in.r.bits.data := out.r.bits.data
-//         }.otherwise {
-//           // in.b.bits.resp := 0.U
-//           // in.r.bits.data := 0.U
-//         }
-        
-//         out.aw.bits.len  := in.aw.bits.len
-//         out.aw.bits.size := in.aw.bits.size
-//         out.ar.bits.len  := in.ar.bits.len
-//       }
-//     }
-//   }
-// }
-
-class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModule {
-  val node = AXI4AdapterNode(
+  val node = AXI4AdapterNode( // identity
     masterFn = { mp => mp },
     slaveFn = { sp =>
       sp.copy(slaves = sp.slaves.map(s =>
         s.copy(address = s.address.map(a =>
-          AddressSet(fn(a), a.mask)))))})
+          AddressSet(a.base, a.mask)))))})
   lazy val module = new Impl
   class Impl extends LazyModuleImp(this) {
     (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
       out <> in
-      dontTouch(node.in)
-      dontTouch(node.out)
+      dontTouch(in.aw.bits)
+      dontTouch(in.ar.bits)
+      dontTouch(in.w.bits)
+      dontTouch(in.b.bits)
+      dontTouch(in.r.bits)
+      
+      dontTouch(out.aw.bits)
+      dontTouch(out.ar.bits)
+      dontTouch(out.w.bits)
+      dontTouch(out.b.bits)
+      dontTouch(out.r.bits)
       val addrAW = in.aw.bits.addr
       val addrAR = in.ar.bits.addr
       val convert = edgeIn.slave.slaves.flatMap(_.address) zip edgeOut.slave.slaves.flatMap(_.address)
 
-      def forward(x: UInt) =
-        convert.map { case (i, o) => Mux(i.contains(x), o.base.U | (x & o.mask.U), 0.U) }.reduce(_ | _)
-      def backward(x: UInt) =
-        convert.map { case (i, o) => Mux(o.contains(x), i.base.U | (x & i.mask.U), 0.U) }.reduce(_ | _)
+      // def forward(x: UInt) =
+      //   convert.map { case (i, o) => Mux(i.contains(x), o.base.U | (x & o.mask.U), 0.U) }.reduce(_ | _)
+      // def backward(x: UInt) =
+      //   convert.map { case (i, o) => Mux(o.contains(x), i.base.U | (x & i.mask.U), 0.U) }.reduce(_ | _)
 
       // Address validation checks based on the valid signals (AWVALID and ARVALID)
       val isAWValid = in.aw.valid
@@ -192,15 +102,15 @@ class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModu
 
       wrapAddr := Mux(isWrapBurst, (wrapAddr + burstSize) % totalSize, addrAW)
       when(isWrapBurst && isFirstBurst) {
-        out.aw.bits.addr := forward(wrapAddr)
-        out.ar.bits.addr := forward(wrapAddr)
+        // out.aw.bits.addr := forward(wrapAddr)
+        // out.ar.bits.addr := forward(wrapAddr)
         isFirstBurst := false.B
         isFinalBurst := (burstLength === 1.U)
       }.elsewhen(isWrapBurst && !isFirstBurst) {
         isFinalBurst := (burstLength === 1.U)
       }.otherwise {
-        out.aw.bits.addr := forward(wrapAddr)
-        out.ar.bits.addr := forward(wrapAddr)
+        // out.aw.bits.addr := forward(wrapAddr)
+        // out.ar.bits.addr := forward(wrapAddr)
         isFinalBurst := (burstLength === 1.U)
       }
 
@@ -221,6 +131,32 @@ class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModu
 }
 
 
+class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModule
+{
+  val node = AXI4AdapterNode(
+    masterFn = { mp => mp },
+    slaveFn = { sp =>
+      sp.copy(slaves = sp.slaves.map(s =>
+        s.copy(address = s.address.map(a =>
+          AddressSet(fn(a), a.mask)))))})
+
+  lazy val module = new Impl
+  class Impl extends LazyModuleImp(this) {
+    (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
+      out <> in
+      val convert = edgeIn.slave.slaves.flatMap(_.address) zip edgeOut.slave.slaves.flatMap(_.address)
+      def forward(x: UInt) =
+        convert.map { case (i, o) => Mux(i.contains(x), o.base.U | (x & o.mask.U), 0.U) }.reduce(_ | _)
+      def backward(x: UInt) =
+        convert.map { case (i, o) => Mux(o.contains(x), i.base.U | (x & i.mask.U), 0.U) }.reduce(_ | _)
+
+      out.aw.bits.addr := forward(in.aw.bits.addr)
+      out.ar.bits.addr := forward(in.ar.bits.addr)
+    }
+  }
+}
+
+
 object AXI4Map
 {
   def apply(fn: AddressSet => BigInt)(implicit p: Parameters): AXI4Node =
@@ -228,6 +164,7 @@ object AXI4Map
     val map = LazyModule(new AXI4Map(fn))
     map.node
   }
+  
 }
 
 /**
@@ -500,8 +437,13 @@ case class AXI4RegMapperNode(
     val w  = io.w
     val r  = io.r
     val b  = io.b
-    dontTouch(ar)
-    dontTouch(aw)
+
+    dontTouch(aw.bits)
+    dontTouch(ar.bits)
+    dontTouch(w.bits)
+    dontTouch(b.bits)
+    dontTouch(r.bits)
+    
     // Prefer to execute reads first
     in.valid := ar.valid || (aw.valid && w.valid)
     ar.ready := in.ready
@@ -539,4 +481,95 @@ case class AXI4RegMapperNode(
     b.bits.resp := AXI4Parameters.RESP_OKAY
     b.bits.echo :<= awEchoReg
   }
+
+  // def regmap(in: DecoupledIO[RegMapperInput],out: DecoupledIO[RegMapperOutput], backpress: Bool = true.B, flat: Bool) = {
+  //   val (io, _) = this.in(0)
+  //   dontTouch(in.aw.bits)
+  //   dontTouch(in.ar.bits)
+  //   dontTouch(in.w.bits)
+  //   dontTouch(in.b.bits)
+  //   dontTouch(in.r.bits)
+    
+  //   dontTouch(out.aw.bits)
+  //   dontTouch(out.ar.bits)
+  //   dontTouch(out.w.bits)
+  //   dontTouch(out.b.bits)
+  //   dontTouch(out.r.bits)
+  //   val addrAW = in.aw.bits.addr
+  //   val addrAR = in.ar.bits.addr
+  //   val convert = edgeIn.slave.slaves.flatMap(_.address) zip edgeOut.slave.slaves.flatMap(_.address)
+
+  //   def forward(x: UInt) =
+  //     convert.map { case (i, o) => Mux(i.contains(x), o.base.U | (x & o.mask.U), 0.U) }.reduce(_ | _)
+  //   def backward(x: UInt) =
+  //     convert.map { case (i, o) => Mux(o.contains(x), i.base.U | (x & i.mask.U), 0.U) }.reduce(_ | _)
+
+  //   // Address validation checks based on the valid signals (AWVALID and ARVALID)
+  //   val isAWValid = in.aw.valid
+  //   val isARValid = in.ar.valid
+
+  //   val isValidAddressAW = (addrAW(11, 0) === 0.U)  // Example address check for AW
+  //   val isValidAddressAR = (addrAR(11, 0) === 0.U)  // Example address check for AR
+
+  //   val isValidAlignmentAW = (addrAW(1, 0) === 0.U)  // Example alignment check for AW
+  //   val isValidAlignmentAR = (addrAR(1, 0) === 0.U)  // Example alignment check for AR
+
+  //   val isAccessingValidRegisterAW = (addrAW(11, 2) === 0.U)  // Example valid register check for AW
+  //   val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
+
+  //   val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
+  //   val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
+
+  //   // When either AW or AR is valid, perform address checks
+  //   when(isAWValid) {
+  //     when(!isValidAddressAW || !isValidAlignmentAW || isReservedAreaAccessAW) {
+  //       // Address invalid, clear the address and ID fields
+  //       out.aw.bits.addr := 0.U
+  //       out.aw.bits.id := 0.U
+  //     }
+  //   }
+  //   when(isARValid) {
+  //     when(!isValidAddressAR || !isValidAlignmentAR || isReservedAreaAccessAR) {
+  //       // Address invalid, clear the address and ID fields
+  //       out.ar.bits.addr := 0.U
+  //       out.ar.bits.id := 0.U
+  //     }
+  //   }
+
+  //   // Only check for wrap and other burst logic if the address is valid and burst type is wrap
+  //   val isWrapBurst = in.aw.bits.burst === AXI4Parameters.BURST_WRAP
+  //   val burstSize = 4.U
+  //   val burstLength = in.aw.bits.len + 1.U
+  //   val totalSize = burstSize * burstLength
+  //   val wrapAddr = RegInit(0.U(32.W))
+  //   val isFirstBurst = RegInit(true.B)
+  //   val isFinalBurst = RegInit(false.B)
+
+  //   wrapAddr := Mux(isWrapBurst, (wrapAddr + burstSize) % totalSize, addrAW)
+  //   when(isWrapBurst && isFirstBurst) {
+  //     out.aw.bits.addr := forward(wrapAddr)
+  //     out.ar.bits.addr := forward(wrapAddr)
+  //     isFirstBurst := false.B
+  //     isFinalBurst := (burstLength === 1.U)
+  //   }.elsewhen(isWrapBurst && !isFirstBurst) {
+  //     isFinalBurst := (burstLength === 1.U)
+  //   }.otherwise {
+  //     out.aw.bits.addr := forward(wrapAddr)
+  //     out.ar.bits.addr := forward(wrapAddr)
+  //     isFinalBurst := (burstLength === 1.U)
+  //   }
+
+  //   when(isFinalBurst) {
+  //     in.b.bits.resp := out.b.bits.resp
+  //     in.r.bits.data := out.r.bits.data
+  //   }.otherwise {
+  //     // in.b.bits.resp := 0.U
+  //     // in.r.bits.data := 0.U
+  //   }
+
+  //   // Pass through the rest of the signals
+  //   out.aw.bits.len := in.aw.bits.len
+  //   out.aw.bits.size := in.aw.bits.size
+  //   out.ar.bits.len := in.ar.bits.len
+  // }
 }

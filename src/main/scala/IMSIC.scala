@@ -659,15 +659,18 @@ class AXIRegIMSIC(
     beatBytes: Int = 8
 )(implicit p: Parameters) extends LazyModule {
   val fromMem = AXI4Xbar()
+
   private val intfileFromMems = Seq(
     AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
     AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)
   ).map { addrset =>
+    val axi4tolite = LazyModule(new AXI4ToLite()(Parameters.empty))
+    val axi4tolitenode = axi4tolite.node
     val intfileFromMem = AXI4RegMapperNode(
       address = addrset,
       beatBytes = beatBytes
     )
-    intfileFromMem := fromMem
+    intfileFromMem := axi4tolitenode := fromMem
     intfileFromMem
   }
 

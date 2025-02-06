@@ -43,18 +43,19 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
     require(groupID < aplic_params.groupsNum,    f"groupID ${groupID} should less than groupsNum ${aplic_params.groupsNum}")
     require(memberID < aplic_params.membersNum,  f"memberID ${memberID} should less than membersNum ${aplic_params.membersNum}")
     println(f"Generating IMSIC groupID=0x${groupID }%x memberID=0x${memberID}%x")
-    val map = LazyModule(new AXI4Map( addrSet => addrSet.base.toLong match {
+    val axi4map = LazyModule(new AXI4Map( addrSet => addrSet.base.toLong match {
       case imsic_params.mAddr => groupID * pow2(aplic_params.groupStrideWidth) + aplic_params.mBaseAddr + memberID * pow2(aplic_params.mStrideWidth)
       case imsic_params.sgAddr=> groupID * pow2(aplic_params.groupStrideWidth) + aplic_params.sgBaseAddr+ memberID * pow2(aplic_params.sgStrideWidth)
       case _ => assert(false, f"unknown address ${addrSet.base}"); 0
-    })(Parameters.empty)).node
-
-    val teemap = LazyModule(new AXI4Map(addrSet => addrSet.base.toLong match {
+    })(Parameters.empty))
+    val map = axi4map.node
+    
+    val axi4teemap = LazyModule(new AXI4Map(addrSet => addrSet.base.toLong match {
       case imsic_params.mAddr => groupID * pow2(aplic_params.groupStrideWidth) + 0x40010000L + memberID * pow2(aplic_params.mStrideWidth)
       case imsic_params.sgAddr => groupID * pow2(aplic_params.groupStrideWidth) + 0x80010000L + memberID * pow2(aplic_params.sgStrideWidth)
       case _ => assert(false, f"unknown address ${addrSet.base}"); 0
-    })(Parameters.empty)).node
-
+    })(Parameters.empty))
+    val teemap = axi4teemap.node
     val imsic = LazyModule(new AXI4IMSIC(imsic_params)(new Config((site, here, up) => {
       case IMSICParameKey => IMSICParameters(HasTEEIMSIC = false)
     })))
