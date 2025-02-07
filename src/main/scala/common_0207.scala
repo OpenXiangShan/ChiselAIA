@@ -137,7 +137,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       //awcnt : muli used for aw and ar
 
       when(state === sWCH) {
-        when((!isillegalAW) & (awcnt === 0.U)) {
+        when((!isillegalAW) & (awcnt === 0.U)) { //only the first illegal data to downstream
           awready := out.aw.ready
         }.otherwise {
           awready := true.B  // legal or non first data
@@ -157,7 +157,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }
 
       when(state === sWCH) {
-        when(awcnt >= awburst_l) { // arrive the max length of burst
+        when(awcnt >= awlen_l) { // arrive the max length of burst
           awcnt := awcnt
         }.elsewhen(awready) {
           awcnt := awcnt + 1.U
@@ -171,7 +171,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }
       //wcnt
       when(state === sWCH) {
-        when(wcnt >= awburst_l) { // arrive the max length of burst
+        when(wcnt >= awlen_l) { // arrive the max length of burst
           wcnt := wcnt
         }.elsewhen(wready) {
           wcnt := wcnt + 1.U
@@ -182,8 +182,8 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
      // response for in
      val in.aw.ready = isFinalBurst
       val in.w.ready = isFinalBurst
-      val in.b.valid = state == sBCH
-
+      val in.b.valid = (state === sBCH)
+      val in.b.id    = awid_l
 
       // When either AW or AR is valid, perform address checks
       val out.aw.valid = (state === sWCH) & (!isillegalAW) & (awcnt == 0.U)
