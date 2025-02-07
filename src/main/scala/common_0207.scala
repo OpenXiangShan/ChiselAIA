@@ -38,18 +38,14 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
   lazy val module = new Impl
   class Impl extends LazyModuleImp(this) {
     (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
-      out <> in
+//      out <> in
       dontTouch(in.aw.bits)
       dontTouch(in.ar.bits)
       dontTouch(in.w.bits)
       dontTouch(in.b.bits)
       dontTouch(in.r.bits)
       
-      dontTouch(out.aw.bits)
-      dontTouch(out.ar.bits)
-      dontTouch(out.w.bits)
-      dontTouch(out.b.bits)
-      dontTouch(out.r.bits)
+
       //      val addrAW = in.aw.bits.addr
       //      val addrAR = in.ar.bits.addr
       //latch awxx and arxx
@@ -67,11 +63,12 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       state := next_state
       
       val awpulse_l = (state === sIDLE) && (next_state === sWCH)
+      val arpulse_l = (state === sIDLE) && (next_state === sRCH)
       val awchvld = isAWValid & in.w.valid
       val aw_l = RegEnable(in.aw.bits, awpulse_l)
       val w_l = RegEnable(in.w.bits, awpulse_l)
 //      val b_l = RegEnable(in.b.bits, awpulse_l)
-      val ar_l = RegEnable(in.ar.bits, awpulse_l)
+      val ar_l = RegEnable(in.ar.bits, arpulse_l)
 //      val r_l = RegEnable(in.r.bits, awpulse_l)
 
       // val awaddr_l = RegEnable(in.aw.bits.addr, awchvld)
@@ -101,7 +98,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
       // Address validation checks based on the valid signals (AWVALID and ARVALID)
 
-
+      val isValidSize      = (aw_l.size === 2.U) && (w_l.strb === 15.U)
       val isValidAddressAW = (addrAW(11, 0) === 0.U)  // Example address check for AW
       val isValidAddressAR = (addrAR(11, 0) === 0.U)  // Example address check for AR
 
@@ -112,16 +109,17 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
       val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
       val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
-
-      val isillegalAW = (!isValidAddressAW) || (!isValidAlignmentAW) || isReservedAreaAccessAW
+      val isillegalAC = !((aw_l.cache(3,1) === 0.U) && (aw_l.lock === 1.U))
+      val isillegalAW = (!isValidAddressAW) || (!isValidAlignmentAW) || isReservedAreaAccessAW || (!isValidSize) || isillegalAC
       val isillegalAR = (!isValidAddressAR) || (!isValidAlignmentAR) || isReservedAreaAccessAR
 
-      in.r.bits.last := Mux((state === sRCH) && (awcnt === ar_l.len), 1.U, 0.U)
+      in.r.bits.last := (state === sRCH) && (awcnt === ar_l.len) && in.r.ready
       val awready = WireInit(true.B)  // temp signal ,out.awready for the first data, true.B for other data transaction.
       val wready = WireInit(true.B)  // temp signal
       val aw_last = (awcnt === aw_l.len) & awready
       val w_last = (wcnt === aw_l.len) & wready
       val isFinalBurst = (state === sWCH) & (aw_last === true.B) & (w_last === true.B) // the final data for a transaction
+      val rready = out.ar.ready //ready from downstream
       switch(state){
         is(sIDLE) {
           when(awchvld){
@@ -131,7 +129,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           }
         }
         is(sWCH) {
-          when(isFinalBurst.asBool){
+          when(out.b.valid & isFinalBurst){ // in.b.valid can be high,only when the last burst data done and the bvalid for data to downstream is high.
             next_state := sBCH
           }
         }
@@ -174,7 +172,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           awcnt := awcnt + 1.U
         }
       }.elsewhen(state === sRCH) {
-        when(in.ar.ready) {
+        when(in.r.ready) {
           awcnt := awcnt + 1.U
         }
       }.otherwise {
@@ -191,17 +189,26 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         wcnt := 0.U
       }
       // response for in
-      in.aw.ready    := isFinalBurst.asBool
-      in.w.ready     := isFinalBurst.asBool
-      in.b.valid     := (state === sBCH).asBool
+      val isFinaldly = RegInit(false.B)
+      isFinaldly := isFinalBurst
+      val isFinalris = isFinalBurst & (!isFinaldly)
+      in.aw.ready    := isFinalris
+      in.w.ready     := isFinalris
+      in.b.valid     := state === sBCH
       in.b.bits.id   := aw_l.id
       in.b.bits.resp := 0.U
-      
+      in.r.valid     := state === sRCH
+      in.r.bits.resp := 0.U
+      in.r.bits.id   := ar_l.id
+      in.r.bits.data := 0.U
+      in.ar.ready    := true.B
+
       // When either AW or AR is valid, perform address checks
       out.aw.valid := (state === sWCH) & (!isillegalAW) & (awcnt === 0.U).asBool
       out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U).asBool
       out.aw.bits.addr := aw_l.addr
       out.w.bits.data := w_l.data
+      out.b.ready := (state === sBCH) && (next_state === sIDLE)
       //else out signal is from the signals latched,for timing.
       }
   }
