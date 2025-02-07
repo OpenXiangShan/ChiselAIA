@@ -35,8 +35,8 @@ module AXI4AIA(
   input  [3:0]  toaia_0_aw_bits_qos,
   output        toaia_0_w_ready,
   input         toaia_0_w_valid,
-  input  [63:0] toaia_0_w_bits_data,
-  input  [7:0]  toaia_0_w_bits_strb,
+  input  [31:0] toaia_0_w_bits_data,
+  input  [3:0]  toaia_0_w_bits_strb,
   input         toaia_0_w_bits_last,
   input         toaia_0_b_ready,
   output        toaia_0_b_valid,
@@ -56,18 +56,13 @@ module AXI4AIA(
   input         toaia_0_r_ready,
   output        toaia_0_r_valid,
   output [3:0]  toaia_0_r_bits_id,
-  output [63:0] toaia_0_r_bits_data,
+  output [31:0] toaia_0_r_bits_data,
   output [1:0]  toaia_0_r_bits_resp,
   output        toaia_0_r_bits_last,
   output        toCSR0_rdata_valid,
   output [63:0] toCSR0_rdata_bits,
   output        toCSR0_illegal,
-  output        toCSR0_pendings_0,
-  output        toCSR0_pendings_1,
-  output        toCSR0_pendings_2,
-  output        toCSR0_pendings_3,
-  output        toCSR0_pendings_4,
-  output        toCSR0_pendings_5,
+  output [5:0]  toCSR0_pendings,
   output [31:0] toCSR0_topeis_0,
   output [31:0] toCSR0_topeis_1,
   output [31:0] toCSR0_topeis_2,
@@ -85,12 +80,7 @@ module AXI4AIA(
   output        toCSR1_rdata_valid,
   output [63:0] toCSR1_rdata_bits,
   output        toCSR1_illegal,
-  output        toCSR1_pendings_0,
-  output        toCSR1_pendings_1,
-  output        toCSR1_pendings_2,
-  output        toCSR1_pendings_3,
-  output        toCSR1_pendings_4,
-  output        toCSR1_pendings_5,
+  output [5:0]  toCSR1_pendings,
   output [31:0] toCSR1_topeis_0,
   output [31:0] toCSR1_topeis_1,
   output [31:0] toCSR1_topeis_2,
@@ -108,12 +98,7 @@ module AXI4AIA(
   output        toCSR2_rdata_valid,
   output [63:0] toCSR2_rdata_bits,
   output        toCSR2_illegal,
-  output        toCSR2_pendings_0,
-  output        toCSR2_pendings_1,
-  output        toCSR2_pendings_2,
-  output        toCSR2_pendings_3,
-  output        toCSR2_pendings_4,
-  output        toCSR2_pendings_5,
+  output [5:0]  toCSR2_pendings,
   output [31:0] toCSR2_topeis_0,
   output [31:0] toCSR2_topeis_1,
   output [31:0] toCSR2_topeis_2,
@@ -131,12 +116,7 @@ module AXI4AIA(
   output        toCSR3_rdata_valid,
   output [63:0] toCSR3_rdata_bits,
   output        toCSR3_illegal,
-  output        toCSR3_pendings_0,
-  output        toCSR3_pendings_1,
-  output        toCSR3_pendings_2,
-  output        toCSR3_pendings_3,
-  output        toCSR3_pendings_4,
-  output        toCSR3_pendings_5,
+  output [5:0]  toCSR3_pendings,
   output [31:0] toCSR3_topeis_0,
   output [31:0] toCSR3_topeis_1,
   output [31:0] toCSR3_topeis_2,
@@ -284,836 +264,1240 @@ module AXI4AIA(
   wire        _aplic_auto_toIMSIC_out_aw_valid;
   wire [4:0]  _aplic_auto_toIMSIC_out_aw_bits_id;
   wire [31:0] _aplic_auto_toIMSIC_out_aw_bits_addr;
+  wire [2:0]  _aplic_auto_toIMSIC_out_aw_bits_size;
   wire        _aplic_auto_toIMSIC_out_w_valid;
-  wire [63:0] _aplic_auto_toIMSIC_out_w_bits_data;
-  wire [7:0]  _aplic_auto_toIMSIC_out_w_bits_strb;
+  wire [31:0] _aplic_auto_toIMSIC_out_w_bits_data;
+  wire [3:0]  _aplic_auto_toIMSIC_out_w_bits_strb;
   wire        _aplic_auto_toIMSIC_out_w_bits_last;
   wire        _aplic_auto_toIMSIC_out_b_ready;
   wire        _aplic_auto_fromCPU_in_aw_ready;
   wire        _aplic_auto_fromCPU_in_w_ready;
   wire        _aplic_auto_fromCPU_in_b_valid;
   wire [3:0]  _aplic_auto_fromCPU_in_b_bits_id;
+  wire [1:0]  _aplic_auto_fromCPU_in_b_bits_resp;
   wire        _aplic_auto_fromCPU_in_ar_ready;
   wire        _aplic_auto_fromCPU_in_r_valid;
   wire [3:0]  _aplic_auto_fromCPU_in_r_bits_id;
-  wire [63:0] _aplic_auto_fromCPU_in_r_bits_data;
+  wire [31:0] _aplic_auto_fromCPU_in_r_bits_data;
+  wire [1:0]  _aplic_auto_fromCPU_in_r_bits_resp;
   wire        _aplic_auto_fromCPU_in_r_bits_last;
-  wire        _imsic_3_auto_axireg_axireg_axi4xbar_in_aw_ready;
-  wire        _imsic_3_auto_axireg_axireg_axi4xbar_in_w_ready;
   wire        _imsic_3_auto_axireg_axireg_axi4xbar_in_b_valid;
   wire [5:0]  _imsic_3_auto_axireg_axireg_axi4xbar_in_b_bits_id;
+  wire [1:0]  _imsic_3_auto_axireg_axireg_axi4xbar_in_b_bits_resp;
   wire        _imsic_3_auto_axireg_axireg_axi4xbar_in_ar_ready;
   wire        _imsic_3_auto_axireg_axireg_axi4xbar_in_r_valid;
   wire [5:0]  _imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_id;
+  wire [31:0] _imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_data;
+  wire [1:0]  _imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_resp;
   wire        _imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_last;
-  wire        _map_3_auto_in_aw_ready;
-  wire        _map_3_auto_in_w_ready;
-  wire        _map_3_auto_in_b_valid;
-  wire [5:0]  _map_3_auto_in_b_bits_id;
-  wire        _map_3_auto_in_ar_ready;
-  wire        _map_3_auto_in_r_valid;
-  wire [5:0]  _map_3_auto_in_r_bits_id;
-  wire        _map_3_auto_in_r_bits_last;
-  wire        _map_3_auto_out_aw_valid;
-  wire [5:0]  _map_3_auto_out_aw_bits_id;
-  wire [16:0] _map_3_auto_out_aw_bits_addr;
-  wire        _map_3_auto_out_w_valid;
-  wire [63:0] _map_3_auto_out_w_bits_data;
-  wire [7:0]  _map_3_auto_out_w_bits_strb;
-  wire        _map_3_auto_out_w_bits_last;
-  wire        _map_3_auto_out_b_ready;
-  wire        _map_3_auto_out_ar_valid;
-  wire [5:0]  _map_3_auto_out_ar_bits_id;
-  wire [16:0] _map_3_auto_out_ar_bits_addr;
-  wire [2:0]  _map_3_auto_out_ar_bits_size;
-  wire        _map_3_auto_out_r_ready;
-  wire        _imsic_2_auto_axireg_axireg_axi4xbar_in_aw_ready;
-  wire        _imsic_2_auto_axireg_axireg_axi4xbar_in_w_ready;
+  wire        _axi4map_3_auto_in_b_valid;
+  wire [5:0]  _axi4map_3_auto_in_b_bits_id;
+  wire [1:0]  _axi4map_3_auto_in_b_bits_resp;
+  wire        _axi4map_3_auto_in_ar_ready;
+  wire        _axi4map_3_auto_in_r_valid;
+  wire [5:0]  _axi4map_3_auto_in_r_bits_id;
+  wire [31:0] _axi4map_3_auto_in_r_bits_data;
+  wire [1:0]  _axi4map_3_auto_in_r_bits_resp;
+  wire        _axi4map_3_auto_in_r_bits_last;
+  wire        _axi4map_3_auto_out_aw_valid;
+  wire [5:0]  _axi4map_3_auto_out_aw_bits_id;
+  wire [16:0] _axi4map_3_auto_out_aw_bits_addr;
+  wire [7:0]  _axi4map_3_auto_out_aw_bits_len;
+  wire [2:0]  _axi4map_3_auto_out_aw_bits_size;
+  wire [1:0]  _axi4map_3_auto_out_aw_bits_burst;
+  wire        _axi4map_3_auto_out_aw_bits_lock;
+  wire [3:0]  _axi4map_3_auto_out_aw_bits_cache;
+  wire [2:0]  _axi4map_3_auto_out_aw_bits_prot;
+  wire [3:0]  _axi4map_3_auto_out_aw_bits_qos;
+  wire        _axi4map_3_auto_out_w_valid;
+  wire [31:0] _axi4map_3_auto_out_w_bits_data;
+  wire [3:0]  _axi4map_3_auto_out_w_bits_strb;
+  wire        _axi4map_3_auto_out_w_bits_last;
+  wire        _axi4map_3_auto_out_b_ready;
+  wire        _axi4map_3_auto_out_ar_valid;
+  wire [5:0]  _axi4map_3_auto_out_ar_bits_id;
+  wire [16:0] _axi4map_3_auto_out_ar_bits_addr;
+  wire [7:0]  _axi4map_3_auto_out_ar_bits_len;
+  wire [2:0]  _axi4map_3_auto_out_ar_bits_size;
+  wire [1:0]  _axi4map_3_auto_out_ar_bits_burst;
+  wire        _axi4map_3_auto_out_ar_bits_lock;
+  wire [3:0]  _axi4map_3_auto_out_ar_bits_cache;
+  wire [2:0]  _axi4map_3_auto_out_ar_bits_prot;
+  wire [3:0]  _axi4map_3_auto_out_ar_bits_qos;
+  wire        _axi4map_3_auto_out_r_ready;
   wire        _imsic_2_auto_axireg_axireg_axi4xbar_in_b_valid;
   wire [5:0]  _imsic_2_auto_axireg_axireg_axi4xbar_in_b_bits_id;
+  wire [1:0]  _imsic_2_auto_axireg_axireg_axi4xbar_in_b_bits_resp;
   wire        _imsic_2_auto_axireg_axireg_axi4xbar_in_ar_ready;
   wire        _imsic_2_auto_axireg_axireg_axi4xbar_in_r_valid;
   wire [5:0]  _imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_id;
+  wire [31:0] _imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_data;
+  wire [1:0]  _imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_resp;
   wire        _imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_last;
-  wire        _map_2_auto_in_aw_ready;
-  wire        _map_2_auto_in_w_ready;
-  wire        _map_2_auto_in_b_valid;
-  wire [5:0]  _map_2_auto_in_b_bits_id;
-  wire        _map_2_auto_in_ar_ready;
-  wire        _map_2_auto_in_r_valid;
-  wire [5:0]  _map_2_auto_in_r_bits_id;
-  wire        _map_2_auto_in_r_bits_last;
-  wire        _map_2_auto_out_aw_valid;
-  wire [5:0]  _map_2_auto_out_aw_bits_id;
-  wire [16:0] _map_2_auto_out_aw_bits_addr;
-  wire        _map_2_auto_out_w_valid;
-  wire [63:0] _map_2_auto_out_w_bits_data;
-  wire [7:0]  _map_2_auto_out_w_bits_strb;
-  wire        _map_2_auto_out_w_bits_last;
-  wire        _map_2_auto_out_b_ready;
-  wire        _map_2_auto_out_ar_valid;
-  wire [5:0]  _map_2_auto_out_ar_bits_id;
-  wire [16:0] _map_2_auto_out_ar_bits_addr;
-  wire [2:0]  _map_2_auto_out_ar_bits_size;
-  wire        _map_2_auto_out_r_ready;
-  wire        _imsic_1_auto_axireg_axireg_axi4xbar_in_aw_ready;
-  wire        _imsic_1_auto_axireg_axireg_axi4xbar_in_w_ready;
+  wire        _axi4map_2_auto_in_b_valid;
+  wire [5:0]  _axi4map_2_auto_in_b_bits_id;
+  wire [1:0]  _axi4map_2_auto_in_b_bits_resp;
+  wire        _axi4map_2_auto_in_ar_ready;
+  wire        _axi4map_2_auto_in_r_valid;
+  wire [5:0]  _axi4map_2_auto_in_r_bits_id;
+  wire [31:0] _axi4map_2_auto_in_r_bits_data;
+  wire [1:0]  _axi4map_2_auto_in_r_bits_resp;
+  wire        _axi4map_2_auto_in_r_bits_last;
+  wire        _axi4map_2_auto_out_aw_valid;
+  wire [5:0]  _axi4map_2_auto_out_aw_bits_id;
+  wire [16:0] _axi4map_2_auto_out_aw_bits_addr;
+  wire [7:0]  _axi4map_2_auto_out_aw_bits_len;
+  wire [2:0]  _axi4map_2_auto_out_aw_bits_size;
+  wire [1:0]  _axi4map_2_auto_out_aw_bits_burst;
+  wire        _axi4map_2_auto_out_aw_bits_lock;
+  wire [3:0]  _axi4map_2_auto_out_aw_bits_cache;
+  wire [2:0]  _axi4map_2_auto_out_aw_bits_prot;
+  wire [3:0]  _axi4map_2_auto_out_aw_bits_qos;
+  wire        _axi4map_2_auto_out_w_valid;
+  wire [31:0] _axi4map_2_auto_out_w_bits_data;
+  wire [3:0]  _axi4map_2_auto_out_w_bits_strb;
+  wire        _axi4map_2_auto_out_w_bits_last;
+  wire        _axi4map_2_auto_out_b_ready;
+  wire        _axi4map_2_auto_out_ar_valid;
+  wire [5:0]  _axi4map_2_auto_out_ar_bits_id;
+  wire [16:0] _axi4map_2_auto_out_ar_bits_addr;
+  wire [7:0]  _axi4map_2_auto_out_ar_bits_len;
+  wire [2:0]  _axi4map_2_auto_out_ar_bits_size;
+  wire [1:0]  _axi4map_2_auto_out_ar_bits_burst;
+  wire        _axi4map_2_auto_out_ar_bits_lock;
+  wire [3:0]  _axi4map_2_auto_out_ar_bits_cache;
+  wire [2:0]  _axi4map_2_auto_out_ar_bits_prot;
+  wire [3:0]  _axi4map_2_auto_out_ar_bits_qos;
+  wire        _axi4map_2_auto_out_r_ready;
   wire        _imsic_1_auto_axireg_axireg_axi4xbar_in_b_valid;
   wire [5:0]  _imsic_1_auto_axireg_axireg_axi4xbar_in_b_bits_id;
+  wire [1:0]  _imsic_1_auto_axireg_axireg_axi4xbar_in_b_bits_resp;
   wire        _imsic_1_auto_axireg_axireg_axi4xbar_in_ar_ready;
   wire        _imsic_1_auto_axireg_axireg_axi4xbar_in_r_valid;
   wire [5:0]  _imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_id;
+  wire [31:0] _imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_data;
+  wire [1:0]  _imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_resp;
   wire        _imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_last;
-  wire        _map_1_auto_in_aw_ready;
-  wire        _map_1_auto_in_w_ready;
-  wire        _map_1_auto_in_b_valid;
-  wire [5:0]  _map_1_auto_in_b_bits_id;
-  wire        _map_1_auto_in_ar_ready;
-  wire        _map_1_auto_in_r_valid;
-  wire [5:0]  _map_1_auto_in_r_bits_id;
-  wire        _map_1_auto_in_r_bits_last;
-  wire        _map_1_auto_out_aw_valid;
-  wire [5:0]  _map_1_auto_out_aw_bits_id;
-  wire [16:0] _map_1_auto_out_aw_bits_addr;
-  wire        _map_1_auto_out_w_valid;
-  wire [63:0] _map_1_auto_out_w_bits_data;
-  wire [7:0]  _map_1_auto_out_w_bits_strb;
-  wire        _map_1_auto_out_w_bits_last;
-  wire        _map_1_auto_out_b_ready;
-  wire        _map_1_auto_out_ar_valid;
-  wire [5:0]  _map_1_auto_out_ar_bits_id;
-  wire [16:0] _map_1_auto_out_ar_bits_addr;
-  wire [2:0]  _map_1_auto_out_ar_bits_size;
-  wire        _map_1_auto_out_r_ready;
-  wire        _imsic_auto_axireg_axireg_axi4xbar_in_aw_ready;
-  wire        _imsic_auto_axireg_axireg_axi4xbar_in_w_ready;
+  wire        _axi4map_1_auto_in_b_valid;
+  wire [5:0]  _axi4map_1_auto_in_b_bits_id;
+  wire [1:0]  _axi4map_1_auto_in_b_bits_resp;
+  wire        _axi4map_1_auto_in_ar_ready;
+  wire        _axi4map_1_auto_in_r_valid;
+  wire [5:0]  _axi4map_1_auto_in_r_bits_id;
+  wire [31:0] _axi4map_1_auto_in_r_bits_data;
+  wire [1:0]  _axi4map_1_auto_in_r_bits_resp;
+  wire        _axi4map_1_auto_in_r_bits_last;
+  wire        _axi4map_1_auto_out_aw_valid;
+  wire [5:0]  _axi4map_1_auto_out_aw_bits_id;
+  wire [16:0] _axi4map_1_auto_out_aw_bits_addr;
+  wire [7:0]  _axi4map_1_auto_out_aw_bits_len;
+  wire [2:0]  _axi4map_1_auto_out_aw_bits_size;
+  wire [1:0]  _axi4map_1_auto_out_aw_bits_burst;
+  wire        _axi4map_1_auto_out_aw_bits_lock;
+  wire [3:0]  _axi4map_1_auto_out_aw_bits_cache;
+  wire [2:0]  _axi4map_1_auto_out_aw_bits_prot;
+  wire [3:0]  _axi4map_1_auto_out_aw_bits_qos;
+  wire        _axi4map_1_auto_out_w_valid;
+  wire [31:0] _axi4map_1_auto_out_w_bits_data;
+  wire [3:0]  _axi4map_1_auto_out_w_bits_strb;
+  wire        _axi4map_1_auto_out_w_bits_last;
+  wire        _axi4map_1_auto_out_b_ready;
+  wire        _axi4map_1_auto_out_ar_valid;
+  wire [5:0]  _axi4map_1_auto_out_ar_bits_id;
+  wire [16:0] _axi4map_1_auto_out_ar_bits_addr;
+  wire [7:0]  _axi4map_1_auto_out_ar_bits_len;
+  wire [2:0]  _axi4map_1_auto_out_ar_bits_size;
+  wire [1:0]  _axi4map_1_auto_out_ar_bits_burst;
+  wire        _axi4map_1_auto_out_ar_bits_lock;
+  wire [3:0]  _axi4map_1_auto_out_ar_bits_cache;
+  wire [2:0]  _axi4map_1_auto_out_ar_bits_prot;
+  wire [3:0]  _axi4map_1_auto_out_ar_bits_qos;
+  wire        _axi4map_1_auto_out_r_ready;
   wire        _imsic_auto_axireg_axireg_axi4xbar_in_b_valid;
   wire [5:0]  _imsic_auto_axireg_axireg_axi4xbar_in_b_bits_id;
+  wire [1:0]  _imsic_auto_axireg_axireg_axi4xbar_in_b_bits_resp;
   wire        _imsic_auto_axireg_axireg_axi4xbar_in_ar_ready;
   wire        _imsic_auto_axireg_axireg_axi4xbar_in_r_valid;
   wire [5:0]  _imsic_auto_axireg_axireg_axi4xbar_in_r_bits_id;
+  wire [31:0] _imsic_auto_axireg_axireg_axi4xbar_in_r_bits_data;
+  wire [1:0]  _imsic_auto_axireg_axireg_axi4xbar_in_r_bits_resp;
   wire        _imsic_auto_axireg_axireg_axi4xbar_in_r_bits_last;
-  wire        _map_auto_in_aw_ready;
-  wire        _map_auto_in_w_ready;
-  wire        _map_auto_in_b_valid;
-  wire [5:0]  _map_auto_in_b_bits_id;
-  wire        _map_auto_in_ar_ready;
-  wire        _map_auto_in_r_valid;
-  wire [5:0]  _map_auto_in_r_bits_id;
-  wire        _map_auto_in_r_bits_last;
-  wire        _map_auto_out_aw_valid;
-  wire [5:0]  _map_auto_out_aw_bits_id;
-  wire [16:0] _map_auto_out_aw_bits_addr;
-  wire        _map_auto_out_w_valid;
-  wire [63:0] _map_auto_out_w_bits_data;
-  wire [7:0]  _map_auto_out_w_bits_strb;
-  wire        _map_auto_out_w_bits_last;
-  wire        _map_auto_out_b_ready;
-  wire        _map_auto_out_ar_valid;
-  wire [5:0]  _map_auto_out_ar_bits_id;
-  wire [16:0] _map_auto_out_ar_bits_addr;
-  wire [2:0]  _map_auto_out_ar_bits_size;
-  wire        _map_auto_out_r_ready;
-  wire        _imsics_fromMem_xbar_auto_in_1_aw_ready;
-  wire        _imsics_fromMem_xbar_auto_in_1_w_ready;
+  wire        _axi4map_auto_in_b_valid;
+  wire [5:0]  _axi4map_auto_in_b_bits_id;
+  wire [1:0]  _axi4map_auto_in_b_bits_resp;
+  wire        _axi4map_auto_in_ar_ready;
+  wire        _axi4map_auto_in_r_valid;
+  wire [5:0]  _axi4map_auto_in_r_bits_id;
+  wire [31:0] _axi4map_auto_in_r_bits_data;
+  wire [1:0]  _axi4map_auto_in_r_bits_resp;
+  wire        _axi4map_auto_in_r_bits_last;
+  wire        _axi4map_auto_out_aw_valid;
+  wire [5:0]  _axi4map_auto_out_aw_bits_id;
+  wire [16:0] _axi4map_auto_out_aw_bits_addr;
+  wire [7:0]  _axi4map_auto_out_aw_bits_len;
+  wire [2:0]  _axi4map_auto_out_aw_bits_size;
+  wire [1:0]  _axi4map_auto_out_aw_bits_burst;
+  wire        _axi4map_auto_out_aw_bits_lock;
+  wire [3:0]  _axi4map_auto_out_aw_bits_cache;
+  wire [2:0]  _axi4map_auto_out_aw_bits_prot;
+  wire [3:0]  _axi4map_auto_out_aw_bits_qos;
+  wire        _axi4map_auto_out_w_valid;
+  wire [31:0] _axi4map_auto_out_w_bits_data;
+  wire [3:0]  _axi4map_auto_out_w_bits_strb;
+  wire        _axi4map_auto_out_w_bits_last;
+  wire        _axi4map_auto_out_b_ready;
+  wire        _axi4map_auto_out_ar_valid;
+  wire [5:0]  _axi4map_auto_out_ar_bits_id;
+  wire [16:0] _axi4map_auto_out_ar_bits_addr;
+  wire [7:0]  _axi4map_auto_out_ar_bits_len;
+  wire [2:0]  _axi4map_auto_out_ar_bits_size;
+  wire [1:0]  _axi4map_auto_out_ar_bits_burst;
+  wire        _axi4map_auto_out_ar_bits_lock;
+  wire [3:0]  _axi4map_auto_out_ar_bits_cache;
+  wire [2:0]  _axi4map_auto_out_ar_bits_prot;
+  wire [3:0]  _axi4map_auto_out_ar_bits_qos;
+  wire        _axi4map_auto_out_r_ready;
   wire        _imsics_fromMem_xbar_auto_in_1_b_valid;
   wire [4:0]  _imsics_fromMem_xbar_auto_in_1_b_bits_id;
   wire        _imsics_fromMem_xbar_auto_in_1_r_valid;
   wire [4:0]  _imsics_fromMem_xbar_auto_in_1_r_bits_id;
-  wire        _imsics_fromMem_xbar_auto_in_0_aw_ready;
-  wire        _imsics_fromMem_xbar_auto_in_0_w_ready;
   wire        _imsics_fromMem_xbar_auto_in_0_b_valid;
   wire [3:0]  _imsics_fromMem_xbar_auto_in_0_b_bits_id;
+  wire [1:0]  _imsics_fromMem_xbar_auto_in_0_b_bits_resp;
   wire        _imsics_fromMem_xbar_auto_in_0_ar_ready;
   wire        _imsics_fromMem_xbar_auto_in_0_r_valid;
   wire [3:0]  _imsics_fromMem_xbar_auto_in_0_r_bits_id;
+  wire [31:0] _imsics_fromMem_xbar_auto_in_0_r_bits_data;
+  wire [1:0]  _imsics_fromMem_xbar_auto_in_0_r_bits_resp;
   wire        _imsics_fromMem_xbar_auto_in_0_r_bits_last;
   wire        _imsics_fromMem_xbar_auto_out_3_aw_valid;
   wire [5:0]  _imsics_fromMem_xbar_auto_out_3_aw_bits_id;
   wire [31:0] _imsics_fromMem_xbar_auto_out_3_aw_bits_addr;
+  wire [7:0]  _imsics_fromMem_xbar_auto_out_3_aw_bits_len;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_3_aw_bits_size;
+  wire [1:0]  _imsics_fromMem_xbar_auto_out_3_aw_bits_burst;
+  wire        _imsics_fromMem_xbar_auto_out_3_aw_bits_lock;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_3_aw_bits_cache;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_3_aw_bits_prot;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_3_aw_bits_qos;
   wire        _imsics_fromMem_xbar_auto_out_3_w_valid;
-  wire [63:0] _imsics_fromMem_xbar_auto_out_3_w_bits_data;
-  wire [7:0]  _imsics_fromMem_xbar_auto_out_3_w_bits_strb;
+  wire [31:0] _imsics_fromMem_xbar_auto_out_3_w_bits_data;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_3_w_bits_strb;
   wire        _imsics_fromMem_xbar_auto_out_3_w_bits_last;
   wire        _imsics_fromMem_xbar_auto_out_3_b_ready;
   wire        _imsics_fromMem_xbar_auto_out_3_ar_valid;
   wire [5:0]  _imsics_fromMem_xbar_auto_out_3_ar_bits_id;
   wire [31:0] _imsics_fromMem_xbar_auto_out_3_ar_bits_addr;
+  wire [7:0]  _imsics_fromMem_xbar_auto_out_3_ar_bits_len;
   wire [2:0]  _imsics_fromMem_xbar_auto_out_3_ar_bits_size;
+  wire [1:0]  _imsics_fromMem_xbar_auto_out_3_ar_bits_burst;
+  wire        _imsics_fromMem_xbar_auto_out_3_ar_bits_lock;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_3_ar_bits_cache;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_3_ar_bits_prot;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_3_ar_bits_qos;
   wire        _imsics_fromMem_xbar_auto_out_3_r_ready;
   wire        _imsics_fromMem_xbar_auto_out_2_aw_valid;
   wire [5:0]  _imsics_fromMem_xbar_auto_out_2_aw_bits_id;
   wire [31:0] _imsics_fromMem_xbar_auto_out_2_aw_bits_addr;
+  wire [7:0]  _imsics_fromMem_xbar_auto_out_2_aw_bits_len;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_2_aw_bits_size;
+  wire [1:0]  _imsics_fromMem_xbar_auto_out_2_aw_bits_burst;
+  wire        _imsics_fromMem_xbar_auto_out_2_aw_bits_lock;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_2_aw_bits_cache;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_2_aw_bits_prot;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_2_aw_bits_qos;
   wire        _imsics_fromMem_xbar_auto_out_2_w_valid;
-  wire [63:0] _imsics_fromMem_xbar_auto_out_2_w_bits_data;
-  wire [7:0]  _imsics_fromMem_xbar_auto_out_2_w_bits_strb;
+  wire [31:0] _imsics_fromMem_xbar_auto_out_2_w_bits_data;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_2_w_bits_strb;
   wire        _imsics_fromMem_xbar_auto_out_2_w_bits_last;
   wire        _imsics_fromMem_xbar_auto_out_2_b_ready;
   wire        _imsics_fromMem_xbar_auto_out_2_ar_valid;
   wire [5:0]  _imsics_fromMem_xbar_auto_out_2_ar_bits_id;
   wire [31:0] _imsics_fromMem_xbar_auto_out_2_ar_bits_addr;
+  wire [7:0]  _imsics_fromMem_xbar_auto_out_2_ar_bits_len;
   wire [2:0]  _imsics_fromMem_xbar_auto_out_2_ar_bits_size;
+  wire [1:0]  _imsics_fromMem_xbar_auto_out_2_ar_bits_burst;
+  wire        _imsics_fromMem_xbar_auto_out_2_ar_bits_lock;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_2_ar_bits_cache;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_2_ar_bits_prot;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_2_ar_bits_qos;
   wire        _imsics_fromMem_xbar_auto_out_2_r_ready;
   wire        _imsics_fromMem_xbar_auto_out_1_aw_valid;
   wire [5:0]  _imsics_fromMem_xbar_auto_out_1_aw_bits_id;
   wire [31:0] _imsics_fromMem_xbar_auto_out_1_aw_bits_addr;
+  wire [7:0]  _imsics_fromMem_xbar_auto_out_1_aw_bits_len;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_1_aw_bits_size;
+  wire [1:0]  _imsics_fromMem_xbar_auto_out_1_aw_bits_burst;
+  wire        _imsics_fromMem_xbar_auto_out_1_aw_bits_lock;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_1_aw_bits_cache;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_1_aw_bits_prot;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_1_aw_bits_qos;
   wire        _imsics_fromMem_xbar_auto_out_1_w_valid;
-  wire [63:0] _imsics_fromMem_xbar_auto_out_1_w_bits_data;
-  wire [7:0]  _imsics_fromMem_xbar_auto_out_1_w_bits_strb;
+  wire [31:0] _imsics_fromMem_xbar_auto_out_1_w_bits_data;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_1_w_bits_strb;
   wire        _imsics_fromMem_xbar_auto_out_1_w_bits_last;
   wire        _imsics_fromMem_xbar_auto_out_1_b_ready;
   wire        _imsics_fromMem_xbar_auto_out_1_ar_valid;
   wire [5:0]  _imsics_fromMem_xbar_auto_out_1_ar_bits_id;
   wire [31:0] _imsics_fromMem_xbar_auto_out_1_ar_bits_addr;
+  wire [7:0]  _imsics_fromMem_xbar_auto_out_1_ar_bits_len;
   wire [2:0]  _imsics_fromMem_xbar_auto_out_1_ar_bits_size;
+  wire [1:0]  _imsics_fromMem_xbar_auto_out_1_ar_bits_burst;
+  wire        _imsics_fromMem_xbar_auto_out_1_ar_bits_lock;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_1_ar_bits_cache;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_1_ar_bits_prot;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_1_ar_bits_qos;
   wire        _imsics_fromMem_xbar_auto_out_1_r_ready;
   wire        _imsics_fromMem_xbar_auto_out_0_aw_valid;
   wire [5:0]  _imsics_fromMem_xbar_auto_out_0_aw_bits_id;
   wire [31:0] _imsics_fromMem_xbar_auto_out_0_aw_bits_addr;
+  wire [7:0]  _imsics_fromMem_xbar_auto_out_0_aw_bits_len;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_0_aw_bits_size;
+  wire [1:0]  _imsics_fromMem_xbar_auto_out_0_aw_bits_burst;
+  wire        _imsics_fromMem_xbar_auto_out_0_aw_bits_lock;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_0_aw_bits_cache;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_0_aw_bits_prot;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_0_aw_bits_qos;
   wire        _imsics_fromMem_xbar_auto_out_0_w_valid;
-  wire [63:0] _imsics_fromMem_xbar_auto_out_0_w_bits_data;
-  wire [7:0]  _imsics_fromMem_xbar_auto_out_0_w_bits_strb;
+  wire [31:0] _imsics_fromMem_xbar_auto_out_0_w_bits_data;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_0_w_bits_strb;
   wire        _imsics_fromMem_xbar_auto_out_0_w_bits_last;
   wire        _imsics_fromMem_xbar_auto_out_0_b_ready;
   wire        _imsics_fromMem_xbar_auto_out_0_ar_valid;
   wire [5:0]  _imsics_fromMem_xbar_auto_out_0_ar_bits_id;
   wire [31:0] _imsics_fromMem_xbar_auto_out_0_ar_bits_addr;
+  wire [7:0]  _imsics_fromMem_xbar_auto_out_0_ar_bits_len;
   wire [2:0]  _imsics_fromMem_xbar_auto_out_0_ar_bits_size;
+  wire [1:0]  _imsics_fromMem_xbar_auto_out_0_ar_bits_burst;
+  wire        _imsics_fromMem_xbar_auto_out_0_ar_bits_lock;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_0_ar_bits_cache;
+  wire [2:0]  _imsics_fromMem_xbar_auto_out_0_ar_bits_prot;
+  wire [3:0]  _imsics_fromMem_xbar_auto_out_0_ar_bits_qos;
   wire        _imsics_fromMem_xbar_auto_out_0_r_ready;
   wire        _toAIA_xbar_auto_out_1_aw_valid;
   wire [3:0]  _toAIA_xbar_auto_out_1_aw_bits_id;
   wire [28:0] _toAIA_xbar_auto_out_1_aw_bits_addr;
+  wire [7:0]  _toAIA_xbar_auto_out_1_aw_bits_len;
+  wire [2:0]  _toAIA_xbar_auto_out_1_aw_bits_size;
+  wire [1:0]  _toAIA_xbar_auto_out_1_aw_bits_burst;
+  wire        _toAIA_xbar_auto_out_1_aw_bits_lock;
+  wire [3:0]  _toAIA_xbar_auto_out_1_aw_bits_cache;
+  wire [2:0]  _toAIA_xbar_auto_out_1_aw_bits_prot;
+  wire [3:0]  _toAIA_xbar_auto_out_1_aw_bits_qos;
   wire        _toAIA_xbar_auto_out_1_w_valid;
-  wire [63:0] _toAIA_xbar_auto_out_1_w_bits_data;
-  wire [7:0]  _toAIA_xbar_auto_out_1_w_bits_strb;
+  wire [31:0] _toAIA_xbar_auto_out_1_w_bits_data;
+  wire [3:0]  _toAIA_xbar_auto_out_1_w_bits_strb;
   wire        _toAIA_xbar_auto_out_1_w_bits_last;
   wire        _toAIA_xbar_auto_out_1_b_ready;
   wire        _toAIA_xbar_auto_out_1_ar_valid;
   wire [3:0]  _toAIA_xbar_auto_out_1_ar_bits_id;
   wire [28:0] _toAIA_xbar_auto_out_1_ar_bits_addr;
+  wire [7:0]  _toAIA_xbar_auto_out_1_ar_bits_len;
   wire [2:0]  _toAIA_xbar_auto_out_1_ar_bits_size;
+  wire [1:0]  _toAIA_xbar_auto_out_1_ar_bits_burst;
+  wire        _toAIA_xbar_auto_out_1_ar_bits_lock;
+  wire [3:0]  _toAIA_xbar_auto_out_1_ar_bits_cache;
+  wire [2:0]  _toAIA_xbar_auto_out_1_ar_bits_prot;
+  wire [3:0]  _toAIA_xbar_auto_out_1_ar_bits_qos;
   wire        _toAIA_xbar_auto_out_1_r_ready;
   wire        _toAIA_xbar_auto_out_0_aw_valid;
   wire [3:0]  _toAIA_xbar_auto_out_0_aw_bits_id;
   wire [31:0] _toAIA_xbar_auto_out_0_aw_bits_addr;
+  wire [7:0]  _toAIA_xbar_auto_out_0_aw_bits_len;
+  wire [2:0]  _toAIA_xbar_auto_out_0_aw_bits_size;
+  wire [1:0]  _toAIA_xbar_auto_out_0_aw_bits_burst;
+  wire        _toAIA_xbar_auto_out_0_aw_bits_lock;
+  wire [3:0]  _toAIA_xbar_auto_out_0_aw_bits_cache;
+  wire [2:0]  _toAIA_xbar_auto_out_0_aw_bits_prot;
+  wire [3:0]  _toAIA_xbar_auto_out_0_aw_bits_qos;
   wire        _toAIA_xbar_auto_out_0_w_valid;
-  wire [63:0] _toAIA_xbar_auto_out_0_w_bits_data;
-  wire [7:0]  _toAIA_xbar_auto_out_0_w_bits_strb;
+  wire [31:0] _toAIA_xbar_auto_out_0_w_bits_data;
+  wire [3:0]  _toAIA_xbar_auto_out_0_w_bits_strb;
   wire        _toAIA_xbar_auto_out_0_w_bits_last;
   wire        _toAIA_xbar_auto_out_0_b_ready;
   wire        _toAIA_xbar_auto_out_0_ar_valid;
   wire [3:0]  _toAIA_xbar_auto_out_0_ar_bits_id;
   wire [31:0] _toAIA_xbar_auto_out_0_ar_bits_addr;
+  wire [7:0]  _toAIA_xbar_auto_out_0_ar_bits_len;
   wire [2:0]  _toAIA_xbar_auto_out_0_ar_bits_size;
+  wire [1:0]  _toAIA_xbar_auto_out_0_ar_bits_burst;
+  wire        _toAIA_xbar_auto_out_0_ar_bits_lock;
+  wire [3:0]  _toAIA_xbar_auto_out_0_ar_bits_cache;
+  wire [2:0]  _toAIA_xbar_auto_out_0_ar_bits_prot;
+  wire [3:0]  _toAIA_xbar_auto_out_0_ar_bits_qos;
   wire        _toAIA_xbar_auto_out_0_r_ready;
   AXI4Xbar toAIA_xbar (
-    .clock                   (clock),
-    .reset                   (reset),
-    .auto_in_aw_ready        (toaia_0_aw_ready),
-    .auto_in_aw_valid        (toaia_0_aw_valid),
-    .auto_in_aw_bits_id      (toaia_0_aw_bits_id),
-    .auto_in_aw_bits_addr    (toaia_0_aw_bits_addr),
-    .auto_in_w_ready         (toaia_0_w_ready),
-    .auto_in_w_valid         (toaia_0_w_valid),
-    .auto_in_w_bits_data     (toaia_0_w_bits_data),
-    .auto_in_w_bits_strb     (toaia_0_w_bits_strb),
-    .auto_in_w_bits_last     (toaia_0_w_bits_last),
-    .auto_in_b_ready         (toaia_0_b_ready),
-    .auto_in_b_valid         (toaia_0_b_valid),
-    .auto_in_b_bits_id       (toaia_0_b_bits_id),
-    .auto_in_ar_ready        (toaia_0_ar_ready),
-    .auto_in_ar_valid        (toaia_0_ar_valid),
-    .auto_in_ar_bits_id      (toaia_0_ar_bits_id),
-    .auto_in_ar_bits_addr    (toaia_0_ar_bits_addr),
-    .auto_in_ar_bits_size    (toaia_0_ar_bits_size),
-    .auto_in_r_ready         (toaia_0_r_ready),
-    .auto_in_r_valid         (toaia_0_r_valid),
-    .auto_in_r_bits_id       (toaia_0_r_bits_id),
-    .auto_in_r_bits_data     (toaia_0_r_bits_data),
-    .auto_in_r_bits_last     (toaia_0_r_bits_last),
-    .auto_out_1_aw_ready     (_aplic_auto_fromCPU_in_aw_ready),
-    .auto_out_1_aw_valid     (_toAIA_xbar_auto_out_1_aw_valid),
-    .auto_out_1_aw_bits_id   (_toAIA_xbar_auto_out_1_aw_bits_id),
-    .auto_out_1_aw_bits_addr (_toAIA_xbar_auto_out_1_aw_bits_addr),
-    .auto_out_1_w_ready      (_aplic_auto_fromCPU_in_w_ready),
-    .auto_out_1_w_valid      (_toAIA_xbar_auto_out_1_w_valid),
-    .auto_out_1_w_bits_data  (_toAIA_xbar_auto_out_1_w_bits_data),
-    .auto_out_1_w_bits_strb  (_toAIA_xbar_auto_out_1_w_bits_strb),
-    .auto_out_1_w_bits_last  (_toAIA_xbar_auto_out_1_w_bits_last),
-    .auto_out_1_b_ready      (_toAIA_xbar_auto_out_1_b_ready),
-    .auto_out_1_b_valid      (_aplic_auto_fromCPU_in_b_valid),
-    .auto_out_1_b_bits_id    (_aplic_auto_fromCPU_in_b_bits_id),
-    .auto_out_1_ar_ready     (_aplic_auto_fromCPU_in_ar_ready),
-    .auto_out_1_ar_valid     (_toAIA_xbar_auto_out_1_ar_valid),
-    .auto_out_1_ar_bits_id   (_toAIA_xbar_auto_out_1_ar_bits_id),
-    .auto_out_1_ar_bits_addr (_toAIA_xbar_auto_out_1_ar_bits_addr),
-    .auto_out_1_ar_bits_size (_toAIA_xbar_auto_out_1_ar_bits_size),
-    .auto_out_1_r_ready      (_toAIA_xbar_auto_out_1_r_ready),
-    .auto_out_1_r_valid      (_aplic_auto_fromCPU_in_r_valid),
-    .auto_out_1_r_bits_id    (_aplic_auto_fromCPU_in_r_bits_id),
-    .auto_out_1_r_bits_data  (_aplic_auto_fromCPU_in_r_bits_data),
-    .auto_out_1_r_bits_last  (_aplic_auto_fromCPU_in_r_bits_last),
-    .auto_out_0_aw_ready     (_imsics_fromMem_xbar_auto_in_0_aw_ready),
-    .auto_out_0_aw_valid     (_toAIA_xbar_auto_out_0_aw_valid),
-    .auto_out_0_aw_bits_id   (_toAIA_xbar_auto_out_0_aw_bits_id),
-    .auto_out_0_aw_bits_addr (_toAIA_xbar_auto_out_0_aw_bits_addr),
-    .auto_out_0_w_ready      (_imsics_fromMem_xbar_auto_in_0_w_ready),
-    .auto_out_0_w_valid      (_toAIA_xbar_auto_out_0_w_valid),
-    .auto_out_0_w_bits_data  (_toAIA_xbar_auto_out_0_w_bits_data),
-    .auto_out_0_w_bits_strb  (_toAIA_xbar_auto_out_0_w_bits_strb),
-    .auto_out_0_w_bits_last  (_toAIA_xbar_auto_out_0_w_bits_last),
-    .auto_out_0_b_ready      (_toAIA_xbar_auto_out_0_b_ready),
-    .auto_out_0_b_valid      (_imsics_fromMem_xbar_auto_in_0_b_valid),
-    .auto_out_0_b_bits_id    (_imsics_fromMem_xbar_auto_in_0_b_bits_id),
-    .auto_out_0_ar_ready     (_imsics_fromMem_xbar_auto_in_0_ar_ready),
-    .auto_out_0_ar_valid     (_toAIA_xbar_auto_out_0_ar_valid),
-    .auto_out_0_ar_bits_id   (_toAIA_xbar_auto_out_0_ar_bits_id),
-    .auto_out_0_ar_bits_addr (_toAIA_xbar_auto_out_0_ar_bits_addr),
-    .auto_out_0_ar_bits_size (_toAIA_xbar_auto_out_0_ar_bits_size),
-    .auto_out_0_r_ready      (_toAIA_xbar_auto_out_0_r_ready),
-    .auto_out_0_r_valid      (_imsics_fromMem_xbar_auto_in_0_r_valid),
-    .auto_out_0_r_bits_id    (_imsics_fromMem_xbar_auto_in_0_r_bits_id),
-    .auto_out_0_r_bits_last  (_imsics_fromMem_xbar_auto_in_0_r_bits_last)
+    .clock                    (clock),
+    .reset                    (reset),
+    .auto_in_aw_ready         (toaia_0_aw_ready),
+    .auto_in_aw_valid         (toaia_0_aw_valid),
+    .auto_in_aw_bits_id       (toaia_0_aw_bits_id),
+    .auto_in_aw_bits_addr     (toaia_0_aw_bits_addr),
+    .auto_in_aw_bits_len      (toaia_0_aw_bits_len),
+    .auto_in_aw_bits_size     (toaia_0_aw_bits_size),
+    .auto_in_aw_bits_burst    (toaia_0_aw_bits_burst),
+    .auto_in_aw_bits_lock     (toaia_0_aw_bits_lock),
+    .auto_in_aw_bits_cache    (toaia_0_aw_bits_cache),
+    .auto_in_aw_bits_prot     (toaia_0_aw_bits_prot),
+    .auto_in_aw_bits_qos      (toaia_0_aw_bits_qos),
+    .auto_in_w_ready          (toaia_0_w_ready),
+    .auto_in_w_valid          (toaia_0_w_valid),
+    .auto_in_w_bits_data      (toaia_0_w_bits_data),
+    .auto_in_w_bits_strb      (toaia_0_w_bits_strb),
+    .auto_in_w_bits_last      (toaia_0_w_bits_last),
+    .auto_in_b_ready          (toaia_0_b_ready),
+    .auto_in_b_valid          (toaia_0_b_valid),
+    .auto_in_b_bits_id        (toaia_0_b_bits_id),
+    .auto_in_b_bits_resp      (toaia_0_b_bits_resp),
+    .auto_in_ar_ready         (toaia_0_ar_ready),
+    .auto_in_ar_valid         (toaia_0_ar_valid),
+    .auto_in_ar_bits_id       (toaia_0_ar_bits_id),
+    .auto_in_ar_bits_addr     (toaia_0_ar_bits_addr),
+    .auto_in_ar_bits_len      (toaia_0_ar_bits_len),
+    .auto_in_ar_bits_size     (toaia_0_ar_bits_size),
+    .auto_in_ar_bits_burst    (toaia_0_ar_bits_burst),
+    .auto_in_ar_bits_lock     (toaia_0_ar_bits_lock),
+    .auto_in_ar_bits_cache    (toaia_0_ar_bits_cache),
+    .auto_in_ar_bits_prot     (toaia_0_ar_bits_prot),
+    .auto_in_ar_bits_qos      (toaia_0_ar_bits_qos),
+    .auto_in_r_ready          (toaia_0_r_ready),
+    .auto_in_r_valid          (toaia_0_r_valid),
+    .auto_in_r_bits_id        (toaia_0_r_bits_id),
+    .auto_in_r_bits_data      (toaia_0_r_bits_data),
+    .auto_in_r_bits_resp      (toaia_0_r_bits_resp),
+    .auto_in_r_bits_last      (toaia_0_r_bits_last),
+    .auto_out_1_aw_ready      (_aplic_auto_fromCPU_in_aw_ready),
+    .auto_out_1_aw_valid      (_toAIA_xbar_auto_out_1_aw_valid),
+    .auto_out_1_aw_bits_id    (_toAIA_xbar_auto_out_1_aw_bits_id),
+    .auto_out_1_aw_bits_addr  (_toAIA_xbar_auto_out_1_aw_bits_addr),
+    .auto_out_1_aw_bits_len   (_toAIA_xbar_auto_out_1_aw_bits_len),
+    .auto_out_1_aw_bits_size  (_toAIA_xbar_auto_out_1_aw_bits_size),
+    .auto_out_1_aw_bits_burst (_toAIA_xbar_auto_out_1_aw_bits_burst),
+    .auto_out_1_aw_bits_lock  (_toAIA_xbar_auto_out_1_aw_bits_lock),
+    .auto_out_1_aw_bits_cache (_toAIA_xbar_auto_out_1_aw_bits_cache),
+    .auto_out_1_aw_bits_prot  (_toAIA_xbar_auto_out_1_aw_bits_prot),
+    .auto_out_1_aw_bits_qos   (_toAIA_xbar_auto_out_1_aw_bits_qos),
+    .auto_out_1_w_ready       (_aplic_auto_fromCPU_in_w_ready),
+    .auto_out_1_w_valid       (_toAIA_xbar_auto_out_1_w_valid),
+    .auto_out_1_w_bits_data   (_toAIA_xbar_auto_out_1_w_bits_data),
+    .auto_out_1_w_bits_strb   (_toAIA_xbar_auto_out_1_w_bits_strb),
+    .auto_out_1_w_bits_last   (_toAIA_xbar_auto_out_1_w_bits_last),
+    .auto_out_1_b_ready       (_toAIA_xbar_auto_out_1_b_ready),
+    .auto_out_1_b_valid       (_aplic_auto_fromCPU_in_b_valid),
+    .auto_out_1_b_bits_id     (_aplic_auto_fromCPU_in_b_bits_id),
+    .auto_out_1_b_bits_resp   (_aplic_auto_fromCPU_in_b_bits_resp),
+    .auto_out_1_ar_ready      (_aplic_auto_fromCPU_in_ar_ready),
+    .auto_out_1_ar_valid      (_toAIA_xbar_auto_out_1_ar_valid),
+    .auto_out_1_ar_bits_id    (_toAIA_xbar_auto_out_1_ar_bits_id),
+    .auto_out_1_ar_bits_addr  (_toAIA_xbar_auto_out_1_ar_bits_addr),
+    .auto_out_1_ar_bits_len   (_toAIA_xbar_auto_out_1_ar_bits_len),
+    .auto_out_1_ar_bits_size  (_toAIA_xbar_auto_out_1_ar_bits_size),
+    .auto_out_1_ar_bits_burst (_toAIA_xbar_auto_out_1_ar_bits_burst),
+    .auto_out_1_ar_bits_lock  (_toAIA_xbar_auto_out_1_ar_bits_lock),
+    .auto_out_1_ar_bits_cache (_toAIA_xbar_auto_out_1_ar_bits_cache),
+    .auto_out_1_ar_bits_prot  (_toAIA_xbar_auto_out_1_ar_bits_prot),
+    .auto_out_1_ar_bits_qos   (_toAIA_xbar_auto_out_1_ar_bits_qos),
+    .auto_out_1_r_ready       (_toAIA_xbar_auto_out_1_r_ready),
+    .auto_out_1_r_valid       (_aplic_auto_fromCPU_in_r_valid),
+    .auto_out_1_r_bits_id     (_aplic_auto_fromCPU_in_r_bits_id),
+    .auto_out_1_r_bits_data   (_aplic_auto_fromCPU_in_r_bits_data),
+    .auto_out_1_r_bits_resp   (_aplic_auto_fromCPU_in_r_bits_resp),
+    .auto_out_1_r_bits_last   (_aplic_auto_fromCPU_in_r_bits_last),
+    .auto_out_0_aw_valid      (_toAIA_xbar_auto_out_0_aw_valid),
+    .auto_out_0_aw_bits_id    (_toAIA_xbar_auto_out_0_aw_bits_id),
+    .auto_out_0_aw_bits_addr  (_toAIA_xbar_auto_out_0_aw_bits_addr),
+    .auto_out_0_aw_bits_len   (_toAIA_xbar_auto_out_0_aw_bits_len),
+    .auto_out_0_aw_bits_size  (_toAIA_xbar_auto_out_0_aw_bits_size),
+    .auto_out_0_aw_bits_burst (_toAIA_xbar_auto_out_0_aw_bits_burst),
+    .auto_out_0_aw_bits_lock  (_toAIA_xbar_auto_out_0_aw_bits_lock),
+    .auto_out_0_aw_bits_cache (_toAIA_xbar_auto_out_0_aw_bits_cache),
+    .auto_out_0_aw_bits_prot  (_toAIA_xbar_auto_out_0_aw_bits_prot),
+    .auto_out_0_aw_bits_qos   (_toAIA_xbar_auto_out_0_aw_bits_qos),
+    .auto_out_0_w_valid       (_toAIA_xbar_auto_out_0_w_valid),
+    .auto_out_0_w_bits_data   (_toAIA_xbar_auto_out_0_w_bits_data),
+    .auto_out_0_w_bits_strb   (_toAIA_xbar_auto_out_0_w_bits_strb),
+    .auto_out_0_w_bits_last   (_toAIA_xbar_auto_out_0_w_bits_last),
+    .auto_out_0_b_ready       (_toAIA_xbar_auto_out_0_b_ready),
+    .auto_out_0_b_valid       (_imsics_fromMem_xbar_auto_in_0_b_valid),
+    .auto_out_0_b_bits_id     (_imsics_fromMem_xbar_auto_in_0_b_bits_id),
+    .auto_out_0_b_bits_resp   (_imsics_fromMem_xbar_auto_in_0_b_bits_resp),
+    .auto_out_0_ar_ready      (_imsics_fromMem_xbar_auto_in_0_ar_ready),
+    .auto_out_0_ar_valid      (_toAIA_xbar_auto_out_0_ar_valid),
+    .auto_out_0_ar_bits_id    (_toAIA_xbar_auto_out_0_ar_bits_id),
+    .auto_out_0_ar_bits_addr  (_toAIA_xbar_auto_out_0_ar_bits_addr),
+    .auto_out_0_ar_bits_len   (_toAIA_xbar_auto_out_0_ar_bits_len),
+    .auto_out_0_ar_bits_size  (_toAIA_xbar_auto_out_0_ar_bits_size),
+    .auto_out_0_ar_bits_burst (_toAIA_xbar_auto_out_0_ar_bits_burst),
+    .auto_out_0_ar_bits_lock  (_toAIA_xbar_auto_out_0_ar_bits_lock),
+    .auto_out_0_ar_bits_cache (_toAIA_xbar_auto_out_0_ar_bits_cache),
+    .auto_out_0_ar_bits_prot  (_toAIA_xbar_auto_out_0_ar_bits_prot),
+    .auto_out_0_ar_bits_qos   (_toAIA_xbar_auto_out_0_ar_bits_qos),
+    .auto_out_0_r_ready       (_toAIA_xbar_auto_out_0_r_ready),
+    .auto_out_0_r_valid       (_imsics_fromMem_xbar_auto_in_0_r_valid),
+    .auto_out_0_r_bits_id     (_imsics_fromMem_xbar_auto_in_0_r_bits_id),
+    .auto_out_0_r_bits_data   (_imsics_fromMem_xbar_auto_in_0_r_bits_data),
+    .auto_out_0_r_bits_resp   (_imsics_fromMem_xbar_auto_in_0_r_bits_resp),
+    .auto_out_0_r_bits_last   (_imsics_fromMem_xbar_auto_in_0_r_bits_last)
   );
   AXI4Xbar_1 imsics_fromMem_xbar (
-    .clock                   (clock),
-    .reset                   (reset),
-    .auto_in_1_aw_ready      (_imsics_fromMem_xbar_auto_in_1_aw_ready),
-    .auto_in_1_aw_valid      (_aplic_auto_toIMSIC_out_aw_valid),
-    .auto_in_1_aw_bits_id    (_aplic_auto_toIMSIC_out_aw_bits_id),
-    .auto_in_1_aw_bits_addr  (_aplic_auto_toIMSIC_out_aw_bits_addr),
-    .auto_in_1_w_ready       (_imsics_fromMem_xbar_auto_in_1_w_ready),
-    .auto_in_1_w_valid       (_aplic_auto_toIMSIC_out_w_valid),
-    .auto_in_1_w_bits_data   (_aplic_auto_toIMSIC_out_w_bits_data),
-    .auto_in_1_w_bits_strb   (_aplic_auto_toIMSIC_out_w_bits_strb),
-    .auto_in_1_w_bits_last   (_aplic_auto_toIMSIC_out_w_bits_last),
-    .auto_in_1_b_ready       (_aplic_auto_toIMSIC_out_b_ready),
-    .auto_in_1_b_valid       (_imsics_fromMem_xbar_auto_in_1_b_valid),
-    .auto_in_1_b_bits_id     (_imsics_fromMem_xbar_auto_in_1_b_bits_id),
-    .auto_in_1_r_valid       (_imsics_fromMem_xbar_auto_in_1_r_valid),
-    .auto_in_1_r_bits_id     (_imsics_fromMem_xbar_auto_in_1_r_bits_id),
-    .auto_in_0_aw_ready      (_imsics_fromMem_xbar_auto_in_0_aw_ready),
-    .auto_in_0_aw_valid      (_toAIA_xbar_auto_out_0_aw_valid),
-    .auto_in_0_aw_bits_id    (_toAIA_xbar_auto_out_0_aw_bits_id),
-    .auto_in_0_aw_bits_addr  (_toAIA_xbar_auto_out_0_aw_bits_addr),
-    .auto_in_0_w_ready       (_imsics_fromMem_xbar_auto_in_0_w_ready),
-    .auto_in_0_w_valid       (_toAIA_xbar_auto_out_0_w_valid),
-    .auto_in_0_w_bits_data   (_toAIA_xbar_auto_out_0_w_bits_data),
-    .auto_in_0_w_bits_strb   (_toAIA_xbar_auto_out_0_w_bits_strb),
-    .auto_in_0_w_bits_last   (_toAIA_xbar_auto_out_0_w_bits_last),
-    .auto_in_0_b_ready       (_toAIA_xbar_auto_out_0_b_ready),
-    .auto_in_0_b_valid       (_imsics_fromMem_xbar_auto_in_0_b_valid),
-    .auto_in_0_b_bits_id     (_imsics_fromMem_xbar_auto_in_0_b_bits_id),
-    .auto_in_0_ar_ready      (_imsics_fromMem_xbar_auto_in_0_ar_ready),
-    .auto_in_0_ar_valid      (_toAIA_xbar_auto_out_0_ar_valid),
-    .auto_in_0_ar_bits_id    (_toAIA_xbar_auto_out_0_ar_bits_id),
-    .auto_in_0_ar_bits_addr  (_toAIA_xbar_auto_out_0_ar_bits_addr),
-    .auto_in_0_ar_bits_size  (_toAIA_xbar_auto_out_0_ar_bits_size),
-    .auto_in_0_r_ready       (_toAIA_xbar_auto_out_0_r_ready),
-    .auto_in_0_r_valid       (_imsics_fromMem_xbar_auto_in_0_r_valid),
-    .auto_in_0_r_bits_id     (_imsics_fromMem_xbar_auto_in_0_r_bits_id),
-    .auto_in_0_r_bits_last   (_imsics_fromMem_xbar_auto_in_0_r_bits_last),
-    .auto_out_3_aw_ready     (_map_3_auto_in_aw_ready),
-    .auto_out_3_aw_valid     (_imsics_fromMem_xbar_auto_out_3_aw_valid),
-    .auto_out_3_aw_bits_id   (_imsics_fromMem_xbar_auto_out_3_aw_bits_id),
-    .auto_out_3_aw_bits_addr (_imsics_fromMem_xbar_auto_out_3_aw_bits_addr),
-    .auto_out_3_w_ready      (_map_3_auto_in_w_ready),
-    .auto_out_3_w_valid      (_imsics_fromMem_xbar_auto_out_3_w_valid),
-    .auto_out_3_w_bits_data  (_imsics_fromMem_xbar_auto_out_3_w_bits_data),
-    .auto_out_3_w_bits_strb  (_imsics_fromMem_xbar_auto_out_3_w_bits_strb),
-    .auto_out_3_w_bits_last  (_imsics_fromMem_xbar_auto_out_3_w_bits_last),
-    .auto_out_3_b_ready      (_imsics_fromMem_xbar_auto_out_3_b_ready),
-    .auto_out_3_b_valid      (_map_3_auto_in_b_valid),
-    .auto_out_3_b_bits_id    (_map_3_auto_in_b_bits_id),
-    .auto_out_3_ar_ready     (_map_3_auto_in_ar_ready),
-    .auto_out_3_ar_valid     (_imsics_fromMem_xbar_auto_out_3_ar_valid),
-    .auto_out_3_ar_bits_id   (_imsics_fromMem_xbar_auto_out_3_ar_bits_id),
-    .auto_out_3_ar_bits_addr (_imsics_fromMem_xbar_auto_out_3_ar_bits_addr),
-    .auto_out_3_ar_bits_size (_imsics_fromMem_xbar_auto_out_3_ar_bits_size),
-    .auto_out_3_r_ready      (_imsics_fromMem_xbar_auto_out_3_r_ready),
-    .auto_out_3_r_valid      (_map_3_auto_in_r_valid),
-    .auto_out_3_r_bits_id    (_map_3_auto_in_r_bits_id),
-    .auto_out_3_r_bits_last  (_map_3_auto_in_r_bits_last),
-    .auto_out_2_aw_ready     (_map_2_auto_in_aw_ready),
-    .auto_out_2_aw_valid     (_imsics_fromMem_xbar_auto_out_2_aw_valid),
-    .auto_out_2_aw_bits_id   (_imsics_fromMem_xbar_auto_out_2_aw_bits_id),
-    .auto_out_2_aw_bits_addr (_imsics_fromMem_xbar_auto_out_2_aw_bits_addr),
-    .auto_out_2_w_ready      (_map_2_auto_in_w_ready),
-    .auto_out_2_w_valid      (_imsics_fromMem_xbar_auto_out_2_w_valid),
-    .auto_out_2_w_bits_data  (_imsics_fromMem_xbar_auto_out_2_w_bits_data),
-    .auto_out_2_w_bits_strb  (_imsics_fromMem_xbar_auto_out_2_w_bits_strb),
-    .auto_out_2_w_bits_last  (_imsics_fromMem_xbar_auto_out_2_w_bits_last),
-    .auto_out_2_b_ready      (_imsics_fromMem_xbar_auto_out_2_b_ready),
-    .auto_out_2_b_valid      (_map_2_auto_in_b_valid),
-    .auto_out_2_b_bits_id    (_map_2_auto_in_b_bits_id),
-    .auto_out_2_ar_ready     (_map_2_auto_in_ar_ready),
-    .auto_out_2_ar_valid     (_imsics_fromMem_xbar_auto_out_2_ar_valid),
-    .auto_out_2_ar_bits_id   (_imsics_fromMem_xbar_auto_out_2_ar_bits_id),
-    .auto_out_2_ar_bits_addr (_imsics_fromMem_xbar_auto_out_2_ar_bits_addr),
-    .auto_out_2_ar_bits_size (_imsics_fromMem_xbar_auto_out_2_ar_bits_size),
-    .auto_out_2_r_ready      (_imsics_fromMem_xbar_auto_out_2_r_ready),
-    .auto_out_2_r_valid      (_map_2_auto_in_r_valid),
-    .auto_out_2_r_bits_id    (_map_2_auto_in_r_bits_id),
-    .auto_out_2_r_bits_last  (_map_2_auto_in_r_bits_last),
-    .auto_out_1_aw_ready     (_map_1_auto_in_aw_ready),
-    .auto_out_1_aw_valid     (_imsics_fromMem_xbar_auto_out_1_aw_valid),
-    .auto_out_1_aw_bits_id   (_imsics_fromMem_xbar_auto_out_1_aw_bits_id),
-    .auto_out_1_aw_bits_addr (_imsics_fromMem_xbar_auto_out_1_aw_bits_addr),
-    .auto_out_1_w_ready      (_map_1_auto_in_w_ready),
-    .auto_out_1_w_valid      (_imsics_fromMem_xbar_auto_out_1_w_valid),
-    .auto_out_1_w_bits_data  (_imsics_fromMem_xbar_auto_out_1_w_bits_data),
-    .auto_out_1_w_bits_strb  (_imsics_fromMem_xbar_auto_out_1_w_bits_strb),
-    .auto_out_1_w_bits_last  (_imsics_fromMem_xbar_auto_out_1_w_bits_last),
-    .auto_out_1_b_ready      (_imsics_fromMem_xbar_auto_out_1_b_ready),
-    .auto_out_1_b_valid      (_map_1_auto_in_b_valid),
-    .auto_out_1_b_bits_id    (_map_1_auto_in_b_bits_id),
-    .auto_out_1_ar_ready     (_map_1_auto_in_ar_ready),
-    .auto_out_1_ar_valid     (_imsics_fromMem_xbar_auto_out_1_ar_valid),
-    .auto_out_1_ar_bits_id   (_imsics_fromMem_xbar_auto_out_1_ar_bits_id),
-    .auto_out_1_ar_bits_addr (_imsics_fromMem_xbar_auto_out_1_ar_bits_addr),
-    .auto_out_1_ar_bits_size (_imsics_fromMem_xbar_auto_out_1_ar_bits_size),
-    .auto_out_1_r_ready      (_imsics_fromMem_xbar_auto_out_1_r_ready),
-    .auto_out_1_r_valid      (_map_1_auto_in_r_valid),
-    .auto_out_1_r_bits_id    (_map_1_auto_in_r_bits_id),
-    .auto_out_1_r_bits_last  (_map_1_auto_in_r_bits_last),
-    .auto_out_0_aw_ready     (_map_auto_in_aw_ready),
-    .auto_out_0_aw_valid     (_imsics_fromMem_xbar_auto_out_0_aw_valid),
-    .auto_out_0_aw_bits_id   (_imsics_fromMem_xbar_auto_out_0_aw_bits_id),
-    .auto_out_0_aw_bits_addr (_imsics_fromMem_xbar_auto_out_0_aw_bits_addr),
-    .auto_out_0_w_ready      (_map_auto_in_w_ready),
-    .auto_out_0_w_valid      (_imsics_fromMem_xbar_auto_out_0_w_valid),
-    .auto_out_0_w_bits_data  (_imsics_fromMem_xbar_auto_out_0_w_bits_data),
-    .auto_out_0_w_bits_strb  (_imsics_fromMem_xbar_auto_out_0_w_bits_strb),
-    .auto_out_0_w_bits_last  (_imsics_fromMem_xbar_auto_out_0_w_bits_last),
-    .auto_out_0_b_ready      (_imsics_fromMem_xbar_auto_out_0_b_ready),
-    .auto_out_0_b_valid      (_map_auto_in_b_valid),
-    .auto_out_0_b_bits_id    (_map_auto_in_b_bits_id),
-    .auto_out_0_ar_ready     (_map_auto_in_ar_ready),
-    .auto_out_0_ar_valid     (_imsics_fromMem_xbar_auto_out_0_ar_valid),
-    .auto_out_0_ar_bits_id   (_imsics_fromMem_xbar_auto_out_0_ar_bits_id),
-    .auto_out_0_ar_bits_addr (_imsics_fromMem_xbar_auto_out_0_ar_bits_addr),
-    .auto_out_0_ar_bits_size (_imsics_fromMem_xbar_auto_out_0_ar_bits_size),
-    .auto_out_0_r_ready      (_imsics_fromMem_xbar_auto_out_0_r_ready),
-    .auto_out_0_r_valid      (_map_auto_in_r_valid),
-    .auto_out_0_r_bits_id    (_map_auto_in_r_bits_id),
-    .auto_out_0_r_bits_last  (_map_auto_in_r_bits_last)
+    .clock                    (clock),
+    .reset                    (reset),
+    .auto_in_1_aw_valid       (_aplic_auto_toIMSIC_out_aw_valid),
+    .auto_in_1_aw_bits_id     (_aplic_auto_toIMSIC_out_aw_bits_id),
+    .auto_in_1_aw_bits_addr   (_aplic_auto_toIMSIC_out_aw_bits_addr),
+    .auto_in_1_aw_bits_size   (_aplic_auto_toIMSIC_out_aw_bits_size),
+    .auto_in_1_w_valid        (_aplic_auto_toIMSIC_out_w_valid),
+    .auto_in_1_w_bits_data    (_aplic_auto_toIMSIC_out_w_bits_data),
+    .auto_in_1_w_bits_strb    (_aplic_auto_toIMSIC_out_w_bits_strb),
+    .auto_in_1_w_bits_last    (_aplic_auto_toIMSIC_out_w_bits_last),
+    .auto_in_1_b_ready        (_aplic_auto_toIMSIC_out_b_ready),
+    .auto_in_1_b_valid        (_imsics_fromMem_xbar_auto_in_1_b_valid),
+    .auto_in_1_b_bits_id      (_imsics_fromMem_xbar_auto_in_1_b_bits_id),
+    .auto_in_1_r_valid        (_imsics_fromMem_xbar_auto_in_1_r_valid),
+    .auto_in_1_r_bits_id      (_imsics_fromMem_xbar_auto_in_1_r_bits_id),
+    .auto_in_0_aw_valid       (_toAIA_xbar_auto_out_0_aw_valid),
+    .auto_in_0_aw_bits_id     (_toAIA_xbar_auto_out_0_aw_bits_id),
+    .auto_in_0_aw_bits_addr   (_toAIA_xbar_auto_out_0_aw_bits_addr),
+    .auto_in_0_aw_bits_len    (_toAIA_xbar_auto_out_0_aw_bits_len),
+    .auto_in_0_aw_bits_size   (_toAIA_xbar_auto_out_0_aw_bits_size),
+    .auto_in_0_aw_bits_burst  (_toAIA_xbar_auto_out_0_aw_bits_burst),
+    .auto_in_0_aw_bits_lock   (_toAIA_xbar_auto_out_0_aw_bits_lock),
+    .auto_in_0_aw_bits_cache  (_toAIA_xbar_auto_out_0_aw_bits_cache),
+    .auto_in_0_aw_bits_prot   (_toAIA_xbar_auto_out_0_aw_bits_prot),
+    .auto_in_0_aw_bits_qos    (_toAIA_xbar_auto_out_0_aw_bits_qos),
+    .auto_in_0_w_valid        (_toAIA_xbar_auto_out_0_w_valid),
+    .auto_in_0_w_bits_data    (_toAIA_xbar_auto_out_0_w_bits_data),
+    .auto_in_0_w_bits_strb    (_toAIA_xbar_auto_out_0_w_bits_strb),
+    .auto_in_0_w_bits_last    (_toAIA_xbar_auto_out_0_w_bits_last),
+    .auto_in_0_b_ready        (_toAIA_xbar_auto_out_0_b_ready),
+    .auto_in_0_b_valid        (_imsics_fromMem_xbar_auto_in_0_b_valid),
+    .auto_in_0_b_bits_id      (_imsics_fromMem_xbar_auto_in_0_b_bits_id),
+    .auto_in_0_b_bits_resp    (_imsics_fromMem_xbar_auto_in_0_b_bits_resp),
+    .auto_in_0_ar_ready       (_imsics_fromMem_xbar_auto_in_0_ar_ready),
+    .auto_in_0_ar_valid       (_toAIA_xbar_auto_out_0_ar_valid),
+    .auto_in_0_ar_bits_id     (_toAIA_xbar_auto_out_0_ar_bits_id),
+    .auto_in_0_ar_bits_addr   (_toAIA_xbar_auto_out_0_ar_bits_addr),
+    .auto_in_0_ar_bits_len    (_toAIA_xbar_auto_out_0_ar_bits_len),
+    .auto_in_0_ar_bits_size   (_toAIA_xbar_auto_out_0_ar_bits_size),
+    .auto_in_0_ar_bits_burst  (_toAIA_xbar_auto_out_0_ar_bits_burst),
+    .auto_in_0_ar_bits_lock   (_toAIA_xbar_auto_out_0_ar_bits_lock),
+    .auto_in_0_ar_bits_cache  (_toAIA_xbar_auto_out_0_ar_bits_cache),
+    .auto_in_0_ar_bits_prot   (_toAIA_xbar_auto_out_0_ar_bits_prot),
+    .auto_in_0_ar_bits_qos    (_toAIA_xbar_auto_out_0_ar_bits_qos),
+    .auto_in_0_r_ready        (_toAIA_xbar_auto_out_0_r_ready),
+    .auto_in_0_r_valid        (_imsics_fromMem_xbar_auto_in_0_r_valid),
+    .auto_in_0_r_bits_id      (_imsics_fromMem_xbar_auto_in_0_r_bits_id),
+    .auto_in_0_r_bits_data    (_imsics_fromMem_xbar_auto_in_0_r_bits_data),
+    .auto_in_0_r_bits_resp    (_imsics_fromMem_xbar_auto_in_0_r_bits_resp),
+    .auto_in_0_r_bits_last    (_imsics_fromMem_xbar_auto_in_0_r_bits_last),
+    .auto_out_3_aw_valid      (_imsics_fromMem_xbar_auto_out_3_aw_valid),
+    .auto_out_3_aw_bits_id    (_imsics_fromMem_xbar_auto_out_3_aw_bits_id),
+    .auto_out_3_aw_bits_addr  (_imsics_fromMem_xbar_auto_out_3_aw_bits_addr),
+    .auto_out_3_aw_bits_len   (_imsics_fromMem_xbar_auto_out_3_aw_bits_len),
+    .auto_out_3_aw_bits_size  (_imsics_fromMem_xbar_auto_out_3_aw_bits_size),
+    .auto_out_3_aw_bits_burst (_imsics_fromMem_xbar_auto_out_3_aw_bits_burst),
+    .auto_out_3_aw_bits_lock  (_imsics_fromMem_xbar_auto_out_3_aw_bits_lock),
+    .auto_out_3_aw_bits_cache (_imsics_fromMem_xbar_auto_out_3_aw_bits_cache),
+    .auto_out_3_aw_bits_prot  (_imsics_fromMem_xbar_auto_out_3_aw_bits_prot),
+    .auto_out_3_aw_bits_qos   (_imsics_fromMem_xbar_auto_out_3_aw_bits_qos),
+    .auto_out_3_w_valid       (_imsics_fromMem_xbar_auto_out_3_w_valid),
+    .auto_out_3_w_bits_data   (_imsics_fromMem_xbar_auto_out_3_w_bits_data),
+    .auto_out_3_w_bits_strb   (_imsics_fromMem_xbar_auto_out_3_w_bits_strb),
+    .auto_out_3_w_bits_last   (_imsics_fromMem_xbar_auto_out_3_w_bits_last),
+    .auto_out_3_b_ready       (_imsics_fromMem_xbar_auto_out_3_b_ready),
+    .auto_out_3_b_valid       (_axi4map_3_auto_in_b_valid),
+    .auto_out_3_b_bits_id     (_axi4map_3_auto_in_b_bits_id),
+    .auto_out_3_b_bits_resp   (_axi4map_3_auto_in_b_bits_resp),
+    .auto_out_3_ar_ready      (_axi4map_3_auto_in_ar_ready),
+    .auto_out_3_ar_valid      (_imsics_fromMem_xbar_auto_out_3_ar_valid),
+    .auto_out_3_ar_bits_id    (_imsics_fromMem_xbar_auto_out_3_ar_bits_id),
+    .auto_out_3_ar_bits_addr  (_imsics_fromMem_xbar_auto_out_3_ar_bits_addr),
+    .auto_out_3_ar_bits_len   (_imsics_fromMem_xbar_auto_out_3_ar_bits_len),
+    .auto_out_3_ar_bits_size  (_imsics_fromMem_xbar_auto_out_3_ar_bits_size),
+    .auto_out_3_ar_bits_burst (_imsics_fromMem_xbar_auto_out_3_ar_bits_burst),
+    .auto_out_3_ar_bits_lock  (_imsics_fromMem_xbar_auto_out_3_ar_bits_lock),
+    .auto_out_3_ar_bits_cache (_imsics_fromMem_xbar_auto_out_3_ar_bits_cache),
+    .auto_out_3_ar_bits_prot  (_imsics_fromMem_xbar_auto_out_3_ar_bits_prot),
+    .auto_out_3_ar_bits_qos   (_imsics_fromMem_xbar_auto_out_3_ar_bits_qos),
+    .auto_out_3_r_ready       (_imsics_fromMem_xbar_auto_out_3_r_ready),
+    .auto_out_3_r_valid       (_axi4map_3_auto_in_r_valid),
+    .auto_out_3_r_bits_id     (_axi4map_3_auto_in_r_bits_id),
+    .auto_out_3_r_bits_data   (_axi4map_3_auto_in_r_bits_data),
+    .auto_out_3_r_bits_resp   (_axi4map_3_auto_in_r_bits_resp),
+    .auto_out_3_r_bits_last   (_axi4map_3_auto_in_r_bits_last),
+    .auto_out_2_aw_valid      (_imsics_fromMem_xbar_auto_out_2_aw_valid),
+    .auto_out_2_aw_bits_id    (_imsics_fromMem_xbar_auto_out_2_aw_bits_id),
+    .auto_out_2_aw_bits_addr  (_imsics_fromMem_xbar_auto_out_2_aw_bits_addr),
+    .auto_out_2_aw_bits_len   (_imsics_fromMem_xbar_auto_out_2_aw_bits_len),
+    .auto_out_2_aw_bits_size  (_imsics_fromMem_xbar_auto_out_2_aw_bits_size),
+    .auto_out_2_aw_bits_burst (_imsics_fromMem_xbar_auto_out_2_aw_bits_burst),
+    .auto_out_2_aw_bits_lock  (_imsics_fromMem_xbar_auto_out_2_aw_bits_lock),
+    .auto_out_2_aw_bits_cache (_imsics_fromMem_xbar_auto_out_2_aw_bits_cache),
+    .auto_out_2_aw_bits_prot  (_imsics_fromMem_xbar_auto_out_2_aw_bits_prot),
+    .auto_out_2_aw_bits_qos   (_imsics_fromMem_xbar_auto_out_2_aw_bits_qos),
+    .auto_out_2_w_valid       (_imsics_fromMem_xbar_auto_out_2_w_valid),
+    .auto_out_2_w_bits_data   (_imsics_fromMem_xbar_auto_out_2_w_bits_data),
+    .auto_out_2_w_bits_strb   (_imsics_fromMem_xbar_auto_out_2_w_bits_strb),
+    .auto_out_2_w_bits_last   (_imsics_fromMem_xbar_auto_out_2_w_bits_last),
+    .auto_out_2_b_ready       (_imsics_fromMem_xbar_auto_out_2_b_ready),
+    .auto_out_2_b_valid       (_axi4map_2_auto_in_b_valid),
+    .auto_out_2_b_bits_id     (_axi4map_2_auto_in_b_bits_id),
+    .auto_out_2_b_bits_resp   (_axi4map_2_auto_in_b_bits_resp),
+    .auto_out_2_ar_ready      (_axi4map_2_auto_in_ar_ready),
+    .auto_out_2_ar_valid      (_imsics_fromMem_xbar_auto_out_2_ar_valid),
+    .auto_out_2_ar_bits_id    (_imsics_fromMem_xbar_auto_out_2_ar_bits_id),
+    .auto_out_2_ar_bits_addr  (_imsics_fromMem_xbar_auto_out_2_ar_bits_addr),
+    .auto_out_2_ar_bits_len   (_imsics_fromMem_xbar_auto_out_2_ar_bits_len),
+    .auto_out_2_ar_bits_size  (_imsics_fromMem_xbar_auto_out_2_ar_bits_size),
+    .auto_out_2_ar_bits_burst (_imsics_fromMem_xbar_auto_out_2_ar_bits_burst),
+    .auto_out_2_ar_bits_lock  (_imsics_fromMem_xbar_auto_out_2_ar_bits_lock),
+    .auto_out_2_ar_bits_cache (_imsics_fromMem_xbar_auto_out_2_ar_bits_cache),
+    .auto_out_2_ar_bits_prot  (_imsics_fromMem_xbar_auto_out_2_ar_bits_prot),
+    .auto_out_2_ar_bits_qos   (_imsics_fromMem_xbar_auto_out_2_ar_bits_qos),
+    .auto_out_2_r_ready       (_imsics_fromMem_xbar_auto_out_2_r_ready),
+    .auto_out_2_r_valid       (_axi4map_2_auto_in_r_valid),
+    .auto_out_2_r_bits_id     (_axi4map_2_auto_in_r_bits_id),
+    .auto_out_2_r_bits_data   (_axi4map_2_auto_in_r_bits_data),
+    .auto_out_2_r_bits_resp   (_axi4map_2_auto_in_r_bits_resp),
+    .auto_out_2_r_bits_last   (_axi4map_2_auto_in_r_bits_last),
+    .auto_out_1_aw_valid      (_imsics_fromMem_xbar_auto_out_1_aw_valid),
+    .auto_out_1_aw_bits_id    (_imsics_fromMem_xbar_auto_out_1_aw_bits_id),
+    .auto_out_1_aw_bits_addr  (_imsics_fromMem_xbar_auto_out_1_aw_bits_addr),
+    .auto_out_1_aw_bits_len   (_imsics_fromMem_xbar_auto_out_1_aw_bits_len),
+    .auto_out_1_aw_bits_size  (_imsics_fromMem_xbar_auto_out_1_aw_bits_size),
+    .auto_out_1_aw_bits_burst (_imsics_fromMem_xbar_auto_out_1_aw_bits_burst),
+    .auto_out_1_aw_bits_lock  (_imsics_fromMem_xbar_auto_out_1_aw_bits_lock),
+    .auto_out_1_aw_bits_cache (_imsics_fromMem_xbar_auto_out_1_aw_bits_cache),
+    .auto_out_1_aw_bits_prot  (_imsics_fromMem_xbar_auto_out_1_aw_bits_prot),
+    .auto_out_1_aw_bits_qos   (_imsics_fromMem_xbar_auto_out_1_aw_bits_qos),
+    .auto_out_1_w_valid       (_imsics_fromMem_xbar_auto_out_1_w_valid),
+    .auto_out_1_w_bits_data   (_imsics_fromMem_xbar_auto_out_1_w_bits_data),
+    .auto_out_1_w_bits_strb   (_imsics_fromMem_xbar_auto_out_1_w_bits_strb),
+    .auto_out_1_w_bits_last   (_imsics_fromMem_xbar_auto_out_1_w_bits_last),
+    .auto_out_1_b_ready       (_imsics_fromMem_xbar_auto_out_1_b_ready),
+    .auto_out_1_b_valid       (_axi4map_1_auto_in_b_valid),
+    .auto_out_1_b_bits_id     (_axi4map_1_auto_in_b_bits_id),
+    .auto_out_1_b_bits_resp   (_axi4map_1_auto_in_b_bits_resp),
+    .auto_out_1_ar_ready      (_axi4map_1_auto_in_ar_ready),
+    .auto_out_1_ar_valid      (_imsics_fromMem_xbar_auto_out_1_ar_valid),
+    .auto_out_1_ar_bits_id    (_imsics_fromMem_xbar_auto_out_1_ar_bits_id),
+    .auto_out_1_ar_bits_addr  (_imsics_fromMem_xbar_auto_out_1_ar_bits_addr),
+    .auto_out_1_ar_bits_len   (_imsics_fromMem_xbar_auto_out_1_ar_bits_len),
+    .auto_out_1_ar_bits_size  (_imsics_fromMem_xbar_auto_out_1_ar_bits_size),
+    .auto_out_1_ar_bits_burst (_imsics_fromMem_xbar_auto_out_1_ar_bits_burst),
+    .auto_out_1_ar_bits_lock  (_imsics_fromMem_xbar_auto_out_1_ar_bits_lock),
+    .auto_out_1_ar_bits_cache (_imsics_fromMem_xbar_auto_out_1_ar_bits_cache),
+    .auto_out_1_ar_bits_prot  (_imsics_fromMem_xbar_auto_out_1_ar_bits_prot),
+    .auto_out_1_ar_bits_qos   (_imsics_fromMem_xbar_auto_out_1_ar_bits_qos),
+    .auto_out_1_r_ready       (_imsics_fromMem_xbar_auto_out_1_r_ready),
+    .auto_out_1_r_valid       (_axi4map_1_auto_in_r_valid),
+    .auto_out_1_r_bits_id     (_axi4map_1_auto_in_r_bits_id),
+    .auto_out_1_r_bits_data   (_axi4map_1_auto_in_r_bits_data),
+    .auto_out_1_r_bits_resp   (_axi4map_1_auto_in_r_bits_resp),
+    .auto_out_1_r_bits_last   (_axi4map_1_auto_in_r_bits_last),
+    .auto_out_0_aw_valid      (_imsics_fromMem_xbar_auto_out_0_aw_valid),
+    .auto_out_0_aw_bits_id    (_imsics_fromMem_xbar_auto_out_0_aw_bits_id),
+    .auto_out_0_aw_bits_addr  (_imsics_fromMem_xbar_auto_out_0_aw_bits_addr),
+    .auto_out_0_aw_bits_len   (_imsics_fromMem_xbar_auto_out_0_aw_bits_len),
+    .auto_out_0_aw_bits_size  (_imsics_fromMem_xbar_auto_out_0_aw_bits_size),
+    .auto_out_0_aw_bits_burst (_imsics_fromMem_xbar_auto_out_0_aw_bits_burst),
+    .auto_out_0_aw_bits_lock  (_imsics_fromMem_xbar_auto_out_0_aw_bits_lock),
+    .auto_out_0_aw_bits_cache (_imsics_fromMem_xbar_auto_out_0_aw_bits_cache),
+    .auto_out_0_aw_bits_prot  (_imsics_fromMem_xbar_auto_out_0_aw_bits_prot),
+    .auto_out_0_aw_bits_qos   (_imsics_fromMem_xbar_auto_out_0_aw_bits_qos),
+    .auto_out_0_w_valid       (_imsics_fromMem_xbar_auto_out_0_w_valid),
+    .auto_out_0_w_bits_data   (_imsics_fromMem_xbar_auto_out_0_w_bits_data),
+    .auto_out_0_w_bits_strb   (_imsics_fromMem_xbar_auto_out_0_w_bits_strb),
+    .auto_out_0_w_bits_last   (_imsics_fromMem_xbar_auto_out_0_w_bits_last),
+    .auto_out_0_b_ready       (_imsics_fromMem_xbar_auto_out_0_b_ready),
+    .auto_out_0_b_valid       (_axi4map_auto_in_b_valid),
+    .auto_out_0_b_bits_id     (_axi4map_auto_in_b_bits_id),
+    .auto_out_0_b_bits_resp   (_axi4map_auto_in_b_bits_resp),
+    .auto_out_0_ar_ready      (_axi4map_auto_in_ar_ready),
+    .auto_out_0_ar_valid      (_imsics_fromMem_xbar_auto_out_0_ar_valid),
+    .auto_out_0_ar_bits_id    (_imsics_fromMem_xbar_auto_out_0_ar_bits_id),
+    .auto_out_0_ar_bits_addr  (_imsics_fromMem_xbar_auto_out_0_ar_bits_addr),
+    .auto_out_0_ar_bits_len   (_imsics_fromMem_xbar_auto_out_0_ar_bits_len),
+    .auto_out_0_ar_bits_size  (_imsics_fromMem_xbar_auto_out_0_ar_bits_size),
+    .auto_out_0_ar_bits_burst (_imsics_fromMem_xbar_auto_out_0_ar_bits_burst),
+    .auto_out_0_ar_bits_lock  (_imsics_fromMem_xbar_auto_out_0_ar_bits_lock),
+    .auto_out_0_ar_bits_cache (_imsics_fromMem_xbar_auto_out_0_ar_bits_cache),
+    .auto_out_0_ar_bits_prot  (_imsics_fromMem_xbar_auto_out_0_ar_bits_prot),
+    .auto_out_0_ar_bits_qos   (_imsics_fromMem_xbar_auto_out_0_ar_bits_qos),
+    .auto_out_0_r_ready       (_imsics_fromMem_xbar_auto_out_0_r_ready),
+    .auto_out_0_r_valid       (_axi4map_auto_in_r_valid),
+    .auto_out_0_r_bits_id     (_axi4map_auto_in_r_bits_id),
+    .auto_out_0_r_bits_data   (_axi4map_auto_in_r_bits_data),
+    .auto_out_0_r_bits_resp   (_axi4map_auto_in_r_bits_resp),
+    .auto_out_0_r_bits_last   (_axi4map_auto_in_r_bits_last)
   );
-  AXI4Map map (
-    .auto_in_aw_ready      (_map_auto_in_aw_ready),
-    .auto_in_aw_valid      (_imsics_fromMem_xbar_auto_out_0_aw_valid),
-    .auto_in_aw_bits_id    (_imsics_fromMem_xbar_auto_out_0_aw_bits_id),
-    .auto_in_aw_bits_addr  (_imsics_fromMem_xbar_auto_out_0_aw_bits_addr),
-    .auto_in_w_ready       (_map_auto_in_w_ready),
-    .auto_in_w_valid       (_imsics_fromMem_xbar_auto_out_0_w_valid),
-    .auto_in_w_bits_data   (_imsics_fromMem_xbar_auto_out_0_w_bits_data),
-    .auto_in_w_bits_strb   (_imsics_fromMem_xbar_auto_out_0_w_bits_strb),
-    .auto_in_w_bits_last   (_imsics_fromMem_xbar_auto_out_0_w_bits_last),
-    .auto_in_b_ready       (_imsics_fromMem_xbar_auto_out_0_b_ready),
-    .auto_in_b_valid       (_map_auto_in_b_valid),
-    .auto_in_b_bits_id     (_map_auto_in_b_bits_id),
-    .auto_in_ar_ready      (_map_auto_in_ar_ready),
-    .auto_in_ar_valid      (_imsics_fromMem_xbar_auto_out_0_ar_valid),
-    .auto_in_ar_bits_id    (_imsics_fromMem_xbar_auto_out_0_ar_bits_id),
-    .auto_in_ar_bits_addr  (_imsics_fromMem_xbar_auto_out_0_ar_bits_addr),
-    .auto_in_ar_bits_size  (_imsics_fromMem_xbar_auto_out_0_ar_bits_size),
-    .auto_in_r_ready       (_imsics_fromMem_xbar_auto_out_0_r_ready),
-    .auto_in_r_valid       (_map_auto_in_r_valid),
-    .auto_in_r_bits_id     (_map_auto_in_r_bits_id),
-    .auto_in_r_bits_last   (_map_auto_in_r_bits_last),
-    .auto_out_aw_ready     (_imsic_auto_axireg_axireg_axi4xbar_in_aw_ready),
-    .auto_out_aw_valid     (_map_auto_out_aw_valid),
-    .auto_out_aw_bits_id   (_map_auto_out_aw_bits_id),
-    .auto_out_aw_bits_addr (_map_auto_out_aw_bits_addr),
-    .auto_out_w_ready      (_imsic_auto_axireg_axireg_axi4xbar_in_w_ready),
-    .auto_out_w_valid      (_map_auto_out_w_valid),
-    .auto_out_w_bits_data  (_map_auto_out_w_bits_data),
-    .auto_out_w_bits_strb  (_map_auto_out_w_bits_strb),
-    .auto_out_w_bits_last  (_map_auto_out_w_bits_last),
-    .auto_out_b_ready      (_map_auto_out_b_ready),
-    .auto_out_b_valid      (_imsic_auto_axireg_axireg_axi4xbar_in_b_valid),
-    .auto_out_b_bits_id    (_imsic_auto_axireg_axireg_axi4xbar_in_b_bits_id),
-    .auto_out_ar_ready     (_imsic_auto_axireg_axireg_axi4xbar_in_ar_ready),
-    .auto_out_ar_valid     (_map_auto_out_ar_valid),
-    .auto_out_ar_bits_id   (_map_auto_out_ar_bits_id),
-    .auto_out_ar_bits_addr (_map_auto_out_ar_bits_addr),
-    .auto_out_ar_bits_size (_map_auto_out_ar_bits_size),
-    .auto_out_r_ready      (_map_auto_out_r_ready),
-    .auto_out_r_valid      (_imsic_auto_axireg_axireg_axi4xbar_in_r_valid),
-    .auto_out_r_bits_id    (_imsic_auto_axireg_axireg_axi4xbar_in_r_bits_id),
-    .auto_out_r_bits_last  (_imsic_auto_axireg_axireg_axi4xbar_in_r_bits_last)
+  AXI4Map axi4map (
+    .auto_in_aw_valid       (_imsics_fromMem_xbar_auto_out_0_aw_valid),
+    .auto_in_aw_bits_id     (_imsics_fromMem_xbar_auto_out_0_aw_bits_id),
+    .auto_in_aw_bits_addr   (_imsics_fromMem_xbar_auto_out_0_aw_bits_addr),
+    .auto_in_aw_bits_len    (_imsics_fromMem_xbar_auto_out_0_aw_bits_len),
+    .auto_in_aw_bits_size   (_imsics_fromMem_xbar_auto_out_0_aw_bits_size),
+    .auto_in_aw_bits_burst  (_imsics_fromMem_xbar_auto_out_0_aw_bits_burst),
+    .auto_in_aw_bits_lock   (_imsics_fromMem_xbar_auto_out_0_aw_bits_lock),
+    .auto_in_aw_bits_cache  (_imsics_fromMem_xbar_auto_out_0_aw_bits_cache),
+    .auto_in_aw_bits_prot   (_imsics_fromMem_xbar_auto_out_0_aw_bits_prot),
+    .auto_in_aw_bits_qos    (_imsics_fromMem_xbar_auto_out_0_aw_bits_qos),
+    .auto_in_w_valid        (_imsics_fromMem_xbar_auto_out_0_w_valid),
+    .auto_in_w_bits_data    (_imsics_fromMem_xbar_auto_out_0_w_bits_data),
+    .auto_in_w_bits_strb    (_imsics_fromMem_xbar_auto_out_0_w_bits_strb),
+    .auto_in_w_bits_last    (_imsics_fromMem_xbar_auto_out_0_w_bits_last),
+    .auto_in_b_ready        (_imsics_fromMem_xbar_auto_out_0_b_ready),
+    .auto_in_b_valid        (_axi4map_auto_in_b_valid),
+    .auto_in_b_bits_id      (_axi4map_auto_in_b_bits_id),
+    .auto_in_b_bits_resp    (_axi4map_auto_in_b_bits_resp),
+    .auto_in_ar_ready       (_axi4map_auto_in_ar_ready),
+    .auto_in_ar_valid       (_imsics_fromMem_xbar_auto_out_0_ar_valid),
+    .auto_in_ar_bits_id     (_imsics_fromMem_xbar_auto_out_0_ar_bits_id),
+    .auto_in_ar_bits_addr   (_imsics_fromMem_xbar_auto_out_0_ar_bits_addr),
+    .auto_in_ar_bits_len    (_imsics_fromMem_xbar_auto_out_0_ar_bits_len),
+    .auto_in_ar_bits_size   (_imsics_fromMem_xbar_auto_out_0_ar_bits_size),
+    .auto_in_ar_bits_burst  (_imsics_fromMem_xbar_auto_out_0_ar_bits_burst),
+    .auto_in_ar_bits_lock   (_imsics_fromMem_xbar_auto_out_0_ar_bits_lock),
+    .auto_in_ar_bits_cache  (_imsics_fromMem_xbar_auto_out_0_ar_bits_cache),
+    .auto_in_ar_bits_prot   (_imsics_fromMem_xbar_auto_out_0_ar_bits_prot),
+    .auto_in_ar_bits_qos    (_imsics_fromMem_xbar_auto_out_0_ar_bits_qos),
+    .auto_in_r_ready        (_imsics_fromMem_xbar_auto_out_0_r_ready),
+    .auto_in_r_valid        (_axi4map_auto_in_r_valid),
+    .auto_in_r_bits_id      (_axi4map_auto_in_r_bits_id),
+    .auto_in_r_bits_data    (_axi4map_auto_in_r_bits_data),
+    .auto_in_r_bits_resp    (_axi4map_auto_in_r_bits_resp),
+    .auto_in_r_bits_last    (_axi4map_auto_in_r_bits_last),
+    .auto_out_aw_valid      (_axi4map_auto_out_aw_valid),
+    .auto_out_aw_bits_id    (_axi4map_auto_out_aw_bits_id),
+    .auto_out_aw_bits_addr  (_axi4map_auto_out_aw_bits_addr),
+    .auto_out_aw_bits_len   (_axi4map_auto_out_aw_bits_len),
+    .auto_out_aw_bits_size  (_axi4map_auto_out_aw_bits_size),
+    .auto_out_aw_bits_burst (_axi4map_auto_out_aw_bits_burst),
+    .auto_out_aw_bits_lock  (_axi4map_auto_out_aw_bits_lock),
+    .auto_out_aw_bits_cache (_axi4map_auto_out_aw_bits_cache),
+    .auto_out_aw_bits_prot  (_axi4map_auto_out_aw_bits_prot),
+    .auto_out_aw_bits_qos   (_axi4map_auto_out_aw_bits_qos),
+    .auto_out_w_valid       (_axi4map_auto_out_w_valid),
+    .auto_out_w_bits_data   (_axi4map_auto_out_w_bits_data),
+    .auto_out_w_bits_strb   (_axi4map_auto_out_w_bits_strb),
+    .auto_out_w_bits_last   (_axi4map_auto_out_w_bits_last),
+    .auto_out_b_ready       (_axi4map_auto_out_b_ready),
+    .auto_out_b_valid       (_imsic_auto_axireg_axireg_axi4xbar_in_b_valid),
+    .auto_out_b_bits_id     (_imsic_auto_axireg_axireg_axi4xbar_in_b_bits_id),
+    .auto_out_b_bits_resp   (_imsic_auto_axireg_axireg_axi4xbar_in_b_bits_resp),
+    .auto_out_ar_ready      (_imsic_auto_axireg_axireg_axi4xbar_in_ar_ready),
+    .auto_out_ar_valid      (_axi4map_auto_out_ar_valid),
+    .auto_out_ar_bits_id    (_axi4map_auto_out_ar_bits_id),
+    .auto_out_ar_bits_addr  (_axi4map_auto_out_ar_bits_addr),
+    .auto_out_ar_bits_len   (_axi4map_auto_out_ar_bits_len),
+    .auto_out_ar_bits_size  (_axi4map_auto_out_ar_bits_size),
+    .auto_out_ar_bits_burst (_axi4map_auto_out_ar_bits_burst),
+    .auto_out_ar_bits_lock  (_axi4map_auto_out_ar_bits_lock),
+    .auto_out_ar_bits_cache (_axi4map_auto_out_ar_bits_cache),
+    .auto_out_ar_bits_prot  (_axi4map_auto_out_ar_bits_prot),
+    .auto_out_ar_bits_qos   (_axi4map_auto_out_ar_bits_qos),
+    .auto_out_r_ready       (_axi4map_auto_out_r_ready),
+    .auto_out_r_valid       (_imsic_auto_axireg_axireg_axi4xbar_in_r_valid),
+    .auto_out_r_bits_id     (_imsic_auto_axireg_axireg_axi4xbar_in_r_bits_id),
+    .auto_out_r_bits_data   (_imsic_auto_axireg_axireg_axi4xbar_in_r_bits_data),
+    .auto_out_r_bits_resp   (_imsic_auto_axireg_axireg_axi4xbar_in_r_bits_resp),
+    .auto_out_r_bits_last   (_imsic_auto_axireg_axireg_axi4xbar_in_r_bits_last)
   );
   AXI4IMSIC imsic (
-    .clock                                       (clock),
-    .reset                                       (reset),
-    .auto_axireg_axireg_axi4xbar_in_aw_ready
-      (_imsic_auto_axireg_axireg_axi4xbar_in_aw_ready),
-    .auto_axireg_axireg_axi4xbar_in_aw_valid     (_map_auto_out_aw_valid),
-    .auto_axireg_axireg_axi4xbar_in_aw_bits_id   (_map_auto_out_aw_bits_id),
-    .auto_axireg_axireg_axi4xbar_in_aw_bits_addr (_map_auto_out_aw_bits_addr),
-    .auto_axireg_axireg_axi4xbar_in_w_ready
-      (_imsic_auto_axireg_axireg_axi4xbar_in_w_ready),
-    .auto_axireg_axireg_axi4xbar_in_w_valid      (_map_auto_out_w_valid),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_data  (_map_auto_out_w_bits_data),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_strb  (_map_auto_out_w_bits_strb),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_last  (_map_auto_out_w_bits_last),
-    .auto_axireg_axireg_axi4xbar_in_b_ready      (_map_auto_out_b_ready),
+    .clock                                        (clock),
+    .reset                                        (reset),
+    .auto_axireg_axireg_axi4xbar_in_aw_valid      (_axi4map_auto_out_aw_valid),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_id    (_axi4map_auto_out_aw_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_addr  (_axi4map_auto_out_aw_bits_addr),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_len   (_axi4map_auto_out_aw_bits_len),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_size  (_axi4map_auto_out_aw_bits_size),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_burst (_axi4map_auto_out_aw_bits_burst),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_lock  (_axi4map_auto_out_aw_bits_lock),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_cache (_axi4map_auto_out_aw_bits_cache),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_prot  (_axi4map_auto_out_aw_bits_prot),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_qos   (_axi4map_auto_out_aw_bits_qos),
+    .auto_axireg_axireg_axi4xbar_in_w_valid       (_axi4map_auto_out_w_valid),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_data   (_axi4map_auto_out_w_bits_data),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_strb   (_axi4map_auto_out_w_bits_strb),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_last   (_axi4map_auto_out_w_bits_last),
+    .auto_axireg_axireg_axi4xbar_in_b_ready       (_axi4map_auto_out_b_ready),
     .auto_axireg_axireg_axi4xbar_in_b_valid
       (_imsic_auto_axireg_axireg_axi4xbar_in_b_valid),
     .auto_axireg_axireg_axi4xbar_in_b_bits_id
       (_imsic_auto_axireg_axireg_axi4xbar_in_b_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_b_bits_resp
+      (_imsic_auto_axireg_axireg_axi4xbar_in_b_bits_resp),
     .auto_axireg_axireg_axi4xbar_in_ar_ready
       (_imsic_auto_axireg_axireg_axi4xbar_in_ar_ready),
-    .auto_axireg_axireg_axi4xbar_in_ar_valid     (_map_auto_out_ar_valid),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_id   (_map_auto_out_ar_bits_id),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_addr (_map_auto_out_ar_bits_addr),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_size (_map_auto_out_ar_bits_size),
-    .auto_axireg_axireg_axi4xbar_in_r_ready      (_map_auto_out_r_ready),
+    .auto_axireg_axireg_axi4xbar_in_ar_valid      (_axi4map_auto_out_ar_valid),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_id    (_axi4map_auto_out_ar_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_addr  (_axi4map_auto_out_ar_bits_addr),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_len   (_axi4map_auto_out_ar_bits_len),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_size  (_axi4map_auto_out_ar_bits_size),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_burst (_axi4map_auto_out_ar_bits_burst),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_lock  (_axi4map_auto_out_ar_bits_lock),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_cache (_axi4map_auto_out_ar_bits_cache),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_prot  (_axi4map_auto_out_ar_bits_prot),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_qos   (_axi4map_auto_out_ar_bits_qos),
+    .auto_axireg_axireg_axi4xbar_in_r_ready       (_axi4map_auto_out_r_ready),
     .auto_axireg_axireg_axi4xbar_in_r_valid
       (_imsic_auto_axireg_axireg_axi4xbar_in_r_valid),
     .auto_axireg_axireg_axi4xbar_in_r_bits_id
       (_imsic_auto_axireg_axireg_axi4xbar_in_r_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_r_bits_data
+      (_imsic_auto_axireg_axireg_axi4xbar_in_r_bits_data),
+    .auto_axireg_axireg_axi4xbar_in_r_bits_resp
+      (_imsic_auto_axireg_axireg_axi4xbar_in_r_bits_resp),
     .auto_axireg_axireg_axi4xbar_in_r_bits_last
       (_imsic_auto_axireg_axireg_axi4xbar_in_r_bits_last),
-    .toCSR_rdata_valid                           (toCSR0_rdata_valid),
-    .toCSR_rdata_bits                            (toCSR0_rdata_bits),
-    .toCSR_illegal                               (toCSR0_illegal),
-    .toCSR_pendings_0                            (toCSR0_pendings_0),
-    .toCSR_pendings_1                            (toCSR0_pendings_1),
-    .toCSR_pendings_2                            (toCSR0_pendings_2),
-    .toCSR_pendings_3                            (toCSR0_pendings_3),
-    .toCSR_pendings_4                            (toCSR0_pendings_4),
-    .toCSR_pendings_5                            (toCSR0_pendings_5),
-    .toCSR_topeis_0                              (toCSR0_topeis_0),
-    .toCSR_topeis_1                              (toCSR0_topeis_1),
-    .toCSR_topeis_2                              (toCSR0_topeis_2),
-    .fromCSR_addr_valid                          (fromCSR0_addr_valid),
-    .fromCSR_addr_bits                           (fromCSR0_addr_bits),
-    .fromCSR_virt                                (fromCSR0_virt),
-    .fromCSR_priv                                (fromCSR0_priv),
-    .fromCSR_vgein                               (fromCSR0_vgein),
-    .fromCSR_wdata_valid                         (fromCSR0_wdata_valid),
-    .fromCSR_wdata_bits_op                       (fromCSR0_wdata_bits_op),
-    .fromCSR_wdata_bits_data                     (fromCSR0_wdata_bits_data),
-    .fromCSR_claims_0                            (fromCSR0_claims_0),
-    .fromCSR_claims_1                            (fromCSR0_claims_1),
-    .fromCSR_claims_2                            (fromCSR0_claims_2),
-    .soc_clock                                   (clock),
-    .soc_reset                                   (reset)
+    .toCSR_rdata_valid                            (toCSR0_rdata_valid),
+    .toCSR_rdata_bits                             (toCSR0_rdata_bits),
+    .toCSR_illegal                                (toCSR0_illegal),
+    .toCSR_pendings                               (toCSR0_pendings),
+    .toCSR_topeis_0                               (toCSR0_topeis_0),
+    .toCSR_topeis_1                               (toCSR0_topeis_1),
+    .toCSR_topeis_2                               (toCSR0_topeis_2),
+    .fromCSR_addr_valid                           (fromCSR0_addr_valid),
+    .fromCSR_addr_bits                            (fromCSR0_addr_bits),
+    .fromCSR_virt                                 (fromCSR0_virt),
+    .fromCSR_priv                                 (fromCSR0_priv),
+    .fromCSR_vgein                                (fromCSR0_vgein),
+    .fromCSR_wdata_valid                          (fromCSR0_wdata_valid),
+    .fromCSR_wdata_bits_op                        (fromCSR0_wdata_bits_op),
+    .fromCSR_wdata_bits_data                      (fromCSR0_wdata_bits_data),
+    .fromCSR_claims_0                             (fromCSR0_claims_0),
+    .fromCSR_claims_1                             (fromCSR0_claims_1),
+    .fromCSR_claims_2                             (fromCSR0_claims_2),
+    .soc_clock                                    (clock),
+    .soc_reset                                    (reset)
   );
-  AXI4Map_2 map_1 (
-    .auto_in_aw_ready      (_map_1_auto_in_aw_ready),
-    .auto_in_aw_valid      (_imsics_fromMem_xbar_auto_out_1_aw_valid),
-    .auto_in_aw_bits_id    (_imsics_fromMem_xbar_auto_out_1_aw_bits_id),
-    .auto_in_aw_bits_addr  (_imsics_fromMem_xbar_auto_out_1_aw_bits_addr),
-    .auto_in_w_ready       (_map_1_auto_in_w_ready),
-    .auto_in_w_valid       (_imsics_fromMem_xbar_auto_out_1_w_valid),
-    .auto_in_w_bits_data   (_imsics_fromMem_xbar_auto_out_1_w_bits_data),
-    .auto_in_w_bits_strb   (_imsics_fromMem_xbar_auto_out_1_w_bits_strb),
-    .auto_in_w_bits_last   (_imsics_fromMem_xbar_auto_out_1_w_bits_last),
-    .auto_in_b_ready       (_imsics_fromMem_xbar_auto_out_1_b_ready),
-    .auto_in_b_valid       (_map_1_auto_in_b_valid),
-    .auto_in_b_bits_id     (_map_1_auto_in_b_bits_id),
-    .auto_in_ar_ready      (_map_1_auto_in_ar_ready),
-    .auto_in_ar_valid      (_imsics_fromMem_xbar_auto_out_1_ar_valid),
-    .auto_in_ar_bits_id    (_imsics_fromMem_xbar_auto_out_1_ar_bits_id),
-    .auto_in_ar_bits_addr  (_imsics_fromMem_xbar_auto_out_1_ar_bits_addr),
-    .auto_in_ar_bits_size  (_imsics_fromMem_xbar_auto_out_1_ar_bits_size),
-    .auto_in_r_ready       (_imsics_fromMem_xbar_auto_out_1_r_ready),
-    .auto_in_r_valid       (_map_1_auto_in_r_valid),
-    .auto_in_r_bits_id     (_map_1_auto_in_r_bits_id),
-    .auto_in_r_bits_last   (_map_1_auto_in_r_bits_last),
-    .auto_out_aw_ready     (_imsic_1_auto_axireg_axireg_axi4xbar_in_aw_ready),
-    .auto_out_aw_valid     (_map_1_auto_out_aw_valid),
-    .auto_out_aw_bits_id   (_map_1_auto_out_aw_bits_id),
-    .auto_out_aw_bits_addr (_map_1_auto_out_aw_bits_addr),
-    .auto_out_w_ready      (_imsic_1_auto_axireg_axireg_axi4xbar_in_w_ready),
-    .auto_out_w_valid      (_map_1_auto_out_w_valid),
-    .auto_out_w_bits_data  (_map_1_auto_out_w_bits_data),
-    .auto_out_w_bits_strb  (_map_1_auto_out_w_bits_strb),
-    .auto_out_w_bits_last  (_map_1_auto_out_w_bits_last),
-    .auto_out_b_ready      (_map_1_auto_out_b_ready),
-    .auto_out_b_valid      (_imsic_1_auto_axireg_axireg_axi4xbar_in_b_valid),
-    .auto_out_b_bits_id    (_imsic_1_auto_axireg_axireg_axi4xbar_in_b_bits_id),
-    .auto_out_ar_ready     (_imsic_1_auto_axireg_axireg_axi4xbar_in_ar_ready),
-    .auto_out_ar_valid     (_map_1_auto_out_ar_valid),
-    .auto_out_ar_bits_id   (_map_1_auto_out_ar_bits_id),
-    .auto_out_ar_bits_addr (_map_1_auto_out_ar_bits_addr),
-    .auto_out_ar_bits_size (_map_1_auto_out_ar_bits_size),
-    .auto_out_r_ready      (_map_1_auto_out_r_ready),
-    .auto_out_r_valid      (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_valid),
-    .auto_out_r_bits_id    (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_id),
-    .auto_out_r_bits_last  (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_last)
+  AXI4Map_2 axi4map_1 (
+    .auto_in_aw_valid       (_imsics_fromMem_xbar_auto_out_1_aw_valid),
+    .auto_in_aw_bits_id     (_imsics_fromMem_xbar_auto_out_1_aw_bits_id),
+    .auto_in_aw_bits_addr   (_imsics_fromMem_xbar_auto_out_1_aw_bits_addr),
+    .auto_in_aw_bits_len    (_imsics_fromMem_xbar_auto_out_1_aw_bits_len),
+    .auto_in_aw_bits_size   (_imsics_fromMem_xbar_auto_out_1_aw_bits_size),
+    .auto_in_aw_bits_burst  (_imsics_fromMem_xbar_auto_out_1_aw_bits_burst),
+    .auto_in_aw_bits_lock   (_imsics_fromMem_xbar_auto_out_1_aw_bits_lock),
+    .auto_in_aw_bits_cache  (_imsics_fromMem_xbar_auto_out_1_aw_bits_cache),
+    .auto_in_aw_bits_prot   (_imsics_fromMem_xbar_auto_out_1_aw_bits_prot),
+    .auto_in_aw_bits_qos    (_imsics_fromMem_xbar_auto_out_1_aw_bits_qos),
+    .auto_in_w_valid        (_imsics_fromMem_xbar_auto_out_1_w_valid),
+    .auto_in_w_bits_data    (_imsics_fromMem_xbar_auto_out_1_w_bits_data),
+    .auto_in_w_bits_strb    (_imsics_fromMem_xbar_auto_out_1_w_bits_strb),
+    .auto_in_w_bits_last    (_imsics_fromMem_xbar_auto_out_1_w_bits_last),
+    .auto_in_b_ready        (_imsics_fromMem_xbar_auto_out_1_b_ready),
+    .auto_in_b_valid        (_axi4map_1_auto_in_b_valid),
+    .auto_in_b_bits_id      (_axi4map_1_auto_in_b_bits_id),
+    .auto_in_b_bits_resp    (_axi4map_1_auto_in_b_bits_resp),
+    .auto_in_ar_ready       (_axi4map_1_auto_in_ar_ready),
+    .auto_in_ar_valid       (_imsics_fromMem_xbar_auto_out_1_ar_valid),
+    .auto_in_ar_bits_id     (_imsics_fromMem_xbar_auto_out_1_ar_bits_id),
+    .auto_in_ar_bits_addr   (_imsics_fromMem_xbar_auto_out_1_ar_bits_addr),
+    .auto_in_ar_bits_len    (_imsics_fromMem_xbar_auto_out_1_ar_bits_len),
+    .auto_in_ar_bits_size   (_imsics_fromMem_xbar_auto_out_1_ar_bits_size),
+    .auto_in_ar_bits_burst  (_imsics_fromMem_xbar_auto_out_1_ar_bits_burst),
+    .auto_in_ar_bits_lock   (_imsics_fromMem_xbar_auto_out_1_ar_bits_lock),
+    .auto_in_ar_bits_cache  (_imsics_fromMem_xbar_auto_out_1_ar_bits_cache),
+    .auto_in_ar_bits_prot   (_imsics_fromMem_xbar_auto_out_1_ar_bits_prot),
+    .auto_in_ar_bits_qos    (_imsics_fromMem_xbar_auto_out_1_ar_bits_qos),
+    .auto_in_r_ready        (_imsics_fromMem_xbar_auto_out_1_r_ready),
+    .auto_in_r_valid        (_axi4map_1_auto_in_r_valid),
+    .auto_in_r_bits_id      (_axi4map_1_auto_in_r_bits_id),
+    .auto_in_r_bits_data    (_axi4map_1_auto_in_r_bits_data),
+    .auto_in_r_bits_resp    (_axi4map_1_auto_in_r_bits_resp),
+    .auto_in_r_bits_last    (_axi4map_1_auto_in_r_bits_last),
+    .auto_out_aw_valid      (_axi4map_1_auto_out_aw_valid),
+    .auto_out_aw_bits_id    (_axi4map_1_auto_out_aw_bits_id),
+    .auto_out_aw_bits_addr  (_axi4map_1_auto_out_aw_bits_addr),
+    .auto_out_aw_bits_len   (_axi4map_1_auto_out_aw_bits_len),
+    .auto_out_aw_bits_size  (_axi4map_1_auto_out_aw_bits_size),
+    .auto_out_aw_bits_burst (_axi4map_1_auto_out_aw_bits_burst),
+    .auto_out_aw_bits_lock  (_axi4map_1_auto_out_aw_bits_lock),
+    .auto_out_aw_bits_cache (_axi4map_1_auto_out_aw_bits_cache),
+    .auto_out_aw_bits_prot  (_axi4map_1_auto_out_aw_bits_prot),
+    .auto_out_aw_bits_qos   (_axi4map_1_auto_out_aw_bits_qos),
+    .auto_out_w_valid       (_axi4map_1_auto_out_w_valid),
+    .auto_out_w_bits_data   (_axi4map_1_auto_out_w_bits_data),
+    .auto_out_w_bits_strb   (_axi4map_1_auto_out_w_bits_strb),
+    .auto_out_w_bits_last   (_axi4map_1_auto_out_w_bits_last),
+    .auto_out_b_ready       (_axi4map_1_auto_out_b_ready),
+    .auto_out_b_valid       (_imsic_1_auto_axireg_axireg_axi4xbar_in_b_valid),
+    .auto_out_b_bits_id     (_imsic_1_auto_axireg_axireg_axi4xbar_in_b_bits_id),
+    .auto_out_b_bits_resp   (_imsic_1_auto_axireg_axireg_axi4xbar_in_b_bits_resp),
+    .auto_out_ar_ready      (_imsic_1_auto_axireg_axireg_axi4xbar_in_ar_ready),
+    .auto_out_ar_valid      (_axi4map_1_auto_out_ar_valid),
+    .auto_out_ar_bits_id    (_axi4map_1_auto_out_ar_bits_id),
+    .auto_out_ar_bits_addr  (_axi4map_1_auto_out_ar_bits_addr),
+    .auto_out_ar_bits_len   (_axi4map_1_auto_out_ar_bits_len),
+    .auto_out_ar_bits_size  (_axi4map_1_auto_out_ar_bits_size),
+    .auto_out_ar_bits_burst (_axi4map_1_auto_out_ar_bits_burst),
+    .auto_out_ar_bits_lock  (_axi4map_1_auto_out_ar_bits_lock),
+    .auto_out_ar_bits_cache (_axi4map_1_auto_out_ar_bits_cache),
+    .auto_out_ar_bits_prot  (_axi4map_1_auto_out_ar_bits_prot),
+    .auto_out_ar_bits_qos   (_axi4map_1_auto_out_ar_bits_qos),
+    .auto_out_r_ready       (_axi4map_1_auto_out_r_ready),
+    .auto_out_r_valid       (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_valid),
+    .auto_out_r_bits_id     (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_id),
+    .auto_out_r_bits_data   (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_data),
+    .auto_out_r_bits_resp   (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_resp),
+    .auto_out_r_bits_last   (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_last)
   );
   AXI4IMSIC imsic_1 (
-    .clock                                       (clock),
-    .reset                                       (reset),
-    .auto_axireg_axireg_axi4xbar_in_aw_ready
-      (_imsic_1_auto_axireg_axireg_axi4xbar_in_aw_ready),
-    .auto_axireg_axireg_axi4xbar_in_aw_valid     (_map_1_auto_out_aw_valid),
-    .auto_axireg_axireg_axi4xbar_in_aw_bits_id   (_map_1_auto_out_aw_bits_id),
-    .auto_axireg_axireg_axi4xbar_in_aw_bits_addr (_map_1_auto_out_aw_bits_addr),
-    .auto_axireg_axireg_axi4xbar_in_w_ready
-      (_imsic_1_auto_axireg_axireg_axi4xbar_in_w_ready),
-    .auto_axireg_axireg_axi4xbar_in_w_valid      (_map_1_auto_out_w_valid),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_data  (_map_1_auto_out_w_bits_data),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_strb  (_map_1_auto_out_w_bits_strb),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_last  (_map_1_auto_out_w_bits_last),
-    .auto_axireg_axireg_axi4xbar_in_b_ready      (_map_1_auto_out_b_ready),
+    .clock                                        (clock),
+    .reset                                        (reset),
+    .auto_axireg_axireg_axi4xbar_in_aw_valid      (_axi4map_1_auto_out_aw_valid),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_id    (_axi4map_1_auto_out_aw_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_addr  (_axi4map_1_auto_out_aw_bits_addr),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_len   (_axi4map_1_auto_out_aw_bits_len),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_size  (_axi4map_1_auto_out_aw_bits_size),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_burst (_axi4map_1_auto_out_aw_bits_burst),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_lock  (_axi4map_1_auto_out_aw_bits_lock),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_cache (_axi4map_1_auto_out_aw_bits_cache),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_prot  (_axi4map_1_auto_out_aw_bits_prot),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_qos   (_axi4map_1_auto_out_aw_bits_qos),
+    .auto_axireg_axireg_axi4xbar_in_w_valid       (_axi4map_1_auto_out_w_valid),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_data   (_axi4map_1_auto_out_w_bits_data),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_strb   (_axi4map_1_auto_out_w_bits_strb),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_last   (_axi4map_1_auto_out_w_bits_last),
+    .auto_axireg_axireg_axi4xbar_in_b_ready       (_axi4map_1_auto_out_b_ready),
     .auto_axireg_axireg_axi4xbar_in_b_valid
       (_imsic_1_auto_axireg_axireg_axi4xbar_in_b_valid),
     .auto_axireg_axireg_axi4xbar_in_b_bits_id
       (_imsic_1_auto_axireg_axireg_axi4xbar_in_b_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_b_bits_resp
+      (_imsic_1_auto_axireg_axireg_axi4xbar_in_b_bits_resp),
     .auto_axireg_axireg_axi4xbar_in_ar_ready
       (_imsic_1_auto_axireg_axireg_axi4xbar_in_ar_ready),
-    .auto_axireg_axireg_axi4xbar_in_ar_valid     (_map_1_auto_out_ar_valid),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_id   (_map_1_auto_out_ar_bits_id),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_addr (_map_1_auto_out_ar_bits_addr),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_size (_map_1_auto_out_ar_bits_size),
-    .auto_axireg_axireg_axi4xbar_in_r_ready      (_map_1_auto_out_r_ready),
+    .auto_axireg_axireg_axi4xbar_in_ar_valid      (_axi4map_1_auto_out_ar_valid),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_id    (_axi4map_1_auto_out_ar_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_addr  (_axi4map_1_auto_out_ar_bits_addr),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_len   (_axi4map_1_auto_out_ar_bits_len),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_size  (_axi4map_1_auto_out_ar_bits_size),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_burst (_axi4map_1_auto_out_ar_bits_burst),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_lock  (_axi4map_1_auto_out_ar_bits_lock),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_cache (_axi4map_1_auto_out_ar_bits_cache),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_prot  (_axi4map_1_auto_out_ar_bits_prot),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_qos   (_axi4map_1_auto_out_ar_bits_qos),
+    .auto_axireg_axireg_axi4xbar_in_r_ready       (_axi4map_1_auto_out_r_ready),
     .auto_axireg_axireg_axi4xbar_in_r_valid
       (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_valid),
     .auto_axireg_axireg_axi4xbar_in_r_bits_id
       (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_r_bits_data
+      (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_data),
+    .auto_axireg_axireg_axi4xbar_in_r_bits_resp
+      (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_resp),
     .auto_axireg_axireg_axi4xbar_in_r_bits_last
       (_imsic_1_auto_axireg_axireg_axi4xbar_in_r_bits_last),
-    .toCSR_rdata_valid                           (toCSR1_rdata_valid),
-    .toCSR_rdata_bits                            (toCSR1_rdata_bits),
-    .toCSR_illegal                               (toCSR1_illegal),
-    .toCSR_pendings_0                            (toCSR1_pendings_0),
-    .toCSR_pendings_1                            (toCSR1_pendings_1),
-    .toCSR_pendings_2                            (toCSR1_pendings_2),
-    .toCSR_pendings_3                            (toCSR1_pendings_3),
-    .toCSR_pendings_4                            (toCSR1_pendings_4),
-    .toCSR_pendings_5                            (toCSR1_pendings_5),
-    .toCSR_topeis_0                              (toCSR1_topeis_0),
-    .toCSR_topeis_1                              (toCSR1_topeis_1),
-    .toCSR_topeis_2                              (toCSR1_topeis_2),
-    .fromCSR_addr_valid                          (fromCSR1_addr_valid),
-    .fromCSR_addr_bits                           (fromCSR1_addr_bits),
-    .fromCSR_virt                                (fromCSR1_virt),
-    .fromCSR_priv                                (fromCSR1_priv),
-    .fromCSR_vgein                               (fromCSR1_vgein),
-    .fromCSR_wdata_valid                         (fromCSR1_wdata_valid),
-    .fromCSR_wdata_bits_op                       (fromCSR1_wdata_bits_op),
-    .fromCSR_wdata_bits_data                     (fromCSR1_wdata_bits_data),
-    .fromCSR_claims_0                            (fromCSR1_claims_0),
-    .fromCSR_claims_1                            (fromCSR1_claims_1),
-    .fromCSR_claims_2                            (fromCSR1_claims_2),
-    .soc_clock                                   (clock),
-    .soc_reset                                   (reset)
+    .toCSR_rdata_valid                            (toCSR1_rdata_valid),
+    .toCSR_rdata_bits                             (toCSR1_rdata_bits),
+    .toCSR_illegal                                (toCSR1_illegal),
+    .toCSR_pendings                               (toCSR1_pendings),
+    .toCSR_topeis_0                               (toCSR1_topeis_0),
+    .toCSR_topeis_1                               (toCSR1_topeis_1),
+    .toCSR_topeis_2                               (toCSR1_topeis_2),
+    .fromCSR_addr_valid                           (fromCSR1_addr_valid),
+    .fromCSR_addr_bits                            (fromCSR1_addr_bits),
+    .fromCSR_virt                                 (fromCSR1_virt),
+    .fromCSR_priv                                 (fromCSR1_priv),
+    .fromCSR_vgein                                (fromCSR1_vgein),
+    .fromCSR_wdata_valid                          (fromCSR1_wdata_valid),
+    .fromCSR_wdata_bits_op                        (fromCSR1_wdata_bits_op),
+    .fromCSR_wdata_bits_data                      (fromCSR1_wdata_bits_data),
+    .fromCSR_claims_0                             (fromCSR1_claims_0),
+    .fromCSR_claims_1                             (fromCSR1_claims_1),
+    .fromCSR_claims_2                             (fromCSR1_claims_2),
+    .soc_clock                                    (clock),
+    .soc_reset                                    (reset)
   );
-  AXI4Map_4 map_2 (
-    .auto_in_aw_ready      (_map_2_auto_in_aw_ready),
-    .auto_in_aw_valid      (_imsics_fromMem_xbar_auto_out_2_aw_valid),
-    .auto_in_aw_bits_id    (_imsics_fromMem_xbar_auto_out_2_aw_bits_id),
-    .auto_in_aw_bits_addr  (_imsics_fromMem_xbar_auto_out_2_aw_bits_addr),
-    .auto_in_w_ready       (_map_2_auto_in_w_ready),
-    .auto_in_w_valid       (_imsics_fromMem_xbar_auto_out_2_w_valid),
-    .auto_in_w_bits_data   (_imsics_fromMem_xbar_auto_out_2_w_bits_data),
-    .auto_in_w_bits_strb   (_imsics_fromMem_xbar_auto_out_2_w_bits_strb),
-    .auto_in_w_bits_last   (_imsics_fromMem_xbar_auto_out_2_w_bits_last),
-    .auto_in_b_ready       (_imsics_fromMem_xbar_auto_out_2_b_ready),
-    .auto_in_b_valid       (_map_2_auto_in_b_valid),
-    .auto_in_b_bits_id     (_map_2_auto_in_b_bits_id),
-    .auto_in_ar_ready      (_map_2_auto_in_ar_ready),
-    .auto_in_ar_valid      (_imsics_fromMem_xbar_auto_out_2_ar_valid),
-    .auto_in_ar_bits_id    (_imsics_fromMem_xbar_auto_out_2_ar_bits_id),
-    .auto_in_ar_bits_addr  (_imsics_fromMem_xbar_auto_out_2_ar_bits_addr),
-    .auto_in_ar_bits_size  (_imsics_fromMem_xbar_auto_out_2_ar_bits_size),
-    .auto_in_r_ready       (_imsics_fromMem_xbar_auto_out_2_r_ready),
-    .auto_in_r_valid       (_map_2_auto_in_r_valid),
-    .auto_in_r_bits_id     (_map_2_auto_in_r_bits_id),
-    .auto_in_r_bits_last   (_map_2_auto_in_r_bits_last),
-    .auto_out_aw_ready     (_imsic_2_auto_axireg_axireg_axi4xbar_in_aw_ready),
-    .auto_out_aw_valid     (_map_2_auto_out_aw_valid),
-    .auto_out_aw_bits_id   (_map_2_auto_out_aw_bits_id),
-    .auto_out_aw_bits_addr (_map_2_auto_out_aw_bits_addr),
-    .auto_out_w_ready      (_imsic_2_auto_axireg_axireg_axi4xbar_in_w_ready),
-    .auto_out_w_valid      (_map_2_auto_out_w_valid),
-    .auto_out_w_bits_data  (_map_2_auto_out_w_bits_data),
-    .auto_out_w_bits_strb  (_map_2_auto_out_w_bits_strb),
-    .auto_out_w_bits_last  (_map_2_auto_out_w_bits_last),
-    .auto_out_b_ready      (_map_2_auto_out_b_ready),
-    .auto_out_b_valid      (_imsic_2_auto_axireg_axireg_axi4xbar_in_b_valid),
-    .auto_out_b_bits_id    (_imsic_2_auto_axireg_axireg_axi4xbar_in_b_bits_id),
-    .auto_out_ar_ready     (_imsic_2_auto_axireg_axireg_axi4xbar_in_ar_ready),
-    .auto_out_ar_valid     (_map_2_auto_out_ar_valid),
-    .auto_out_ar_bits_id   (_map_2_auto_out_ar_bits_id),
-    .auto_out_ar_bits_addr (_map_2_auto_out_ar_bits_addr),
-    .auto_out_ar_bits_size (_map_2_auto_out_ar_bits_size),
-    .auto_out_r_ready      (_map_2_auto_out_r_ready),
-    .auto_out_r_valid      (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_valid),
-    .auto_out_r_bits_id    (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_id),
-    .auto_out_r_bits_last  (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_last)
+  AXI4Map_4 axi4map_2 (
+    .auto_in_aw_valid       (_imsics_fromMem_xbar_auto_out_2_aw_valid),
+    .auto_in_aw_bits_id     (_imsics_fromMem_xbar_auto_out_2_aw_bits_id),
+    .auto_in_aw_bits_addr   (_imsics_fromMem_xbar_auto_out_2_aw_bits_addr),
+    .auto_in_aw_bits_len    (_imsics_fromMem_xbar_auto_out_2_aw_bits_len),
+    .auto_in_aw_bits_size   (_imsics_fromMem_xbar_auto_out_2_aw_bits_size),
+    .auto_in_aw_bits_burst  (_imsics_fromMem_xbar_auto_out_2_aw_bits_burst),
+    .auto_in_aw_bits_lock   (_imsics_fromMem_xbar_auto_out_2_aw_bits_lock),
+    .auto_in_aw_bits_cache  (_imsics_fromMem_xbar_auto_out_2_aw_bits_cache),
+    .auto_in_aw_bits_prot   (_imsics_fromMem_xbar_auto_out_2_aw_bits_prot),
+    .auto_in_aw_bits_qos    (_imsics_fromMem_xbar_auto_out_2_aw_bits_qos),
+    .auto_in_w_valid        (_imsics_fromMem_xbar_auto_out_2_w_valid),
+    .auto_in_w_bits_data    (_imsics_fromMem_xbar_auto_out_2_w_bits_data),
+    .auto_in_w_bits_strb    (_imsics_fromMem_xbar_auto_out_2_w_bits_strb),
+    .auto_in_w_bits_last    (_imsics_fromMem_xbar_auto_out_2_w_bits_last),
+    .auto_in_b_ready        (_imsics_fromMem_xbar_auto_out_2_b_ready),
+    .auto_in_b_valid        (_axi4map_2_auto_in_b_valid),
+    .auto_in_b_bits_id      (_axi4map_2_auto_in_b_bits_id),
+    .auto_in_b_bits_resp    (_axi4map_2_auto_in_b_bits_resp),
+    .auto_in_ar_ready       (_axi4map_2_auto_in_ar_ready),
+    .auto_in_ar_valid       (_imsics_fromMem_xbar_auto_out_2_ar_valid),
+    .auto_in_ar_bits_id     (_imsics_fromMem_xbar_auto_out_2_ar_bits_id),
+    .auto_in_ar_bits_addr   (_imsics_fromMem_xbar_auto_out_2_ar_bits_addr),
+    .auto_in_ar_bits_len    (_imsics_fromMem_xbar_auto_out_2_ar_bits_len),
+    .auto_in_ar_bits_size   (_imsics_fromMem_xbar_auto_out_2_ar_bits_size),
+    .auto_in_ar_bits_burst  (_imsics_fromMem_xbar_auto_out_2_ar_bits_burst),
+    .auto_in_ar_bits_lock   (_imsics_fromMem_xbar_auto_out_2_ar_bits_lock),
+    .auto_in_ar_bits_cache  (_imsics_fromMem_xbar_auto_out_2_ar_bits_cache),
+    .auto_in_ar_bits_prot   (_imsics_fromMem_xbar_auto_out_2_ar_bits_prot),
+    .auto_in_ar_bits_qos    (_imsics_fromMem_xbar_auto_out_2_ar_bits_qos),
+    .auto_in_r_ready        (_imsics_fromMem_xbar_auto_out_2_r_ready),
+    .auto_in_r_valid        (_axi4map_2_auto_in_r_valid),
+    .auto_in_r_bits_id      (_axi4map_2_auto_in_r_bits_id),
+    .auto_in_r_bits_data    (_axi4map_2_auto_in_r_bits_data),
+    .auto_in_r_bits_resp    (_axi4map_2_auto_in_r_bits_resp),
+    .auto_in_r_bits_last    (_axi4map_2_auto_in_r_bits_last),
+    .auto_out_aw_valid      (_axi4map_2_auto_out_aw_valid),
+    .auto_out_aw_bits_id    (_axi4map_2_auto_out_aw_bits_id),
+    .auto_out_aw_bits_addr  (_axi4map_2_auto_out_aw_bits_addr),
+    .auto_out_aw_bits_len   (_axi4map_2_auto_out_aw_bits_len),
+    .auto_out_aw_bits_size  (_axi4map_2_auto_out_aw_bits_size),
+    .auto_out_aw_bits_burst (_axi4map_2_auto_out_aw_bits_burst),
+    .auto_out_aw_bits_lock  (_axi4map_2_auto_out_aw_bits_lock),
+    .auto_out_aw_bits_cache (_axi4map_2_auto_out_aw_bits_cache),
+    .auto_out_aw_bits_prot  (_axi4map_2_auto_out_aw_bits_prot),
+    .auto_out_aw_bits_qos   (_axi4map_2_auto_out_aw_bits_qos),
+    .auto_out_w_valid       (_axi4map_2_auto_out_w_valid),
+    .auto_out_w_bits_data   (_axi4map_2_auto_out_w_bits_data),
+    .auto_out_w_bits_strb   (_axi4map_2_auto_out_w_bits_strb),
+    .auto_out_w_bits_last   (_axi4map_2_auto_out_w_bits_last),
+    .auto_out_b_ready       (_axi4map_2_auto_out_b_ready),
+    .auto_out_b_valid       (_imsic_2_auto_axireg_axireg_axi4xbar_in_b_valid),
+    .auto_out_b_bits_id     (_imsic_2_auto_axireg_axireg_axi4xbar_in_b_bits_id),
+    .auto_out_b_bits_resp   (_imsic_2_auto_axireg_axireg_axi4xbar_in_b_bits_resp),
+    .auto_out_ar_ready      (_imsic_2_auto_axireg_axireg_axi4xbar_in_ar_ready),
+    .auto_out_ar_valid      (_axi4map_2_auto_out_ar_valid),
+    .auto_out_ar_bits_id    (_axi4map_2_auto_out_ar_bits_id),
+    .auto_out_ar_bits_addr  (_axi4map_2_auto_out_ar_bits_addr),
+    .auto_out_ar_bits_len   (_axi4map_2_auto_out_ar_bits_len),
+    .auto_out_ar_bits_size  (_axi4map_2_auto_out_ar_bits_size),
+    .auto_out_ar_bits_burst (_axi4map_2_auto_out_ar_bits_burst),
+    .auto_out_ar_bits_lock  (_axi4map_2_auto_out_ar_bits_lock),
+    .auto_out_ar_bits_cache (_axi4map_2_auto_out_ar_bits_cache),
+    .auto_out_ar_bits_prot  (_axi4map_2_auto_out_ar_bits_prot),
+    .auto_out_ar_bits_qos   (_axi4map_2_auto_out_ar_bits_qos),
+    .auto_out_r_ready       (_axi4map_2_auto_out_r_ready),
+    .auto_out_r_valid       (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_valid),
+    .auto_out_r_bits_id     (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_id),
+    .auto_out_r_bits_data   (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_data),
+    .auto_out_r_bits_resp   (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_resp),
+    .auto_out_r_bits_last   (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_last)
   );
   AXI4IMSIC imsic_2 (
-    .clock                                       (clock),
-    .reset                                       (reset),
-    .auto_axireg_axireg_axi4xbar_in_aw_ready
-      (_imsic_2_auto_axireg_axireg_axi4xbar_in_aw_ready),
-    .auto_axireg_axireg_axi4xbar_in_aw_valid     (_map_2_auto_out_aw_valid),
-    .auto_axireg_axireg_axi4xbar_in_aw_bits_id   (_map_2_auto_out_aw_bits_id),
-    .auto_axireg_axireg_axi4xbar_in_aw_bits_addr (_map_2_auto_out_aw_bits_addr),
-    .auto_axireg_axireg_axi4xbar_in_w_ready
-      (_imsic_2_auto_axireg_axireg_axi4xbar_in_w_ready),
-    .auto_axireg_axireg_axi4xbar_in_w_valid      (_map_2_auto_out_w_valid),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_data  (_map_2_auto_out_w_bits_data),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_strb  (_map_2_auto_out_w_bits_strb),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_last  (_map_2_auto_out_w_bits_last),
-    .auto_axireg_axireg_axi4xbar_in_b_ready      (_map_2_auto_out_b_ready),
+    .clock                                        (clock),
+    .reset                                        (reset),
+    .auto_axireg_axireg_axi4xbar_in_aw_valid      (_axi4map_2_auto_out_aw_valid),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_id    (_axi4map_2_auto_out_aw_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_addr  (_axi4map_2_auto_out_aw_bits_addr),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_len   (_axi4map_2_auto_out_aw_bits_len),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_size  (_axi4map_2_auto_out_aw_bits_size),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_burst (_axi4map_2_auto_out_aw_bits_burst),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_lock  (_axi4map_2_auto_out_aw_bits_lock),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_cache (_axi4map_2_auto_out_aw_bits_cache),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_prot  (_axi4map_2_auto_out_aw_bits_prot),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_qos   (_axi4map_2_auto_out_aw_bits_qos),
+    .auto_axireg_axireg_axi4xbar_in_w_valid       (_axi4map_2_auto_out_w_valid),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_data   (_axi4map_2_auto_out_w_bits_data),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_strb   (_axi4map_2_auto_out_w_bits_strb),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_last   (_axi4map_2_auto_out_w_bits_last),
+    .auto_axireg_axireg_axi4xbar_in_b_ready       (_axi4map_2_auto_out_b_ready),
     .auto_axireg_axireg_axi4xbar_in_b_valid
       (_imsic_2_auto_axireg_axireg_axi4xbar_in_b_valid),
     .auto_axireg_axireg_axi4xbar_in_b_bits_id
       (_imsic_2_auto_axireg_axireg_axi4xbar_in_b_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_b_bits_resp
+      (_imsic_2_auto_axireg_axireg_axi4xbar_in_b_bits_resp),
     .auto_axireg_axireg_axi4xbar_in_ar_ready
       (_imsic_2_auto_axireg_axireg_axi4xbar_in_ar_ready),
-    .auto_axireg_axireg_axi4xbar_in_ar_valid     (_map_2_auto_out_ar_valid),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_id   (_map_2_auto_out_ar_bits_id),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_addr (_map_2_auto_out_ar_bits_addr),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_size (_map_2_auto_out_ar_bits_size),
-    .auto_axireg_axireg_axi4xbar_in_r_ready      (_map_2_auto_out_r_ready),
+    .auto_axireg_axireg_axi4xbar_in_ar_valid      (_axi4map_2_auto_out_ar_valid),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_id    (_axi4map_2_auto_out_ar_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_addr  (_axi4map_2_auto_out_ar_bits_addr),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_len   (_axi4map_2_auto_out_ar_bits_len),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_size  (_axi4map_2_auto_out_ar_bits_size),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_burst (_axi4map_2_auto_out_ar_bits_burst),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_lock  (_axi4map_2_auto_out_ar_bits_lock),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_cache (_axi4map_2_auto_out_ar_bits_cache),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_prot  (_axi4map_2_auto_out_ar_bits_prot),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_qos   (_axi4map_2_auto_out_ar_bits_qos),
+    .auto_axireg_axireg_axi4xbar_in_r_ready       (_axi4map_2_auto_out_r_ready),
     .auto_axireg_axireg_axi4xbar_in_r_valid
       (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_valid),
     .auto_axireg_axireg_axi4xbar_in_r_bits_id
       (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_r_bits_data
+      (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_data),
+    .auto_axireg_axireg_axi4xbar_in_r_bits_resp
+      (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_resp),
     .auto_axireg_axireg_axi4xbar_in_r_bits_last
       (_imsic_2_auto_axireg_axireg_axi4xbar_in_r_bits_last),
-    .toCSR_rdata_valid                           (toCSR2_rdata_valid),
-    .toCSR_rdata_bits                            (toCSR2_rdata_bits),
-    .toCSR_illegal                               (toCSR2_illegal),
-    .toCSR_pendings_0                            (toCSR2_pendings_0),
-    .toCSR_pendings_1                            (toCSR2_pendings_1),
-    .toCSR_pendings_2                            (toCSR2_pendings_2),
-    .toCSR_pendings_3                            (toCSR2_pendings_3),
-    .toCSR_pendings_4                            (toCSR2_pendings_4),
-    .toCSR_pendings_5                            (toCSR2_pendings_5),
-    .toCSR_topeis_0                              (toCSR2_topeis_0),
-    .toCSR_topeis_1                              (toCSR2_topeis_1),
-    .toCSR_topeis_2                              (toCSR2_topeis_2),
-    .fromCSR_addr_valid                          (fromCSR2_addr_valid),
-    .fromCSR_addr_bits                           (fromCSR2_addr_bits),
-    .fromCSR_virt                                (fromCSR2_virt),
-    .fromCSR_priv                                (fromCSR2_priv),
-    .fromCSR_vgein                               (fromCSR2_vgein),
-    .fromCSR_wdata_valid                         (fromCSR2_wdata_valid),
-    .fromCSR_wdata_bits_op                       (fromCSR2_wdata_bits_op),
-    .fromCSR_wdata_bits_data                     (fromCSR2_wdata_bits_data),
-    .fromCSR_claims_0                            (fromCSR2_claims_0),
-    .fromCSR_claims_1                            (fromCSR2_claims_1),
-    .fromCSR_claims_2                            (fromCSR2_claims_2),
-    .soc_clock                                   (clock),
-    .soc_reset                                   (reset)
+    .toCSR_rdata_valid                            (toCSR2_rdata_valid),
+    .toCSR_rdata_bits                             (toCSR2_rdata_bits),
+    .toCSR_illegal                                (toCSR2_illegal),
+    .toCSR_pendings                               (toCSR2_pendings),
+    .toCSR_topeis_0                               (toCSR2_topeis_0),
+    .toCSR_topeis_1                               (toCSR2_topeis_1),
+    .toCSR_topeis_2                               (toCSR2_topeis_2),
+    .fromCSR_addr_valid                           (fromCSR2_addr_valid),
+    .fromCSR_addr_bits                            (fromCSR2_addr_bits),
+    .fromCSR_virt                                 (fromCSR2_virt),
+    .fromCSR_priv                                 (fromCSR2_priv),
+    .fromCSR_vgein                                (fromCSR2_vgein),
+    .fromCSR_wdata_valid                          (fromCSR2_wdata_valid),
+    .fromCSR_wdata_bits_op                        (fromCSR2_wdata_bits_op),
+    .fromCSR_wdata_bits_data                      (fromCSR2_wdata_bits_data),
+    .fromCSR_claims_0                             (fromCSR2_claims_0),
+    .fromCSR_claims_1                             (fromCSR2_claims_1),
+    .fromCSR_claims_2                             (fromCSR2_claims_2),
+    .soc_clock                                    (clock),
+    .soc_reset                                    (reset)
   );
-  AXI4Map_6 map_3 (
-    .auto_in_aw_ready      (_map_3_auto_in_aw_ready),
-    .auto_in_aw_valid      (_imsics_fromMem_xbar_auto_out_3_aw_valid),
-    .auto_in_aw_bits_id    (_imsics_fromMem_xbar_auto_out_3_aw_bits_id),
-    .auto_in_aw_bits_addr  (_imsics_fromMem_xbar_auto_out_3_aw_bits_addr),
-    .auto_in_w_ready       (_map_3_auto_in_w_ready),
-    .auto_in_w_valid       (_imsics_fromMem_xbar_auto_out_3_w_valid),
-    .auto_in_w_bits_data   (_imsics_fromMem_xbar_auto_out_3_w_bits_data),
-    .auto_in_w_bits_strb   (_imsics_fromMem_xbar_auto_out_3_w_bits_strb),
-    .auto_in_w_bits_last   (_imsics_fromMem_xbar_auto_out_3_w_bits_last),
-    .auto_in_b_ready       (_imsics_fromMem_xbar_auto_out_3_b_ready),
-    .auto_in_b_valid       (_map_3_auto_in_b_valid),
-    .auto_in_b_bits_id     (_map_3_auto_in_b_bits_id),
-    .auto_in_ar_ready      (_map_3_auto_in_ar_ready),
-    .auto_in_ar_valid      (_imsics_fromMem_xbar_auto_out_3_ar_valid),
-    .auto_in_ar_bits_id    (_imsics_fromMem_xbar_auto_out_3_ar_bits_id),
-    .auto_in_ar_bits_addr  (_imsics_fromMem_xbar_auto_out_3_ar_bits_addr),
-    .auto_in_ar_bits_size  (_imsics_fromMem_xbar_auto_out_3_ar_bits_size),
-    .auto_in_r_ready       (_imsics_fromMem_xbar_auto_out_3_r_ready),
-    .auto_in_r_valid       (_map_3_auto_in_r_valid),
-    .auto_in_r_bits_id     (_map_3_auto_in_r_bits_id),
-    .auto_in_r_bits_last   (_map_3_auto_in_r_bits_last),
-    .auto_out_aw_ready     (_imsic_3_auto_axireg_axireg_axi4xbar_in_aw_ready),
-    .auto_out_aw_valid     (_map_3_auto_out_aw_valid),
-    .auto_out_aw_bits_id   (_map_3_auto_out_aw_bits_id),
-    .auto_out_aw_bits_addr (_map_3_auto_out_aw_bits_addr),
-    .auto_out_w_ready      (_imsic_3_auto_axireg_axireg_axi4xbar_in_w_ready),
-    .auto_out_w_valid      (_map_3_auto_out_w_valid),
-    .auto_out_w_bits_data  (_map_3_auto_out_w_bits_data),
-    .auto_out_w_bits_strb  (_map_3_auto_out_w_bits_strb),
-    .auto_out_w_bits_last  (_map_3_auto_out_w_bits_last),
-    .auto_out_b_ready      (_map_3_auto_out_b_ready),
-    .auto_out_b_valid      (_imsic_3_auto_axireg_axireg_axi4xbar_in_b_valid),
-    .auto_out_b_bits_id    (_imsic_3_auto_axireg_axireg_axi4xbar_in_b_bits_id),
-    .auto_out_ar_ready     (_imsic_3_auto_axireg_axireg_axi4xbar_in_ar_ready),
-    .auto_out_ar_valid     (_map_3_auto_out_ar_valid),
-    .auto_out_ar_bits_id   (_map_3_auto_out_ar_bits_id),
-    .auto_out_ar_bits_addr (_map_3_auto_out_ar_bits_addr),
-    .auto_out_ar_bits_size (_map_3_auto_out_ar_bits_size),
-    .auto_out_r_ready      (_map_3_auto_out_r_ready),
-    .auto_out_r_valid      (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_valid),
-    .auto_out_r_bits_id    (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_id),
-    .auto_out_r_bits_last  (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_last)
+  AXI4Map_6 axi4map_3 (
+    .auto_in_aw_valid       (_imsics_fromMem_xbar_auto_out_3_aw_valid),
+    .auto_in_aw_bits_id     (_imsics_fromMem_xbar_auto_out_3_aw_bits_id),
+    .auto_in_aw_bits_addr   (_imsics_fromMem_xbar_auto_out_3_aw_bits_addr),
+    .auto_in_aw_bits_len    (_imsics_fromMem_xbar_auto_out_3_aw_bits_len),
+    .auto_in_aw_bits_size   (_imsics_fromMem_xbar_auto_out_3_aw_bits_size),
+    .auto_in_aw_bits_burst  (_imsics_fromMem_xbar_auto_out_3_aw_bits_burst),
+    .auto_in_aw_bits_lock   (_imsics_fromMem_xbar_auto_out_3_aw_bits_lock),
+    .auto_in_aw_bits_cache  (_imsics_fromMem_xbar_auto_out_3_aw_bits_cache),
+    .auto_in_aw_bits_prot   (_imsics_fromMem_xbar_auto_out_3_aw_bits_prot),
+    .auto_in_aw_bits_qos    (_imsics_fromMem_xbar_auto_out_3_aw_bits_qos),
+    .auto_in_w_valid        (_imsics_fromMem_xbar_auto_out_3_w_valid),
+    .auto_in_w_bits_data    (_imsics_fromMem_xbar_auto_out_3_w_bits_data),
+    .auto_in_w_bits_strb    (_imsics_fromMem_xbar_auto_out_3_w_bits_strb),
+    .auto_in_w_bits_last    (_imsics_fromMem_xbar_auto_out_3_w_bits_last),
+    .auto_in_b_ready        (_imsics_fromMem_xbar_auto_out_3_b_ready),
+    .auto_in_b_valid        (_axi4map_3_auto_in_b_valid),
+    .auto_in_b_bits_id      (_axi4map_3_auto_in_b_bits_id),
+    .auto_in_b_bits_resp    (_axi4map_3_auto_in_b_bits_resp),
+    .auto_in_ar_ready       (_axi4map_3_auto_in_ar_ready),
+    .auto_in_ar_valid       (_imsics_fromMem_xbar_auto_out_3_ar_valid),
+    .auto_in_ar_bits_id     (_imsics_fromMem_xbar_auto_out_3_ar_bits_id),
+    .auto_in_ar_bits_addr   (_imsics_fromMem_xbar_auto_out_3_ar_bits_addr),
+    .auto_in_ar_bits_len    (_imsics_fromMem_xbar_auto_out_3_ar_bits_len),
+    .auto_in_ar_bits_size   (_imsics_fromMem_xbar_auto_out_3_ar_bits_size),
+    .auto_in_ar_bits_burst  (_imsics_fromMem_xbar_auto_out_3_ar_bits_burst),
+    .auto_in_ar_bits_lock   (_imsics_fromMem_xbar_auto_out_3_ar_bits_lock),
+    .auto_in_ar_bits_cache  (_imsics_fromMem_xbar_auto_out_3_ar_bits_cache),
+    .auto_in_ar_bits_prot   (_imsics_fromMem_xbar_auto_out_3_ar_bits_prot),
+    .auto_in_ar_bits_qos    (_imsics_fromMem_xbar_auto_out_3_ar_bits_qos),
+    .auto_in_r_ready        (_imsics_fromMem_xbar_auto_out_3_r_ready),
+    .auto_in_r_valid        (_axi4map_3_auto_in_r_valid),
+    .auto_in_r_bits_id      (_axi4map_3_auto_in_r_bits_id),
+    .auto_in_r_bits_data    (_axi4map_3_auto_in_r_bits_data),
+    .auto_in_r_bits_resp    (_axi4map_3_auto_in_r_bits_resp),
+    .auto_in_r_bits_last    (_axi4map_3_auto_in_r_bits_last),
+    .auto_out_aw_valid      (_axi4map_3_auto_out_aw_valid),
+    .auto_out_aw_bits_id    (_axi4map_3_auto_out_aw_bits_id),
+    .auto_out_aw_bits_addr  (_axi4map_3_auto_out_aw_bits_addr),
+    .auto_out_aw_bits_len   (_axi4map_3_auto_out_aw_bits_len),
+    .auto_out_aw_bits_size  (_axi4map_3_auto_out_aw_bits_size),
+    .auto_out_aw_bits_burst (_axi4map_3_auto_out_aw_bits_burst),
+    .auto_out_aw_bits_lock  (_axi4map_3_auto_out_aw_bits_lock),
+    .auto_out_aw_bits_cache (_axi4map_3_auto_out_aw_bits_cache),
+    .auto_out_aw_bits_prot  (_axi4map_3_auto_out_aw_bits_prot),
+    .auto_out_aw_bits_qos   (_axi4map_3_auto_out_aw_bits_qos),
+    .auto_out_w_valid       (_axi4map_3_auto_out_w_valid),
+    .auto_out_w_bits_data   (_axi4map_3_auto_out_w_bits_data),
+    .auto_out_w_bits_strb   (_axi4map_3_auto_out_w_bits_strb),
+    .auto_out_w_bits_last   (_axi4map_3_auto_out_w_bits_last),
+    .auto_out_b_ready       (_axi4map_3_auto_out_b_ready),
+    .auto_out_b_valid       (_imsic_3_auto_axireg_axireg_axi4xbar_in_b_valid),
+    .auto_out_b_bits_id     (_imsic_3_auto_axireg_axireg_axi4xbar_in_b_bits_id),
+    .auto_out_b_bits_resp   (_imsic_3_auto_axireg_axireg_axi4xbar_in_b_bits_resp),
+    .auto_out_ar_ready      (_imsic_3_auto_axireg_axireg_axi4xbar_in_ar_ready),
+    .auto_out_ar_valid      (_axi4map_3_auto_out_ar_valid),
+    .auto_out_ar_bits_id    (_axi4map_3_auto_out_ar_bits_id),
+    .auto_out_ar_bits_addr  (_axi4map_3_auto_out_ar_bits_addr),
+    .auto_out_ar_bits_len   (_axi4map_3_auto_out_ar_bits_len),
+    .auto_out_ar_bits_size  (_axi4map_3_auto_out_ar_bits_size),
+    .auto_out_ar_bits_burst (_axi4map_3_auto_out_ar_bits_burst),
+    .auto_out_ar_bits_lock  (_axi4map_3_auto_out_ar_bits_lock),
+    .auto_out_ar_bits_cache (_axi4map_3_auto_out_ar_bits_cache),
+    .auto_out_ar_bits_prot  (_axi4map_3_auto_out_ar_bits_prot),
+    .auto_out_ar_bits_qos   (_axi4map_3_auto_out_ar_bits_qos),
+    .auto_out_r_ready       (_axi4map_3_auto_out_r_ready),
+    .auto_out_r_valid       (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_valid),
+    .auto_out_r_bits_id     (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_id),
+    .auto_out_r_bits_data   (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_data),
+    .auto_out_r_bits_resp   (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_resp),
+    .auto_out_r_bits_last   (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_last)
   );
   AXI4IMSIC imsic_3 (
-    .clock                                       (clock),
-    .reset                                       (reset),
-    .auto_axireg_axireg_axi4xbar_in_aw_ready
-      (_imsic_3_auto_axireg_axireg_axi4xbar_in_aw_ready),
-    .auto_axireg_axireg_axi4xbar_in_aw_valid     (_map_3_auto_out_aw_valid),
-    .auto_axireg_axireg_axi4xbar_in_aw_bits_id   (_map_3_auto_out_aw_bits_id),
-    .auto_axireg_axireg_axi4xbar_in_aw_bits_addr (_map_3_auto_out_aw_bits_addr),
-    .auto_axireg_axireg_axi4xbar_in_w_ready
-      (_imsic_3_auto_axireg_axireg_axi4xbar_in_w_ready),
-    .auto_axireg_axireg_axi4xbar_in_w_valid      (_map_3_auto_out_w_valid),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_data  (_map_3_auto_out_w_bits_data),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_strb  (_map_3_auto_out_w_bits_strb),
-    .auto_axireg_axireg_axi4xbar_in_w_bits_last  (_map_3_auto_out_w_bits_last),
-    .auto_axireg_axireg_axi4xbar_in_b_ready      (_map_3_auto_out_b_ready),
+    .clock                                        (clock),
+    .reset                                        (reset),
+    .auto_axireg_axireg_axi4xbar_in_aw_valid      (_axi4map_3_auto_out_aw_valid),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_id    (_axi4map_3_auto_out_aw_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_addr  (_axi4map_3_auto_out_aw_bits_addr),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_len   (_axi4map_3_auto_out_aw_bits_len),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_size  (_axi4map_3_auto_out_aw_bits_size),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_burst (_axi4map_3_auto_out_aw_bits_burst),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_lock  (_axi4map_3_auto_out_aw_bits_lock),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_cache (_axi4map_3_auto_out_aw_bits_cache),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_prot  (_axi4map_3_auto_out_aw_bits_prot),
+    .auto_axireg_axireg_axi4xbar_in_aw_bits_qos   (_axi4map_3_auto_out_aw_bits_qos),
+    .auto_axireg_axireg_axi4xbar_in_w_valid       (_axi4map_3_auto_out_w_valid),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_data   (_axi4map_3_auto_out_w_bits_data),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_strb   (_axi4map_3_auto_out_w_bits_strb),
+    .auto_axireg_axireg_axi4xbar_in_w_bits_last   (_axi4map_3_auto_out_w_bits_last),
+    .auto_axireg_axireg_axi4xbar_in_b_ready       (_axi4map_3_auto_out_b_ready),
     .auto_axireg_axireg_axi4xbar_in_b_valid
       (_imsic_3_auto_axireg_axireg_axi4xbar_in_b_valid),
     .auto_axireg_axireg_axi4xbar_in_b_bits_id
       (_imsic_3_auto_axireg_axireg_axi4xbar_in_b_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_b_bits_resp
+      (_imsic_3_auto_axireg_axireg_axi4xbar_in_b_bits_resp),
     .auto_axireg_axireg_axi4xbar_in_ar_ready
       (_imsic_3_auto_axireg_axireg_axi4xbar_in_ar_ready),
-    .auto_axireg_axireg_axi4xbar_in_ar_valid     (_map_3_auto_out_ar_valid),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_id   (_map_3_auto_out_ar_bits_id),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_addr (_map_3_auto_out_ar_bits_addr),
-    .auto_axireg_axireg_axi4xbar_in_ar_bits_size (_map_3_auto_out_ar_bits_size),
-    .auto_axireg_axireg_axi4xbar_in_r_ready      (_map_3_auto_out_r_ready),
+    .auto_axireg_axireg_axi4xbar_in_ar_valid      (_axi4map_3_auto_out_ar_valid),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_id    (_axi4map_3_auto_out_ar_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_addr  (_axi4map_3_auto_out_ar_bits_addr),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_len   (_axi4map_3_auto_out_ar_bits_len),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_size  (_axi4map_3_auto_out_ar_bits_size),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_burst (_axi4map_3_auto_out_ar_bits_burst),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_lock  (_axi4map_3_auto_out_ar_bits_lock),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_cache (_axi4map_3_auto_out_ar_bits_cache),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_prot  (_axi4map_3_auto_out_ar_bits_prot),
+    .auto_axireg_axireg_axi4xbar_in_ar_bits_qos   (_axi4map_3_auto_out_ar_bits_qos),
+    .auto_axireg_axireg_axi4xbar_in_r_ready       (_axi4map_3_auto_out_r_ready),
     .auto_axireg_axireg_axi4xbar_in_r_valid
       (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_valid),
     .auto_axireg_axireg_axi4xbar_in_r_bits_id
       (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_id),
+    .auto_axireg_axireg_axi4xbar_in_r_bits_data
+      (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_data),
+    .auto_axireg_axireg_axi4xbar_in_r_bits_resp
+      (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_resp),
     .auto_axireg_axireg_axi4xbar_in_r_bits_last
       (_imsic_3_auto_axireg_axireg_axi4xbar_in_r_bits_last),
-    .toCSR_rdata_valid                           (toCSR3_rdata_valid),
-    .toCSR_rdata_bits                            (toCSR3_rdata_bits),
-    .toCSR_illegal                               (toCSR3_illegal),
-    .toCSR_pendings_0                            (toCSR3_pendings_0),
-    .toCSR_pendings_1                            (toCSR3_pendings_1),
-    .toCSR_pendings_2                            (toCSR3_pendings_2),
-    .toCSR_pendings_3                            (toCSR3_pendings_3),
-    .toCSR_pendings_4                            (toCSR3_pendings_4),
-    .toCSR_pendings_5                            (toCSR3_pendings_5),
-    .toCSR_topeis_0                              (toCSR3_topeis_0),
-    .toCSR_topeis_1                              (toCSR3_topeis_1),
-    .toCSR_topeis_2                              (toCSR3_topeis_2),
-    .fromCSR_addr_valid                          (fromCSR3_addr_valid),
-    .fromCSR_addr_bits                           (fromCSR3_addr_bits),
-    .fromCSR_virt                                (fromCSR3_virt),
-    .fromCSR_priv                                (fromCSR3_priv),
-    .fromCSR_vgein                               (fromCSR3_vgein),
-    .fromCSR_wdata_valid                         (fromCSR3_wdata_valid),
-    .fromCSR_wdata_bits_op                       (fromCSR3_wdata_bits_op),
-    .fromCSR_wdata_bits_data                     (fromCSR3_wdata_bits_data),
-    .fromCSR_claims_0                            (fromCSR3_claims_0),
-    .fromCSR_claims_1                            (fromCSR3_claims_1),
-    .fromCSR_claims_2                            (fromCSR3_claims_2),
-    .soc_clock                                   (clock),
-    .soc_reset                                   (reset)
+    .toCSR_rdata_valid                            (toCSR3_rdata_valid),
+    .toCSR_rdata_bits                             (toCSR3_rdata_bits),
+    .toCSR_illegal                                (toCSR3_illegal),
+    .toCSR_pendings                               (toCSR3_pendings),
+    .toCSR_topeis_0                               (toCSR3_topeis_0),
+    .toCSR_topeis_1                               (toCSR3_topeis_1),
+    .toCSR_topeis_2                               (toCSR3_topeis_2),
+    .fromCSR_addr_valid                           (fromCSR3_addr_valid),
+    .fromCSR_addr_bits                            (fromCSR3_addr_bits),
+    .fromCSR_virt                                 (fromCSR3_virt),
+    .fromCSR_priv                                 (fromCSR3_priv),
+    .fromCSR_vgein                                (fromCSR3_vgein),
+    .fromCSR_wdata_valid                          (fromCSR3_wdata_valid),
+    .fromCSR_wdata_bits_op                        (fromCSR3_wdata_bits_op),
+    .fromCSR_wdata_bits_data                      (fromCSR3_wdata_bits_data),
+    .fromCSR_claims_0                             (fromCSR3_claims_0),
+    .fromCSR_claims_1                             (fromCSR3_claims_1),
+    .fromCSR_claims_2                             (fromCSR3_claims_2),
+    .soc_clock                                    (clock),
+    .soc_reset                                    (reset)
   );
   AXI4APLIC aplic (
     .clock                         (clock),
     .reset                         (reset),
-    .auto_toIMSIC_out_aw_ready     (_imsics_fromMem_xbar_auto_in_1_aw_ready),
     .auto_toIMSIC_out_aw_valid     (_aplic_auto_toIMSIC_out_aw_valid),
     .auto_toIMSIC_out_aw_bits_id   (_aplic_auto_toIMSIC_out_aw_bits_id),
     .auto_toIMSIC_out_aw_bits_addr (_aplic_auto_toIMSIC_out_aw_bits_addr),
-    .auto_toIMSIC_out_w_ready      (_imsics_fromMem_xbar_auto_in_1_w_ready),
+    .auto_toIMSIC_out_aw_bits_size (_aplic_auto_toIMSIC_out_aw_bits_size),
     .auto_toIMSIC_out_w_valid      (_aplic_auto_toIMSIC_out_w_valid),
     .auto_toIMSIC_out_w_bits_data  (_aplic_auto_toIMSIC_out_w_bits_data),
     .auto_toIMSIC_out_w_bits_strb  (_aplic_auto_toIMSIC_out_w_bits_strb),
@@ -1127,6 +1511,13 @@ module AXI4AIA(
     .auto_fromCPU_in_aw_valid      (_toAIA_xbar_auto_out_1_aw_valid),
     .auto_fromCPU_in_aw_bits_id    (_toAIA_xbar_auto_out_1_aw_bits_id),
     .auto_fromCPU_in_aw_bits_addr  (_toAIA_xbar_auto_out_1_aw_bits_addr),
+    .auto_fromCPU_in_aw_bits_len   (_toAIA_xbar_auto_out_1_aw_bits_len),
+    .auto_fromCPU_in_aw_bits_size  (_toAIA_xbar_auto_out_1_aw_bits_size),
+    .auto_fromCPU_in_aw_bits_burst (_toAIA_xbar_auto_out_1_aw_bits_burst),
+    .auto_fromCPU_in_aw_bits_lock  (_toAIA_xbar_auto_out_1_aw_bits_lock),
+    .auto_fromCPU_in_aw_bits_cache (_toAIA_xbar_auto_out_1_aw_bits_cache),
+    .auto_fromCPU_in_aw_bits_prot  (_toAIA_xbar_auto_out_1_aw_bits_prot),
+    .auto_fromCPU_in_aw_bits_qos   (_toAIA_xbar_auto_out_1_aw_bits_qos),
     .auto_fromCPU_in_w_ready       (_aplic_auto_fromCPU_in_w_ready),
     .auto_fromCPU_in_w_valid       (_toAIA_xbar_auto_out_1_w_valid),
     .auto_fromCPU_in_w_bits_data   (_toAIA_xbar_auto_out_1_w_bits_data),
@@ -1135,15 +1526,23 @@ module AXI4AIA(
     .auto_fromCPU_in_b_ready       (_toAIA_xbar_auto_out_1_b_ready),
     .auto_fromCPU_in_b_valid       (_aplic_auto_fromCPU_in_b_valid),
     .auto_fromCPU_in_b_bits_id     (_aplic_auto_fromCPU_in_b_bits_id),
+    .auto_fromCPU_in_b_bits_resp   (_aplic_auto_fromCPU_in_b_bits_resp),
     .auto_fromCPU_in_ar_ready      (_aplic_auto_fromCPU_in_ar_ready),
     .auto_fromCPU_in_ar_valid      (_toAIA_xbar_auto_out_1_ar_valid),
     .auto_fromCPU_in_ar_bits_id    (_toAIA_xbar_auto_out_1_ar_bits_id),
     .auto_fromCPU_in_ar_bits_addr  (_toAIA_xbar_auto_out_1_ar_bits_addr),
+    .auto_fromCPU_in_ar_bits_len   (_toAIA_xbar_auto_out_1_ar_bits_len),
     .auto_fromCPU_in_ar_bits_size  (_toAIA_xbar_auto_out_1_ar_bits_size),
+    .auto_fromCPU_in_ar_bits_burst (_toAIA_xbar_auto_out_1_ar_bits_burst),
+    .auto_fromCPU_in_ar_bits_lock  (_toAIA_xbar_auto_out_1_ar_bits_lock),
+    .auto_fromCPU_in_ar_bits_cache (_toAIA_xbar_auto_out_1_ar_bits_cache),
+    .auto_fromCPU_in_ar_bits_prot  (_toAIA_xbar_auto_out_1_ar_bits_prot),
+    .auto_fromCPU_in_ar_bits_qos   (_toAIA_xbar_auto_out_1_ar_bits_qos),
     .auto_fromCPU_in_r_ready       (_toAIA_xbar_auto_out_1_r_ready),
     .auto_fromCPU_in_r_valid       (_aplic_auto_fromCPU_in_r_valid),
     .auto_fromCPU_in_r_bits_id     (_aplic_auto_fromCPU_in_r_bits_id),
     .auto_fromCPU_in_r_bits_data   (_aplic_auto_fromCPU_in_r_bits_data),
+    .auto_fromCPU_in_r_bits_resp   (_aplic_auto_fromCPU_in_r_bits_resp),
     .auto_fromCPU_in_r_bits_last   (_aplic_auto_fromCPU_in_r_bits_last),
     .intSrcs_1                     (intSrcs_1),
     .intSrcs_2                     (intSrcs_2),
@@ -1273,7 +1672,5 @@ module AXI4AIA(
     .intSrcs_126                   (intSrcs_126),
     .intSrcs_127                   (intSrcs_127)
   );
-  assign toaia_0_b_bits_resp = 2'h0;
-  assign toaia_0_r_bits_resp = 2'h0;
 endmodule
 

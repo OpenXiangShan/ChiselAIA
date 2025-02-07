@@ -61,7 +61,6 @@ module TLIMSIC(
 
   wire        _imsic_msiio_msi_vld_ack;
   wire [10:0] _axireg_io_seteipnum;
-  wire        _axireg_io_valid;
   wire        _axireg_msiio_msi_vld_req;
   TLRegIMSIC_WRAP axireg (
     .clock                              (soc_clock),
@@ -82,7 +81,6 @@ module TLIMSIC(
     .auto_axireg_xbar_in_d_bits_size    (auto_axireg_axireg_xbar_in_d_bits_size),
     .auto_axireg_xbar_in_d_bits_source  (auto_axireg_axireg_xbar_in_d_bits_source),
     .io_seteipnum                       (_axireg_io_seteipnum),
-    .io_valid                           (_axireg_io_valid),
     .msiio_msi_vld_req                  (_axireg_msiio_msi_vld_req),
     .msiio_msi_vld_ack                  (_imsic_msiio_msi_vld_ack)
   );
@@ -108,7 +106,6 @@ module TLIMSIC(
     .fromCSR_claims_1        (fromCSR_claims_1),
     .fromCSR_claims_2        (fromCSR_claims_2),
     .io_seteipnum            (_axireg_io_seteipnum),
-    .io_valid                (_axireg_io_valid),
     .msiio_msi_vld_req       (_axireg_msiio_msi_vld_req),
     .msiio_msi_vld_ack       (_imsic_msiio_msi_vld_ack)
   );

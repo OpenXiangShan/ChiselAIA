@@ -38,7 +38,6 @@ module TLRegIMSIC_WRAP(
   output [1:0]  auto_axireg_xbar_in_d_bits_size,
   output [5:0]  auto_axireg_xbar_in_d_bits_source,
   output [10:0] io_seteipnum,
-  output        io_valid,
   output        msiio_msi_vld_req,
   input         msiio_msi_vld_ack
 );
@@ -62,7 +61,6 @@ module TLRegIMSIC_WRAP(
     .auto_xbar_in_d_bits_size    (auto_axireg_xbar_in_d_bits_size),
     .auto_xbar_in_d_bits_source  (auto_axireg_xbar_in_d_bits_source),
     .io_seteipnum                (io_seteipnum),
-    .io_valid                    (io_valid),
     .msiio_msi_vld_req           (msiio_msi_vld_req),
     .msiio_msi_vld_ack           (msiio_msi_vld_ack)
   );

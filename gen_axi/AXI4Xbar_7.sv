@@ -22,30 +22,23 @@
 module AXI4Xbar_7(
   input         clock,
   input         reset,
-  output        auto_in_1_aw_ready,
   input         auto_in_1_aw_valid,
   input  [31:0] auto_in_1_aw_bits_addr,
-  output        auto_in_1_w_ready,
   input         auto_in_1_w_valid,
-  input  [63:0] auto_in_1_w_bits_data,
-  input  [7:0]  auto_in_1_w_bits_strb,
+  input  [31:0] auto_in_1_w_bits_data,
   output        auto_in_1_b_valid,
-  output        auto_in_0_aw_ready,
   input         auto_in_0_aw_valid,
   input  [31:0] auto_in_0_aw_bits_addr,
-  output        auto_in_0_w_ready,
   input         auto_in_0_w_valid,
-  input  [63:0] auto_in_0_w_bits_data,
-  input  [7:0]  auto_in_0_w_bits_strb,
+  input  [31:0] auto_in_0_w_bits_data,
   output        auto_in_0_b_valid,
-  input         auto_out_aw_ready,
   output        auto_out_aw_valid,
   output [4:0]  auto_out_aw_bits_id,
   output [31:0] auto_out_aw_bits_addr,
-  input         auto_out_w_ready,
+  output [2:0]  auto_out_aw_bits_size,
   output        auto_out_w_valid,
-  output [63:0] auto_out_w_bits_data,
-  output [7:0]  auto_out_w_bits_strb,
+  output [31:0] auto_out_w_bits_data,
+  output [3:0]  auto_out_w_bits_strb,
   output        auto_out_w_bits_last,
   output        auto_out_b_ready,
   input         auto_out_b_valid,
@@ -60,10 +53,7 @@ module AXI4Xbar_7(
   wire       _awOut_0_io_deq_valid;
   wire [1:0] _awOut_0_io_deq_bits;
   reg        latched;
-  wire       _out_0_aw_ready_T = latched | _awOut_0_io_enq_ready;
-  wire       out_0_aw_ready = auto_out_aw_ready & _out_0_aw_ready_T;
   wire       _awOut_0_io_enq_valid_T_1 = out_0_aw_valid & ~latched;
-  wire       out_0_w_ready = auto_out_w_ready & _awOut_0_io_deq_valid;
   reg        awOut_0_io_enq_bits_idle;
   wire       awOut_0_io_enq_bits_anyValid = auto_in_0_aw_valid | auto_in_1_aw_valid;
   wire [1:0] awOut_0_io_enq_bits_readys_valid = {auto_in_1_aw_valid, auto_in_0_aw_valid};
@@ -113,7 +103,6 @@ module AXI4Xbar_7(
   `endif // not def SYNTHESIS
   wire [1:0] _awOut_0_io_enq_bits_readys_mask_T =
     awOut_0_io_enq_bits_readys_readys & awOut_0_io_enq_bits_readys_valid;
-  wire       _awOut_0_io_enq_bits_T_16 = out_0_aw_ready & out_0_aw_valid;
   always @(posedge clock) begin
     if (reset) begin
       latched <= 1'h0;
@@ -123,12 +112,9 @@ module AXI4Xbar_7(
       awOut_0_io_enq_bits_state_1 <= 1'h0;
     end
     else begin
-      latched <=
-        ~_awOut_0_io_enq_bits_T_16
-        & (_awOut_0_io_enq_ready & _awOut_0_io_enq_valid_T_1 | latched);
+      latched <= _awOut_0_io_enq_ready & _awOut_0_io_enq_valid_T_1 | latched;
       awOut_0_io_enq_bits_idle <=
-        _awOut_0_io_enq_bits_T_16 | ~awOut_0_io_enq_bits_anyValid
-        & awOut_0_io_enq_bits_idle;
+        ~awOut_0_io_enq_bits_anyValid & awOut_0_io_enq_bits_idle;
       if (awOut_0_io_enq_bits_idle & (|awOut_0_io_enq_bits_readys_valid))
         awOut_0_io_enq_bits_readys_mask <=
           _awOut_0_io_enq_bits_readys_mask_T
@@ -145,36 +131,25 @@ module AXI4Xbar_7(
     .io_enq_ready (_awOut_0_io_enq_ready),
     .io_enq_valid (_awOut_0_io_enq_valid_T_1),
     .io_enq_bits  ({awOut_0_io_enq_bits_muxState_1, awOut_0_io_enq_bits_muxState_0}),
-    .io_deq_ready (_out_0_w_valid_T_4 & (|_awOut_0_io_deq_bits) & auto_out_w_ready),
+    .io_deq_ready (1'h0),
     .io_deq_valid (_awOut_0_io_deq_valid),
     .io_deq_bits  (_awOut_0_io_deq_bits)
   );
-  assign auto_in_1_aw_ready =
-    out_0_aw_ready
-    & (awOut_0_io_enq_bits_idle
-         ? awOut_0_io_enq_bits_readys_readys[1]
-         : awOut_0_io_enq_bits_state_1);
-  assign auto_in_1_w_ready = out_0_w_ready & _awOut_0_io_deq_bits[1];
   assign auto_in_1_b_valid = auto_out_b_valid & ~(auto_out_b_bits_id[4]);
-  assign auto_in_0_aw_ready =
-    out_0_aw_ready
-    & (awOut_0_io_enq_bits_idle
-         ? awOut_0_io_enq_bits_readys_readys[0]
-         : awOut_0_io_enq_bits_state_0);
-  assign auto_in_0_w_ready = out_0_w_ready & _awOut_0_io_deq_bits[0];
   assign auto_in_0_b_valid = auto_out_b_valid & auto_out_b_bits_id[4];
-  assign auto_out_aw_valid = out_0_aw_valid & _out_0_aw_ready_T;
+  assign auto_out_aw_valid = out_0_aw_valid & (latched | _awOut_0_io_enq_ready);
   assign auto_out_aw_bits_id = {awOut_0_io_enq_bits_muxState_0, 4'h0};
   assign auto_out_aw_bits_addr =
     (awOut_0_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_addr : 32'h0)
     | (awOut_0_io_enq_bits_muxState_1 ? auto_in_1_aw_bits_addr : 32'h0);
+  assign auto_out_aw_bits_size =
+    {1'h0, awOut_0_io_enq_bits_muxState_0 | awOut_0_io_enq_bits_muxState_1, 1'h0};
   assign auto_out_w_valid = _out_0_w_valid_T_4 & _awOut_0_io_deq_valid;
   assign auto_out_w_bits_data =
-    (_awOut_0_io_deq_bits[0] ? auto_in_0_w_bits_data : 64'h0)
-    | (_awOut_0_io_deq_bits[1] ? auto_in_1_w_bits_data : 64'h0);
+    (_awOut_0_io_deq_bits[0] ? auto_in_0_w_bits_data : 32'h0)
+    | (_awOut_0_io_deq_bits[1] ? auto_in_1_w_bits_data : 32'h0);
   assign auto_out_w_bits_strb =
-    (_awOut_0_io_deq_bits[0] ? auto_in_0_w_bits_strb : 8'h0)
-    | (_awOut_0_io_deq_bits[1] ? auto_in_1_w_bits_strb : 8'h0);
+    {4{_awOut_0_io_deq_bits[0]}} | {4{_awOut_0_io_deq_bits[1]}};
   assign auto_out_w_bits_last = |_awOut_0_io_deq_bits;
   assign auto_out_b_ready = 1'h1;
 endmodule

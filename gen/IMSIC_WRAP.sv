@@ -41,7 +41,6 @@ module IMSIC_WRAP(
   input         fromCSR_claims_1,
   input         fromCSR_claims_2,
   input  [10:0] io_seteipnum,
-  input         io_valid,
   input         msiio_msi_vld_req,
   output        msiio_msi_vld_ack
 );
@@ -68,7 +67,6 @@ module IMSIC_WRAP(
     .fromCSR_claims_1        (fromCSR_claims_1),
     .fromCSR_claims_2        (fromCSR_claims_2),
     .io_seteipnum            (io_seteipnum),
-    .io_valid                (io_valid),
     .msiio_msi_vld_req       (msiio_msi_vld_req),
     .msiio_msi_vld_ack       (msiio_msi_vld_ack)
   );

@@ -26,64 +26,113 @@ module AXI4Xbar_6(
   input         auto_in_aw_valid,
   input  [3:0]  auto_in_aw_bits_id,
   input  [28:0] auto_in_aw_bits_addr,
+  input  [7:0]  auto_in_aw_bits_len,
+  input  [2:0]  auto_in_aw_bits_size,
+  input  [1:0]  auto_in_aw_bits_burst,
+  input         auto_in_aw_bits_lock,
+  input  [3:0]  auto_in_aw_bits_cache,
+  input  [2:0]  auto_in_aw_bits_prot,
+  input  [3:0]  auto_in_aw_bits_qos,
   output        auto_in_w_ready,
   input         auto_in_w_valid,
-  input  [63:0] auto_in_w_bits_data,
-  input  [7:0]  auto_in_w_bits_strb,
+  input  [31:0] auto_in_w_bits_data,
+  input  [3:0]  auto_in_w_bits_strb,
   input         auto_in_w_bits_last,
   input         auto_in_b_ready,
   output        auto_in_b_valid,
   output [3:0]  auto_in_b_bits_id,
+  output [1:0]  auto_in_b_bits_resp,
   output        auto_in_ar_ready,
   input         auto_in_ar_valid,
   input  [3:0]  auto_in_ar_bits_id,
   input  [28:0] auto_in_ar_bits_addr,
+  input  [7:0]  auto_in_ar_bits_len,
   input  [2:0]  auto_in_ar_bits_size,
+  input  [1:0]  auto_in_ar_bits_burst,
+  input         auto_in_ar_bits_lock,
+  input  [3:0]  auto_in_ar_bits_cache,
+  input  [2:0]  auto_in_ar_bits_prot,
+  input  [3:0]  auto_in_ar_bits_qos,
   input         auto_in_r_ready,
   output        auto_in_r_valid,
   output [3:0]  auto_in_r_bits_id,
-  output [63:0] auto_in_r_bits_data,
+  output [31:0] auto_in_r_bits_data,
+  output [1:0]  auto_in_r_bits_resp,
   output        auto_in_r_bits_last,
   input         auto_out_1_aw_ready,
   output        auto_out_1_aw_valid,
   output [3:0]  auto_out_1_aw_bits_id,
   output [28:0] auto_out_1_aw_bits_addr,
+  output [7:0]  auto_out_1_aw_bits_len,
+  output [2:0]  auto_out_1_aw_bits_size,
+  output [1:0]  auto_out_1_aw_bits_burst,
+  output        auto_out_1_aw_bits_lock,
+  output [3:0]  auto_out_1_aw_bits_cache,
+  output [2:0]  auto_out_1_aw_bits_prot,
+  output [3:0]  auto_out_1_aw_bits_qos,
   input         auto_out_1_w_ready,
   output        auto_out_1_w_valid,
-  output [63:0] auto_out_1_w_bits_data,
-  output [7:0]  auto_out_1_w_bits_strb,
+  output [31:0] auto_out_1_w_bits_data,
+  output [3:0]  auto_out_1_w_bits_strb,
+  output        auto_out_1_w_bits_last,
   output        auto_out_1_b_ready,
   input         auto_out_1_b_valid,
   input  [3:0]  auto_out_1_b_bits_id,
+  input  [1:0]  auto_out_1_b_bits_resp,
   input         auto_out_1_ar_ready,
   output        auto_out_1_ar_valid,
   output [3:0]  auto_out_1_ar_bits_id,
   output [28:0] auto_out_1_ar_bits_addr,
+  output [7:0]  auto_out_1_ar_bits_len,
   output [2:0]  auto_out_1_ar_bits_size,
+  output [1:0]  auto_out_1_ar_bits_burst,
+  output        auto_out_1_ar_bits_lock,
+  output [3:0]  auto_out_1_ar_bits_cache,
+  output [2:0]  auto_out_1_ar_bits_prot,
+  output [3:0]  auto_out_1_ar_bits_qos,
   output        auto_out_1_r_ready,
   input         auto_out_1_r_valid,
   input  [3:0]  auto_out_1_r_bits_id,
-  input  [63:0] auto_out_1_r_bits_data,
+  input  [31:0] auto_out_1_r_bits_data,
+  input  [1:0]  auto_out_1_r_bits_resp,
+  input         auto_out_1_r_bits_last,
   input         auto_out_0_aw_ready,
   output        auto_out_0_aw_valid,
   output [3:0]  auto_out_0_aw_bits_id,
   output [28:0] auto_out_0_aw_bits_addr,
+  output [7:0]  auto_out_0_aw_bits_len,
+  output [2:0]  auto_out_0_aw_bits_size,
+  output [1:0]  auto_out_0_aw_bits_burst,
+  output        auto_out_0_aw_bits_lock,
+  output [3:0]  auto_out_0_aw_bits_cache,
+  output [2:0]  auto_out_0_aw_bits_prot,
+  output [3:0]  auto_out_0_aw_bits_qos,
   input         auto_out_0_w_ready,
   output        auto_out_0_w_valid,
-  output [63:0] auto_out_0_w_bits_data,
-  output [7:0]  auto_out_0_w_bits_strb,
+  output [31:0] auto_out_0_w_bits_data,
+  output [3:0]  auto_out_0_w_bits_strb,
+  output        auto_out_0_w_bits_last,
   output        auto_out_0_b_ready,
   input         auto_out_0_b_valid,
   input  [3:0]  auto_out_0_b_bits_id,
+  input  [1:0]  auto_out_0_b_bits_resp,
   input         auto_out_0_ar_ready,
   output        auto_out_0_ar_valid,
   output [3:0]  auto_out_0_ar_bits_id,
   output [28:0] auto_out_0_ar_bits_addr,
+  output [7:0]  auto_out_0_ar_bits_len,
   output [2:0]  auto_out_0_ar_bits_size,
+  output [1:0]  auto_out_0_ar_bits_burst,
+  output        auto_out_0_ar_bits_lock,
+  output [3:0]  auto_out_0_ar_bits_cache,
+  output [2:0]  auto_out_0_ar_bits_prot,
+  output [3:0]  auto_out_0_ar_bits_qos,
   output        auto_out_0_r_ready,
   input         auto_out_0_r_valid,
   input  [3:0]  auto_out_0_r_bits_id,
-  input  [63:0] auto_out_0_r_bits_data
+  input  [31:0] auto_out_0_r_bits_data,
+  input  [1:0]  auto_out_0_r_bits_resp,
+  input         auto_out_0_r_bits_last
 );
 
   wire [3:0]  _in_0_b_bits_T_5;
@@ -380,7 +429,8 @@ module AXI4Xbar_6(
   wire        muxState_2_1 = idle_2 ? winner_2_1 : state_2_1;
   assign in_0_r_valid =
     idle_2 ? anyValid : state_2_0 & auto_out_0_r_valid | state_2_1 & auto_out_1_r_valid;
-  assign _in_0_r_bits_T_2 = muxState_2_0 | muxState_2_1;
+  assign _in_0_r_bits_T_2 =
+    muxState_2_0 & auto_out_0_r_bits_last | muxState_2_1 & auto_out_1_r_bits_last;
   assign _in_0_r_bits_T_11 =
     (muxState_2_0 ? auto_out_0_r_bits_id : 4'h0)
     | (muxState_2_1 ? auto_out_1_r_bits_id : 4'h0);
@@ -808,11 +858,13 @@ module AXI4Xbar_6(
   `endif // not def SYNTHESIS
   reg         state_3_0;
   reg         state_3_1;
+  wire        muxState_3_0 = idle_3 ? winner_3_0 : state_3_0;
+  wire        muxState_3_1 = idle_3 ? winner_3_1 : state_3_1;
   assign in_0_b_valid =
     idle_3 ? anyValid_1 : state_3_0 & auto_out_0_b_valid | state_3_1 & auto_out_1_b_valid;
   assign _in_0_b_bits_T_5 =
-    ((idle_3 ? winner_3_0 : state_3_0) ? auto_out_0_b_bits_id : 4'h0)
-    | ((idle_3 ? winner_3_1 : state_3_1) ? auto_out_1_b_bits_id : 4'h0);
+    (muxState_3_0 ? auto_out_0_b_bits_id : 4'h0)
+    | (muxState_3_1 ? auto_out_1_b_bits_id : 4'h0);
   wire [1:0]  _readys_mask_T = readys_readys & readys_valid;
   wire [1:0]  _readys_mask_T_5 = readys_readys_1 & readys_valid_1;
   always @(posedge clock) begin
@@ -1033,36 +1085,70 @@ module AXI4Xbar_6(
   assign auto_in_w_ready = _portsWOI_in_0_w_ready_T_2 & _awIn_0_io_deq_valid;
   assign auto_in_b_valid = in_0_b_valid;
   assign auto_in_b_bits_id = _in_0_b_bits_T_5;
+  assign auto_in_b_bits_resp =
+    (muxState_3_0 ? auto_out_0_b_bits_resp : 2'h0)
+    | (muxState_3_1 ? auto_out_1_b_bits_resp : 2'h0);
   assign auto_in_ar_ready = nodeIn_ar_ready;
   assign auto_in_r_valid = in_0_r_valid;
   assign auto_in_r_bits_id = _in_0_r_bits_T_11;
   assign auto_in_r_bits_data =
-    (muxState_2_0 ? auto_out_0_r_bits_data : 64'h0)
-    | (muxState_2_1 ? auto_out_1_r_bits_data : 64'h0);
+    (muxState_2_0 ? auto_out_0_r_bits_data : 32'h0)
+    | (muxState_2_1 ? auto_out_1_r_bits_data : 32'h0);
+  assign auto_in_r_bits_resp =
+    (muxState_2_0 ? auto_out_0_r_bits_resp : 2'h0)
+    | (muxState_2_1 ? auto_out_1_r_bits_resp : 2'h0);
   assign auto_in_r_bits_last = _in_0_r_bits_T_2;
   assign auto_out_1_aw_valid = in_0_aw_valid & auto_in_aw_bits_addr[14];
   assign auto_out_1_aw_bits_id = auto_in_aw_bits_id;
   assign auto_out_1_aw_bits_addr = auto_in_aw_bits_addr;
+  assign auto_out_1_aw_bits_len = auto_in_aw_bits_len;
+  assign auto_out_1_aw_bits_size = auto_in_aw_bits_size;
+  assign auto_out_1_aw_bits_burst = auto_in_aw_bits_burst;
+  assign auto_out_1_aw_bits_lock = auto_in_aw_bits_lock;
+  assign auto_out_1_aw_bits_cache = auto_in_aw_bits_cache;
+  assign auto_out_1_aw_bits_prot = auto_in_aw_bits_prot;
+  assign auto_out_1_aw_bits_qos = auto_in_aw_bits_qos;
   assign auto_out_1_w_valid = in_0_w_valid & _awIn_0_io_deq_bits[1];
   assign auto_out_1_w_bits_data = auto_in_w_bits_data;
   assign auto_out_1_w_bits_strb = auto_in_w_bits_strb;
+  assign auto_out_1_w_bits_last = auto_in_w_bits_last;
   assign auto_out_1_b_ready = auto_in_b_ready & (idle_3 ? readys_readys_1[1] : state_3_1);
   assign auto_out_1_ar_valid = in_0_ar_valid & auto_in_ar_bits_addr[14];
   assign auto_out_1_ar_bits_id = auto_in_ar_bits_id;
   assign auto_out_1_ar_bits_addr = auto_in_ar_bits_addr;
+  assign auto_out_1_ar_bits_len = auto_in_ar_bits_len;
   assign auto_out_1_ar_bits_size = auto_in_ar_bits_size;
+  assign auto_out_1_ar_bits_burst = auto_in_ar_bits_burst;
+  assign auto_out_1_ar_bits_lock = auto_in_ar_bits_lock;
+  assign auto_out_1_ar_bits_cache = auto_in_ar_bits_cache;
+  assign auto_out_1_ar_bits_prot = auto_in_ar_bits_prot;
+  assign auto_out_1_ar_bits_qos = auto_in_ar_bits_qos;
   assign auto_out_1_r_ready = auto_in_r_ready & (idle_2 ? readys_readys[1] : state_2_1);
   assign auto_out_0_aw_valid = in_0_aw_valid & ~(auto_in_aw_bits_addr[14]);
   assign auto_out_0_aw_bits_id = auto_in_aw_bits_id;
   assign auto_out_0_aw_bits_addr = auto_in_aw_bits_addr;
+  assign auto_out_0_aw_bits_len = auto_in_aw_bits_len;
+  assign auto_out_0_aw_bits_size = auto_in_aw_bits_size;
+  assign auto_out_0_aw_bits_burst = auto_in_aw_bits_burst;
+  assign auto_out_0_aw_bits_lock = auto_in_aw_bits_lock;
+  assign auto_out_0_aw_bits_cache = auto_in_aw_bits_cache;
+  assign auto_out_0_aw_bits_prot = auto_in_aw_bits_prot;
+  assign auto_out_0_aw_bits_qos = auto_in_aw_bits_qos;
   assign auto_out_0_w_valid = in_0_w_valid & _awIn_0_io_deq_bits[0];
   assign auto_out_0_w_bits_data = auto_in_w_bits_data;
   assign auto_out_0_w_bits_strb = auto_in_w_bits_strb;
+  assign auto_out_0_w_bits_last = auto_in_w_bits_last;
   assign auto_out_0_b_ready = auto_in_b_ready & (idle_3 ? readys_readys_1[0] : state_3_0);
   assign auto_out_0_ar_valid = in_0_ar_valid & ~(auto_in_ar_bits_addr[14]);
   assign auto_out_0_ar_bits_id = auto_in_ar_bits_id;
   assign auto_out_0_ar_bits_addr = auto_in_ar_bits_addr;
+  assign auto_out_0_ar_bits_len = auto_in_ar_bits_len;
   assign auto_out_0_ar_bits_size = auto_in_ar_bits_size;
+  assign auto_out_0_ar_bits_burst = auto_in_ar_bits_burst;
+  assign auto_out_0_ar_bits_lock = auto_in_ar_bits_lock;
+  assign auto_out_0_ar_bits_cache = auto_in_ar_bits_cache;
+  assign auto_out_0_ar_bits_prot = auto_in_ar_bits_prot;
+  assign auto_out_0_ar_bits_qos = auto_in_ar_bits_qos;
   assign auto_out_0_r_ready = auto_in_r_ready & (idle_2 ? readys_readys[0] : state_2_0);
 endmodule
 

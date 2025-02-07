@@ -62,7 +62,12 @@ module RegGen(
   wire [63:0] _regmapIOs_0_2_back_q_io_deq_bits_data;
   wire [7:0]  _regmapIOs_0_2_back_q_io_deq_bits_mask;
   reg  [10:0] outseteipnum;
-  reg         outvalids;
+  reg         outvalids_0;
+  reg         outvalids_1;
+  reg         outvalids_2;
+  reg         outvalids_3;
+  reg         outvalids_4;
+  reg         outvalids_5;
   wire        seteipnum_valid =
     _regmapIOs_0_2_back_q_io_deq_valid & regmapIOs_0_2_ready
     & _regmapIOs_0_2_wofireMux_T_1 & _regmapIOs_0_2_back_q_io_deq_bits_index == 9'h0
@@ -115,11 +120,32 @@ module RegGen(
   always @(posedge clock) begin
     if (reset) begin
       outseteipnum <= 11'h0;
-      outvalids <= 1'h0;
+      outvalids_0 <= 1'h0;
+      outvalids_1 <= 1'h0;
+      outvalids_2 <= 1'h0;
+      outvalids_3 <= 1'h0;
+      outvalids_4 <= 1'h0;
+      outvalids_5 <= 1'h0;
     end
     else begin
-      outseteipnum <= 11'h500;
-      outvalids <= seteipnum_5_valid;
+      if (seteipnum_5_valid)
+        outseteipnum <= {3'h5, seteipnum_5_bits};
+      else if (seteipnum_4_valid)
+        outseteipnum <= {3'h4, seteipnum_4_bits};
+      else if (seteipnum_3_valid)
+        outseteipnum <= {3'h3, seteipnum_3_bits};
+      else if (seteipnum_2_valid)
+        outseteipnum <= {3'h2, seteipnum_2_bits};
+      else if (seteipnum_1_valid)
+        outseteipnum <= {3'h1, seteipnum_1_bits};
+      else if (seteipnum_valid)
+        outseteipnum <= {3'h0, seteipnum_bits};
+      outvalids_0 <= seteipnum_valid;
+      outvalids_1 <= seteipnum_1_valid;
+      outvalids_2 <= seteipnum_2_valid;
+      outvalids_3 <= seteipnum_3_valid;
+      outvalids_4 <= seteipnum_4_valid;
+      outvalids_5 <= seteipnum_5_valid;
     end
   end // always @(posedge)
   Queue1_RegMapperInput regmapIOs_0_2_back_q (
@@ -159,6 +185,7 @@ module RegGen(
   assign regmapIOs_1_2_valid = _regmapIOs_1_2_back_q_io_deq_valid;
   assign regmapIOs_1_2_bits_read = _regmapIOs_1_2_back_q_io_deq_bits_read;
   assign io_seteipnum = outseteipnum;
-  assign io_valid = outvalids;
+  assign io_valid =
+    outvalids_0 | outvalids_1 | outvalids_2 | outvalids_3 | outvalids_4 | outvalids_5;
 endmodule
 

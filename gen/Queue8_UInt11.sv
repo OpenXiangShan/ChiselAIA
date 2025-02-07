@@ -19,44 +19,51 @@
   `endif // STOP_COND
 `endif // not def STOP_COND_
 
-module Queue2_UInt4(
-  input        clock,
-  input        reset,
-  output       io_enq_ready,
-  input        io_enq_valid,
-  input  [3:0] io_enq_bits,
-  output       io_deq_valid,
-  output [3:0] io_deq_bits
+module Queue8_UInt11(
+  input         clock,
+  input         reset,
+  output        io_enq_ready,
+  input         io_enq_valid,
+  input  [10:0] io_enq_bits,
+  input         io_deq_ready,
+  output        io_deq_valid,
+  output [10:0] io_deq_bits
 );
 
-  wire [3:0] _ram_ext_R0_data;
-  reg        wrap;
+  reg  [2:0] enq_ptr_value;
+  reg  [2:0] deq_ptr_value;
   reg        maybe_full;
-  wire       empty = ~wrap & ~maybe_full;
-  wire       full = ~wrap & maybe_full;
+  wire       ptr_match = enq_ptr_value == deq_ptr_value;
+  wire       empty = ptr_match & ~maybe_full;
+  wire       full = ptr_match & maybe_full;
   wire       do_enq = ~full & io_enq_valid;
+  wire       do_deq = io_deq_ready & ~empty;
   always @(posedge clock) begin
     if (reset) begin
-      wrap <= 1'h0;
+      enq_ptr_value <= 3'h0;
+      deq_ptr_value <= 3'h0;
       maybe_full <= 1'h0;
     end
-    else if (do_enq) begin
-      wrap <= 1'(wrap - 1'h1);
-      maybe_full <= do_enq;
+    else begin
+      if (do_enq)
+        enq_ptr_value <= 3'(enq_ptr_value + 3'h1);
+      if (do_deq)
+        deq_ptr_value <= 3'(deq_ptr_value + 3'h1);
+      if (~(do_enq == do_deq))
+        maybe_full <= do_enq;
     end
   end // always @(posedge)
-  ram_2x4 ram_ext (
-    .R0_addr (1'h0),
+  ram_8x11 ram_ext (
+    .R0_addr (deq_ptr_value),
     .R0_en   (1'h1),
     .R0_clk  (clock),
-    .R0_data (_ram_ext_R0_data),
-    .W0_addr (wrap),
+    .R0_data (io_deq_bits),
+    .W0_addr (enq_ptr_value),
     .W0_en   (do_enq),
     .W0_clk  (clock),
     .W0_data (io_enq_bits)
   );
   assign io_enq_ready = ~full;
-  assign io_deq_valid = io_enq_valid | ~empty;
-  assign io_deq_bits = empty ? io_enq_bits : _ram_ext_R0_data;
+  assign io_deq_valid = ~empty;
 endmodule
 

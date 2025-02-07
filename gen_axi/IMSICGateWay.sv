@@ -20,30 +20,20 @@
 `endif // not def STOP_COND_
 
 module IMSICGateWay(
-  input        clock,
-  input        reset,
-  input        msiio_msi_vld_req,
-  output       msiio_msi_vld_ack,
-  input  [7:0] io_seteipnum,
-  input        io_valid_0,
-  input        io_valid_1,
-  input        io_valid_2,
-  input        io_valid_3,
-  input        io_valid_4,
-  input        io_valid_5,
-  output [7:0] msi_data_o,
-  output       msi_valid_o_0,
-  output       msi_valid_o_1,
-  output       msi_valid_o_2,
-  output       msi_valid_o_3,
-  output       msi_valid_o_4,
-  output       msi_valid_o_5
+  input         clock,
+  input         reset,
+  input         msiio_msi_vld_req,
+  output        msiio_msi_vld_ack,
+  input  [10:0] io_seteipnum,
+  output [7:0]  msi_data_o,
+  output [5:0]  msi_valid_o
 );
 
   reg        msi_vld_ack_cpu;
   reg  [7:0] msi_data_catch;
   reg  [5:0] msi_intf_valids;
   wire       msi_vld_ris_cpu = msiio_msi_vld_req & ~msi_vld_ack_cpu;
+  wire [7:0] _msi_intf_valids_T_1 = 8'h1 << io_seteipnum[10:8];
   always @(posedge clock) begin
     msi_vld_ack_cpu <= msiio_msi_vld_req;
     if (reset) begin
@@ -52,20 +42,12 @@ module IMSICGateWay(
     end
     else begin
       if (msi_vld_ris_cpu)
-        msi_data_catch <= io_seteipnum;
-      msi_intf_valids <=
-        msi_vld_ris_cpu
-          ? {io_valid_5, io_valid_4, io_valid_3, io_valid_2, io_valid_1, io_valid_0}
-          : 6'h0;
+        msi_data_catch <= io_seteipnum[7:0];
+      msi_intf_valids <= msi_vld_ris_cpu ? _msi_intf_valids_T_1[5:0] : 6'h0;
     end
   end // always @(posedge)
   assign msiio_msi_vld_ack = msi_vld_ack_cpu;
   assign msi_data_o = msi_data_catch;
-  assign msi_valid_o_0 = msi_intf_valids[0];
-  assign msi_valid_o_1 = msi_intf_valids[1];
-  assign msi_valid_o_2 = msi_intf_valids[2];
-  assign msi_valid_o_3 = msi_intf_valids[3];
-  assign msi_valid_o_4 = msi_intf_valids[4];
-  assign msi_valid_o_5 = msi_intf_valids[5];
+  assign msi_valid_o = msi_intf_valids;
 endmodule
 

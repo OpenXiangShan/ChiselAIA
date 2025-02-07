@@ -25,12 +25,7 @@ module IMSIC(
   output        toCSR_rdata_valid,
   output [63:0] toCSR_rdata_bits,
   output        toCSR_illegal,
-  output        toCSR_pendings_0,
-  output        toCSR_pendings_1,
-  output        toCSR_pendings_2,
-  output        toCSR_pendings_3,
-  output        toCSR_pendings_4,
-  output        toCSR_pendings_5,
+  output [5:0]  toCSR_pendings,
   output [31:0] toCSR_topeis_0,
   output [31:0] toCSR_topeis_1,
   output [31:0] toCSR_topeis_2,
@@ -45,36 +40,31 @@ module IMSIC(
   input         fromCSR_claims_0,
   input         fromCSR_claims_1,
   input         fromCSR_claims_2,
-  input  [7:0]  io_seteipnum,
-  input         io_valid_0,
-  input         io_valid_1,
-  input         io_valid_2,
-  input         io_valid_3,
-  input         io_valid_4,
-  input         io_valid_5,
+  input  [10:0] io_seteipnum,
   input         msiio_msi_vld_req,
   output        msiio_msi_vld_ack
 );
 
   wire        _intFile_5_toCSR_illegal;
+  wire        _intFile_5_toCSR_pending;
   wire [7:0]  _intFile_5_toCSR_topei;
   wire        _intFile_4_toCSR_illegal;
+  wire        _intFile_4_toCSR_pending;
   wire [7:0]  _intFile_4_toCSR_topei;
   wire        _intFile_3_toCSR_illegal;
+  wire        _intFile_3_toCSR_pending;
   wire [7:0]  _intFile_3_toCSR_topei;
   wire        _intFile_2_toCSR_illegal;
+  wire        _intFile_2_toCSR_pending;
   wire [7:0]  _intFile_2_toCSR_topei;
   wire        _intFile_1_toCSR_illegal;
+  wire        _intFile_1_toCSR_pending;
   wire [7:0]  _intFile_1_toCSR_topei;
   wire        _intFile_toCSR_illegal;
+  wire        _intFile_toCSR_pending;
   wire [7:0]  _intFile_toCSR_topei;
   wire [7:0]  _imsicGateWay_msi_data_o;
-  wire        _imsicGateWay_msi_valid_o_0;
-  wire        _imsicGateWay_msi_valid_o_1;
-  wire        _imsicGateWay_msi_valid_o_2;
-  wire        _imsicGateWay_msi_valid_o_3;
-  wire        _imsicGateWay_msi_valid_o_4;
-  wire        _imsicGateWay_msi_valid_o_5;
+  wire [5:0]  _imsicGateWay_msi_valid_o;
   wire [2:0]  pv = {fromCSR_priv, fromCSR_virt};
   wire        _GEN = pv == 3'h6;
   wire        _GEN_0 = pv == 3'h2;
@@ -96,24 +86,13 @@ module IMSIC(
     .msiio_msi_vld_req (msiio_msi_vld_req),
     .msiio_msi_vld_ack (msiio_msi_vld_ack),
     .io_seteipnum      (io_seteipnum),
-    .io_valid_0        (io_valid_0),
-    .io_valid_1        (io_valid_1),
-    .io_valid_2        (io_valid_2),
-    .io_valid_3        (io_valid_3),
-    .io_valid_4        (io_valid_4),
-    .io_valid_5        (io_valid_5),
     .msi_data_o        (_imsicGateWay_msi_data_o),
-    .msi_valid_o_0     (_imsicGateWay_msi_valid_o_0),
-    .msi_valid_o_1     (_imsicGateWay_msi_valid_o_1),
-    .msi_valid_o_2     (_imsicGateWay_msi_valid_o_2),
-    .msi_valid_o_3     (_imsicGateWay_msi_valid_o_3),
-    .msi_valid_o_4     (_imsicGateWay_msi_valid_o_4),
-    .msi_valid_o_5     (_imsicGateWay_msi_valid_o_5)
+    .msi_valid_o       (_imsicGateWay_msi_valid_o)
   );
   IntFile intFile (
     .clock                   (clock),
     .reset                   (reset),
-    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o_0),
+    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o[0]),
     .fromCSR_seteipnum_bits  (_imsicGateWay_msi_data_o),
     .fromCSR_addr_valid      (fromCSR_addr_valid & intFilesSelOH[0]),
     .fromCSR_addr_bits       (fromCSR_addr_bits),
@@ -124,13 +103,13 @@ module IMSIC(
     .toCSR_rdata_valid       (/* unused */),
     .toCSR_rdata_bits        (/* unused */),
     .toCSR_illegal           (_intFile_toCSR_illegal),
-    .toCSR_pending           (toCSR_pendings_0),
+    .toCSR_pending           (_intFile_toCSR_pending),
     .toCSR_topei             (_intFile_toCSR_topei)
   );
   IntFile intFile_1 (
     .clock                   (clock),
     .reset                   (reset),
-    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o_1),
+    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o[1]),
     .fromCSR_seteipnum_bits  (_imsicGateWay_msi_data_o),
     .fromCSR_addr_valid      (fromCSR_addr_valid & intFilesSelOH[1]),
     .fromCSR_addr_bits       (fromCSR_addr_bits),
@@ -141,13 +120,13 @@ module IMSIC(
     .toCSR_rdata_valid       (/* unused */),
     .toCSR_rdata_bits        (/* unused */),
     .toCSR_illegal           (_intFile_1_toCSR_illegal),
-    .toCSR_pending           (toCSR_pendings_1),
+    .toCSR_pending           (_intFile_1_toCSR_pending),
     .toCSR_topei             (_intFile_1_toCSR_topei)
   );
   IntFile intFile_2 (
     .clock                   (clock),
     .reset                   (reset),
-    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o_2),
+    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o[2]),
     .fromCSR_seteipnum_bits  (_imsicGateWay_msi_data_o),
     .fromCSR_addr_valid      (fromCSR_addr_valid & intFilesSelOH[2]),
     .fromCSR_addr_bits       (fromCSR_addr_bits),
@@ -158,13 +137,13 @@ module IMSIC(
     .toCSR_rdata_valid       (/* unused */),
     .toCSR_rdata_bits        (/* unused */),
     .toCSR_illegal           (_intFile_2_toCSR_illegal),
-    .toCSR_pending           (toCSR_pendings_2),
+    .toCSR_pending           (_intFile_2_toCSR_pending),
     .toCSR_topei             (_intFile_2_toCSR_topei)
   );
   IntFile intFile_3 (
     .clock                   (clock),
     .reset                   (reset),
-    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o_3),
+    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o[3]),
     .fromCSR_seteipnum_bits  (_imsicGateWay_msi_data_o),
     .fromCSR_addr_valid      (fromCSR_addr_valid & intFilesSelOH[3]),
     .fromCSR_addr_bits       (fromCSR_addr_bits),
@@ -175,13 +154,13 @@ module IMSIC(
     .toCSR_rdata_valid       (/* unused */),
     .toCSR_rdata_bits        (/* unused */),
     .toCSR_illegal           (_intFile_3_toCSR_illegal),
-    .toCSR_pending           (toCSR_pendings_3),
+    .toCSR_pending           (_intFile_3_toCSR_pending),
     .toCSR_topei             (_intFile_3_toCSR_topei)
   );
   IntFile intFile_4 (
     .clock                   (clock),
     .reset                   (reset),
-    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o_4),
+    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o[4]),
     .fromCSR_seteipnum_bits  (_imsicGateWay_msi_data_o),
     .fromCSR_addr_valid      (fromCSR_addr_valid & intFilesSelOH[4]),
     .fromCSR_addr_bits       (fromCSR_addr_bits),
@@ -192,13 +171,13 @@ module IMSIC(
     .toCSR_rdata_valid       (/* unused */),
     .toCSR_rdata_bits        (/* unused */),
     .toCSR_illegal           (_intFile_4_toCSR_illegal),
-    .toCSR_pending           (toCSR_pendings_4),
+    .toCSR_pending           (_intFile_4_toCSR_pending),
     .toCSR_topei             (_intFile_4_toCSR_topei)
   );
   IntFile intFile_5 (
     .clock                   (clock),
     .reset                   (reset),
-    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o_5),
+    .fromCSR_seteipnum_valid (_imsicGateWay_msi_valid_o[5]),
     .fromCSR_seteipnum_bits  (_imsicGateWay_msi_data_o),
     .fromCSR_addr_valid      (fromCSR_addr_valid & intFilesSelOH[5]),
     .fromCSR_addr_bits       (fromCSR_addr_bits),
@@ -209,7 +188,7 @@ module IMSIC(
     .toCSR_rdata_valid       (toCSR_rdata_valid),
     .toCSR_rdata_bits        (toCSR_rdata_bits),
     .toCSR_illegal           (_intFile_5_toCSR_illegal),
-    .toCSR_pending           (toCSR_pendings_5),
+    .toCSR_pending           (_intFile_5_toCSR_pending),
     .toCSR_topei             (_intFile_5_toCSR_topei)
   );
   assign toCSR_illegal =
@@ -217,6 +196,13 @@ module IMSIC(
     & (_intFile_toCSR_illegal | _intFile_1_toCSR_illegal | _intFile_2_toCSR_illegal
        | _intFile_3_toCSR_illegal | _intFile_4_toCSR_illegal | _intFile_5_toCSR_illegal
        | (|(fromCSR_vgein[5:2])) | ~(_GEN | _GEN_0) & ~_GEN_1);
+  assign toCSR_pendings =
+    {_intFile_5_toCSR_pending,
+     _intFile_4_toCSR_pending,
+     _intFile_3_toCSR_pending,
+     _intFile_2_toCSR_pending,
+     _intFile_1_toCSR_pending,
+     _intFile_toCSR_pending};
   assign toCSR_topeis_0 = {8'h0, _intFile_toCSR_topei, 8'h0, _intFile_toCSR_topei};
   assign toCSR_topeis_1 = {8'h0, _intFile_1_toCSR_topei, 8'h0, _intFile_1_toCSR_topei};
   assign toCSR_topeis_2 = {8'h0, _toCSR_topeis_2_T_8, 8'h0, _toCSR_topeis_2_T_8};

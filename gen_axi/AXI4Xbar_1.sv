@@ -22,124 +22,193 @@
 module AXI4Xbar_1(
   input         clock,
   input         reset,
-  output        auto_in_1_aw_ready,
   input         auto_in_1_aw_valid,
   input  [4:0]  auto_in_1_aw_bits_id,
   input  [31:0] auto_in_1_aw_bits_addr,
-  output        auto_in_1_w_ready,
+  input  [2:0]  auto_in_1_aw_bits_size,
   input         auto_in_1_w_valid,
-  input  [63:0] auto_in_1_w_bits_data,
-  input  [7:0]  auto_in_1_w_bits_strb,
+  input  [31:0] auto_in_1_w_bits_data,
+  input  [3:0]  auto_in_1_w_bits_strb,
   input         auto_in_1_w_bits_last,
   input         auto_in_1_b_ready,
   output        auto_in_1_b_valid,
   output [4:0]  auto_in_1_b_bits_id,
   output        auto_in_1_r_valid,
   output [4:0]  auto_in_1_r_bits_id,
-  output        auto_in_0_aw_ready,
   input         auto_in_0_aw_valid,
   input  [3:0]  auto_in_0_aw_bits_id,
   input  [31:0] auto_in_0_aw_bits_addr,
-  output        auto_in_0_w_ready,
+  input  [7:0]  auto_in_0_aw_bits_len,
+  input  [2:0]  auto_in_0_aw_bits_size,
+  input  [1:0]  auto_in_0_aw_bits_burst,
+  input         auto_in_0_aw_bits_lock,
+  input  [3:0]  auto_in_0_aw_bits_cache,
+  input  [2:0]  auto_in_0_aw_bits_prot,
+  input  [3:0]  auto_in_0_aw_bits_qos,
   input         auto_in_0_w_valid,
-  input  [63:0] auto_in_0_w_bits_data,
-  input  [7:0]  auto_in_0_w_bits_strb,
+  input  [31:0] auto_in_0_w_bits_data,
+  input  [3:0]  auto_in_0_w_bits_strb,
   input         auto_in_0_w_bits_last,
   input         auto_in_0_b_ready,
   output        auto_in_0_b_valid,
   output [3:0]  auto_in_0_b_bits_id,
+  output [1:0]  auto_in_0_b_bits_resp,
   output        auto_in_0_ar_ready,
   input         auto_in_0_ar_valid,
   input  [3:0]  auto_in_0_ar_bits_id,
   input  [31:0] auto_in_0_ar_bits_addr,
+  input  [7:0]  auto_in_0_ar_bits_len,
   input  [2:0]  auto_in_0_ar_bits_size,
+  input  [1:0]  auto_in_0_ar_bits_burst,
+  input         auto_in_0_ar_bits_lock,
+  input  [3:0]  auto_in_0_ar_bits_cache,
+  input  [2:0]  auto_in_0_ar_bits_prot,
+  input  [3:0]  auto_in_0_ar_bits_qos,
   input         auto_in_0_r_ready,
   output        auto_in_0_r_valid,
   output [3:0]  auto_in_0_r_bits_id,
+  output [31:0] auto_in_0_r_bits_data,
+  output [1:0]  auto_in_0_r_bits_resp,
   output        auto_in_0_r_bits_last,
-  input         auto_out_3_aw_ready,
   output        auto_out_3_aw_valid,
   output [5:0]  auto_out_3_aw_bits_id,
   output [31:0] auto_out_3_aw_bits_addr,
-  input         auto_out_3_w_ready,
+  output [7:0]  auto_out_3_aw_bits_len,
+  output [2:0]  auto_out_3_aw_bits_size,
+  output [1:0]  auto_out_3_aw_bits_burst,
+  output        auto_out_3_aw_bits_lock,
+  output [3:0]  auto_out_3_aw_bits_cache,
+  output [2:0]  auto_out_3_aw_bits_prot,
+  output [3:0]  auto_out_3_aw_bits_qos,
   output        auto_out_3_w_valid,
-  output [63:0] auto_out_3_w_bits_data,
-  output [7:0]  auto_out_3_w_bits_strb,
+  output [31:0] auto_out_3_w_bits_data,
+  output [3:0]  auto_out_3_w_bits_strb,
   output        auto_out_3_w_bits_last,
   output        auto_out_3_b_ready,
   input         auto_out_3_b_valid,
   input  [5:0]  auto_out_3_b_bits_id,
+  input  [1:0]  auto_out_3_b_bits_resp,
   input         auto_out_3_ar_ready,
   output        auto_out_3_ar_valid,
   output [5:0]  auto_out_3_ar_bits_id,
   output [31:0] auto_out_3_ar_bits_addr,
+  output [7:0]  auto_out_3_ar_bits_len,
   output [2:0]  auto_out_3_ar_bits_size,
+  output [1:0]  auto_out_3_ar_bits_burst,
+  output        auto_out_3_ar_bits_lock,
+  output [3:0]  auto_out_3_ar_bits_cache,
+  output [2:0]  auto_out_3_ar_bits_prot,
+  output [3:0]  auto_out_3_ar_bits_qos,
   output        auto_out_3_r_ready,
   input         auto_out_3_r_valid,
   input  [5:0]  auto_out_3_r_bits_id,
+  input  [31:0] auto_out_3_r_bits_data,
+  input  [1:0]  auto_out_3_r_bits_resp,
   input         auto_out_3_r_bits_last,
-  input         auto_out_2_aw_ready,
   output        auto_out_2_aw_valid,
   output [5:0]  auto_out_2_aw_bits_id,
   output [31:0] auto_out_2_aw_bits_addr,
-  input         auto_out_2_w_ready,
+  output [7:0]  auto_out_2_aw_bits_len,
+  output [2:0]  auto_out_2_aw_bits_size,
+  output [1:0]  auto_out_2_aw_bits_burst,
+  output        auto_out_2_aw_bits_lock,
+  output [3:0]  auto_out_2_aw_bits_cache,
+  output [2:0]  auto_out_2_aw_bits_prot,
+  output [3:0]  auto_out_2_aw_bits_qos,
   output        auto_out_2_w_valid,
-  output [63:0] auto_out_2_w_bits_data,
-  output [7:0]  auto_out_2_w_bits_strb,
+  output [31:0] auto_out_2_w_bits_data,
+  output [3:0]  auto_out_2_w_bits_strb,
   output        auto_out_2_w_bits_last,
   output        auto_out_2_b_ready,
   input         auto_out_2_b_valid,
   input  [5:0]  auto_out_2_b_bits_id,
+  input  [1:0]  auto_out_2_b_bits_resp,
   input         auto_out_2_ar_ready,
   output        auto_out_2_ar_valid,
   output [5:0]  auto_out_2_ar_bits_id,
   output [31:0] auto_out_2_ar_bits_addr,
+  output [7:0]  auto_out_2_ar_bits_len,
   output [2:0]  auto_out_2_ar_bits_size,
+  output [1:0]  auto_out_2_ar_bits_burst,
+  output        auto_out_2_ar_bits_lock,
+  output [3:0]  auto_out_2_ar_bits_cache,
+  output [2:0]  auto_out_2_ar_bits_prot,
+  output [3:0]  auto_out_2_ar_bits_qos,
   output        auto_out_2_r_ready,
   input         auto_out_2_r_valid,
   input  [5:0]  auto_out_2_r_bits_id,
+  input  [31:0] auto_out_2_r_bits_data,
+  input  [1:0]  auto_out_2_r_bits_resp,
   input         auto_out_2_r_bits_last,
-  input         auto_out_1_aw_ready,
   output        auto_out_1_aw_valid,
   output [5:0]  auto_out_1_aw_bits_id,
   output [31:0] auto_out_1_aw_bits_addr,
-  input         auto_out_1_w_ready,
+  output [7:0]  auto_out_1_aw_bits_len,
+  output [2:0]  auto_out_1_aw_bits_size,
+  output [1:0]  auto_out_1_aw_bits_burst,
+  output        auto_out_1_aw_bits_lock,
+  output [3:0]  auto_out_1_aw_bits_cache,
+  output [2:0]  auto_out_1_aw_bits_prot,
+  output [3:0]  auto_out_1_aw_bits_qos,
   output        auto_out_1_w_valid,
-  output [63:0] auto_out_1_w_bits_data,
-  output [7:0]  auto_out_1_w_bits_strb,
+  output [31:0] auto_out_1_w_bits_data,
+  output [3:0]  auto_out_1_w_bits_strb,
   output        auto_out_1_w_bits_last,
   output        auto_out_1_b_ready,
   input         auto_out_1_b_valid,
   input  [5:0]  auto_out_1_b_bits_id,
+  input  [1:0]  auto_out_1_b_bits_resp,
   input         auto_out_1_ar_ready,
   output        auto_out_1_ar_valid,
   output [5:0]  auto_out_1_ar_bits_id,
   output [31:0] auto_out_1_ar_bits_addr,
+  output [7:0]  auto_out_1_ar_bits_len,
   output [2:0]  auto_out_1_ar_bits_size,
+  output [1:0]  auto_out_1_ar_bits_burst,
+  output        auto_out_1_ar_bits_lock,
+  output [3:0]  auto_out_1_ar_bits_cache,
+  output [2:0]  auto_out_1_ar_bits_prot,
+  output [3:0]  auto_out_1_ar_bits_qos,
   output        auto_out_1_r_ready,
   input         auto_out_1_r_valid,
   input  [5:0]  auto_out_1_r_bits_id,
+  input  [31:0] auto_out_1_r_bits_data,
+  input  [1:0]  auto_out_1_r_bits_resp,
   input         auto_out_1_r_bits_last,
-  input         auto_out_0_aw_ready,
   output        auto_out_0_aw_valid,
   output [5:0]  auto_out_0_aw_bits_id,
   output [31:0] auto_out_0_aw_bits_addr,
-  input         auto_out_0_w_ready,
+  output [7:0]  auto_out_0_aw_bits_len,
+  output [2:0]  auto_out_0_aw_bits_size,
+  output [1:0]  auto_out_0_aw_bits_burst,
+  output        auto_out_0_aw_bits_lock,
+  output [3:0]  auto_out_0_aw_bits_cache,
+  output [2:0]  auto_out_0_aw_bits_prot,
+  output [3:0]  auto_out_0_aw_bits_qos,
   output        auto_out_0_w_valid,
-  output [63:0] auto_out_0_w_bits_data,
-  output [7:0]  auto_out_0_w_bits_strb,
+  output [31:0] auto_out_0_w_bits_data,
+  output [3:0]  auto_out_0_w_bits_strb,
   output        auto_out_0_w_bits_last,
   output        auto_out_0_b_ready,
   input         auto_out_0_b_valid,
   input  [5:0]  auto_out_0_b_bits_id,
+  input  [1:0]  auto_out_0_b_bits_resp,
   input         auto_out_0_ar_ready,
   output        auto_out_0_ar_valid,
   output [5:0]  auto_out_0_ar_bits_id,
   output [31:0] auto_out_0_ar_bits_addr,
+  output [7:0]  auto_out_0_ar_bits_len,
   output [2:0]  auto_out_0_ar_bits_size,
+  output [1:0]  auto_out_0_ar_bits_burst,
+  output        auto_out_0_ar_bits_lock,
+  output [3:0]  auto_out_0_ar_bits_cache,
+  output [2:0]  auto_out_0_ar_bits_prot,
+  output [3:0]  auto_out_0_ar_bits_qos,
   output        auto_out_0_r_ready,
   input         auto_out_0_r_valid,
   input  [5:0]  auto_out_0_r_bits_id,
+  input  [31:0] auto_out_0_r_bits_data,
+  input  [1:0]  auto_out_0_r_bits_resp,
   input         auto_out_0_r_bits_last
 );
 
@@ -162,45 +231,19 @@ module AXI4Xbar_1(
   wire        allowed_4_2;
   wire        allowed_4_1;
   wire        allowed_4_0;
-  wire        _out_3_w_bits_T_4;
   wire        _out_3_w_valid_T_4;
-  wire        _filtered_3_ready_T_4;
-  wire        _filtered_3_ready_T_2;
   wire        allowed_3_0;
   wire        out_3_aw_valid;
-  wire        awOut_3_io_enq_bits_allowed_1;
-  wire        awOut_3_io_enq_bits_allowed_0;
-  wire        _out_2_w_bits_T_4;
   wire        _out_2_w_valid_T_4;
-  wire        _filtered_2_ready_T_4;
-  wire        _filtered_2_ready_T_2;
   wire        allowed_2_0;
   wire        out_2_aw_valid;
-  wire        awOut_2_io_enq_bits_allowed_1;
-  wire        awOut_2_io_enq_bits_allowed_0;
-  wire        _out_1_w_bits_T_4;
   wire        _out_1_w_valid_T_4;
-  wire        _filtered_1_ready_T_4;
-  wire        _filtered_1_ready_T_2;
   wire        allowed_1_0;
   wire        out_1_aw_valid;
-  wire        awOut_1_io_enq_bits_allowed_1;
-  wire        awOut_1_io_enq_bits_allowed_0;
-  wire        _out_0_w_bits_T_4;
   wire        _out_0_w_valid_T_4;
-  wire        _filtered_0_ready_T_4;
-  wire        _filtered_0_ready_T_2;
   wire        allowed_0;
   wire        out_0_aw_valid;
-  wire        awOut_0_io_enq_bits_allowed_1;
-  wire        awOut_0_io_enq_bits_allowed_0;
-  wire        _portsWOI_in_1_w_ready_T_6;
-  wire        _portsWOI_in_0_w_ready_T_6;
-  wire        _portsAWOI_in_1_aw_ready_T_6;
-  wire        _portsAWOI_in_0_aw_ready_T_6;
   wire        _portsAROI_in_0_ar_ready_T_6;
-  wire        nodeIn_1_aw_ready;
-  wire        nodeIn_aw_ready;
   wire        nodeIn_ar_ready;
   wire        _awOut_3_io_enq_ready;
   wire        _awOut_3_io_deq_valid;
@@ -308,178 +351,129 @@ module AXI4Xbar_1(
   reg  [2:0]  arFIFOMap_0_count;
   reg  [1:0]  arFIFOMap_0_last;
   wire        _arFIFOMap_0_T_22 = arFIFOMap_0_count != 3'h7;
-  wire        _awFIFOMap_15_T_1 = nodeIn_aw_ready & auto_in_0_aw_valid;
-  wire        _awFIFOMap_0_T_2 = auto_in_0_aw_bits_id == 4'h0 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_15_T_4 = auto_in_0_b_ready & in_0_b_valid;
   wire        _awFIFOMap_0_T_5 = _in_0_b_bits_T_13 == 4'h0 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_0_count;
-  reg  [1:0]  awFIFOMap_0_last;
-  wire        _awFIFOMap_0_T_21 = awFIFOMap_0_count != 3'h7;
   wire        _arFIFOMap_1_T_2 = auto_in_0_ar_bits_id == 4'h1 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_1_T_6 =
     _in_0_r_bits_T_27 == 4'h1 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_1_count;
   reg  [1:0]  arFIFOMap_1_last;
   wire        _arFIFOMap_1_T_22 = arFIFOMap_1_count != 3'h7;
-  wire        _awFIFOMap_1_T_2 = auto_in_0_aw_bits_id == 4'h1 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_1_T_5 = _in_0_b_bits_T_13 == 4'h1 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_1_count;
-  reg  [1:0]  awFIFOMap_1_last;
-  wire        _awFIFOMap_1_T_21 = awFIFOMap_1_count != 3'h7;
   wire        _arFIFOMap_2_T_2 = auto_in_0_ar_bits_id == 4'h2 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_2_T_6 =
     _in_0_r_bits_T_27 == 4'h2 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_2_count;
   reg  [1:0]  arFIFOMap_2_last;
   wire        _arFIFOMap_2_T_22 = arFIFOMap_2_count != 3'h7;
-  wire        _awFIFOMap_2_T_2 = auto_in_0_aw_bits_id == 4'h2 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_2_T_5 = _in_0_b_bits_T_13 == 4'h2 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_2_count;
-  reg  [1:0]  awFIFOMap_2_last;
-  wire        _awFIFOMap_2_T_21 = awFIFOMap_2_count != 3'h7;
   wire        _arFIFOMap_3_T_2 = auto_in_0_ar_bits_id == 4'h3 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_3_T_6 =
     _in_0_r_bits_T_27 == 4'h3 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_3_count;
   reg  [1:0]  arFIFOMap_3_last;
   wire        _arFIFOMap_3_T_22 = arFIFOMap_3_count != 3'h7;
-  wire        _awFIFOMap_3_T_2 = auto_in_0_aw_bits_id == 4'h3 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_3_T_5 = _in_0_b_bits_T_13 == 4'h3 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_3_count;
-  reg  [1:0]  awFIFOMap_3_last;
-  wire        _awFIFOMap_3_T_21 = awFIFOMap_3_count != 3'h7;
   wire        _arFIFOMap_4_T_2 = auto_in_0_ar_bits_id == 4'h4 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_4_T_6 =
     _in_0_r_bits_T_27 == 4'h4 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_4_count;
   reg  [1:0]  arFIFOMap_4_last;
   wire        _arFIFOMap_4_T_22 = arFIFOMap_4_count != 3'h7;
-  wire        _awFIFOMap_4_T_2 = auto_in_0_aw_bits_id == 4'h4 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_4_T_5 = _in_0_b_bits_T_13 == 4'h4 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_4_count;
-  reg  [1:0]  awFIFOMap_4_last;
-  wire        _awFIFOMap_4_T_21 = awFIFOMap_4_count != 3'h7;
   wire        _arFIFOMap_5_T_2 = auto_in_0_ar_bits_id == 4'h5 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_5_T_6 =
     _in_0_r_bits_T_27 == 4'h5 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_5_count;
   reg  [1:0]  arFIFOMap_5_last;
   wire        _arFIFOMap_5_T_22 = arFIFOMap_5_count != 3'h7;
-  wire        _awFIFOMap_5_T_2 = auto_in_0_aw_bits_id == 4'h5 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_5_T_5 = _in_0_b_bits_T_13 == 4'h5 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_5_count;
-  reg  [1:0]  awFIFOMap_5_last;
-  wire        _awFIFOMap_5_T_21 = awFIFOMap_5_count != 3'h7;
   wire        _arFIFOMap_6_T_2 = auto_in_0_ar_bits_id == 4'h6 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_6_T_6 =
     _in_0_r_bits_T_27 == 4'h6 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_6_count;
   reg  [1:0]  arFIFOMap_6_last;
   wire        _arFIFOMap_6_T_22 = arFIFOMap_6_count != 3'h7;
-  wire        _awFIFOMap_6_T_2 = auto_in_0_aw_bits_id == 4'h6 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_6_T_5 = _in_0_b_bits_T_13 == 4'h6 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_6_count;
-  reg  [1:0]  awFIFOMap_6_last;
-  wire        _awFIFOMap_6_T_21 = awFIFOMap_6_count != 3'h7;
   wire        _arFIFOMap_7_T_2 = auto_in_0_ar_bits_id == 4'h7 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_7_T_6 =
     _in_0_r_bits_T_27 == 4'h7 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_7_count;
   reg  [1:0]  arFIFOMap_7_last;
   wire        _arFIFOMap_7_T_22 = arFIFOMap_7_count != 3'h7;
-  wire        _awFIFOMap_7_T_2 = auto_in_0_aw_bits_id == 4'h7 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_7_T_5 = _in_0_b_bits_T_13 == 4'h7 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_7_count;
-  reg  [1:0]  awFIFOMap_7_last;
-  wire        _awFIFOMap_7_T_21 = awFIFOMap_7_count != 3'h7;
   wire        _arFIFOMap_8_T_2 = auto_in_0_ar_bits_id == 4'h8 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_8_T_6 =
     _in_0_r_bits_T_27 == 4'h8 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_8_count;
   reg  [1:0]  arFIFOMap_8_last;
   wire        _arFIFOMap_8_T_22 = arFIFOMap_8_count != 3'h7;
-  wire        _awFIFOMap_8_T_2 = auto_in_0_aw_bits_id == 4'h8 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_8_T_5 = _in_0_b_bits_T_13 == 4'h8 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_8_count;
-  reg  [1:0]  awFIFOMap_8_last;
-  wire        _awFIFOMap_8_T_21 = awFIFOMap_8_count != 3'h7;
   wire        _arFIFOMap_9_T_2 = auto_in_0_ar_bits_id == 4'h9 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_9_T_6 =
     _in_0_r_bits_T_27 == 4'h9 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_9_count;
   reg  [1:0]  arFIFOMap_9_last;
   wire        _arFIFOMap_9_T_22 = arFIFOMap_9_count != 3'h7;
-  wire        _awFIFOMap_9_T_2 = auto_in_0_aw_bits_id == 4'h9 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_9_T_5 = _in_0_b_bits_T_13 == 4'h9 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_9_count;
-  reg  [1:0]  awFIFOMap_9_last;
-  wire        _awFIFOMap_9_T_21 = awFIFOMap_9_count != 3'h7;
   wire        _arFIFOMap_10_T_2 = auto_in_0_ar_bits_id == 4'hA & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_10_T_6 =
     _in_0_r_bits_T_27 == 4'hA & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_10_count;
   reg  [1:0]  arFIFOMap_10_last;
   wire        _arFIFOMap_10_T_22 = arFIFOMap_10_count != 3'h7;
-  wire        _awFIFOMap_10_T_2 = auto_in_0_aw_bits_id == 4'hA & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_10_T_5 = _in_0_b_bits_T_13 == 4'hA & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_10_count;
-  reg  [1:0]  awFIFOMap_10_last;
-  wire        _awFIFOMap_10_T_21 = awFIFOMap_10_count != 3'h7;
   wire        _arFIFOMap_11_T_2 = auto_in_0_ar_bits_id == 4'hB & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_11_T_6 =
     _in_0_r_bits_T_27 == 4'hB & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_11_count;
   reg  [1:0]  arFIFOMap_11_last;
   wire        _arFIFOMap_11_T_22 = arFIFOMap_11_count != 3'h7;
-  wire        _awFIFOMap_11_T_2 = auto_in_0_aw_bits_id == 4'hB & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_11_T_5 = _in_0_b_bits_T_13 == 4'hB & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_11_count;
-  reg  [1:0]  awFIFOMap_11_last;
-  wire        _awFIFOMap_11_T_21 = awFIFOMap_11_count != 3'h7;
   wire        _arFIFOMap_12_T_2 = auto_in_0_ar_bits_id == 4'hC & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_12_T_6 =
     _in_0_r_bits_T_27 == 4'hC & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_12_count;
   reg  [1:0]  arFIFOMap_12_last;
   wire        _arFIFOMap_12_T_22 = arFIFOMap_12_count != 3'h7;
-  wire        _awFIFOMap_12_T_2 = auto_in_0_aw_bits_id == 4'hC & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_12_T_5 = _in_0_b_bits_T_13 == 4'hC & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_12_count;
-  reg  [1:0]  awFIFOMap_12_last;
-  wire        _awFIFOMap_12_T_21 = awFIFOMap_12_count != 3'h7;
   wire        _arFIFOMap_13_T_2 = auto_in_0_ar_bits_id == 4'hD & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_13_T_6 =
     _in_0_r_bits_T_27 == 4'hD & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_13_count;
   reg  [1:0]  arFIFOMap_13_last;
   wire        _arFIFOMap_13_T_22 = arFIFOMap_13_count != 3'h7;
-  wire        _awFIFOMap_13_T_2 = auto_in_0_aw_bits_id == 4'hD & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_13_T_5 = _in_0_b_bits_T_13 == 4'hD & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_13_count;
-  reg  [1:0]  awFIFOMap_13_last;
-  wire        _awFIFOMap_13_T_21 = awFIFOMap_13_count != 3'h7;
   wire        _arFIFOMap_14_T_2 = auto_in_0_ar_bits_id == 4'hE & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_14_T_6 =
     _in_0_r_bits_T_27 == 4'hE & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_14_count;
   reg  [1:0]  arFIFOMap_14_last;
   wire        _arFIFOMap_14_T_22 = arFIFOMap_14_count != 3'h7;
-  wire        _awFIFOMap_14_T_2 = auto_in_0_aw_bits_id == 4'hE & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_14_T_5 = _in_0_b_bits_T_13 == 4'hE & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_14_count;
-  reg  [1:0]  awFIFOMap_14_last;
-  wire        _awFIFOMap_14_T_21 = awFIFOMap_14_count != 3'h7;
   wire        _arFIFOMap_15_T_2 = (&auto_in_0_ar_bits_id) & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_15_T_6 =
     (&_in_0_r_bits_T_27) & _arFIFOMap_15_T_4 & _in_0_r_bits_T_6;
   reg  [2:0]  arFIFOMap_15_count;
   reg  [1:0]  arFIFOMap_15_last;
   wire        _arFIFOMap_15_T_22 = arFIFOMap_15_count != 3'h7;
-  wire        _awFIFOMap_15_T_2 = (&auto_in_0_aw_bits_id) & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_15_T_5 = (&_in_0_b_bits_T_13) & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_15_count;
-  reg  [1:0]  awFIFOMap_15_last;
-  wire        _awFIFOMap_15_T_21 = awFIFOMap_15_count != 3'h7;
   wire [15:0] _GEN_2 =
     {{(arFIFOMap_15_count == 3'h0 | arFIFOMap_15_last == arTag) & _arFIFOMap_15_T_22},
      {(arFIFOMap_14_count == 3'h0 | arFIFOMap_14_last == arTag) & _arFIFOMap_14_T_22},
@@ -500,262 +494,142 @@ module AXI4Xbar_1(
   wire        in_0_ar_valid = auto_in_0_ar_valid & _GEN_2[auto_in_0_ar_bits_id];
   assign nodeIn_ar_ready = _portsAROI_in_0_ar_ready_T_6 & _GEN_2[auto_in_0_ar_bits_id];
   reg         latched;
-  wire        _nodeIn_aw_ready_T = latched | _awIn_0_io_enq_ready;
   wire [15:0] _GEN_3 =
-    {{(awFIFOMap_15_count == 3'h0 | awFIFOMap_15_last == awTag) & _awFIFOMap_15_T_21},
-     {(awFIFOMap_14_count == 3'h0 | awFIFOMap_14_last == awTag) & _awFIFOMap_14_T_21},
-     {(awFIFOMap_13_count == 3'h0 | awFIFOMap_13_last == awTag) & _awFIFOMap_13_T_21},
-     {(awFIFOMap_12_count == 3'h0 | awFIFOMap_12_last == awTag) & _awFIFOMap_12_T_21},
-     {(awFIFOMap_11_count == 3'h0 | awFIFOMap_11_last == awTag) & _awFIFOMap_11_T_21},
-     {(awFIFOMap_10_count == 3'h0 | awFIFOMap_10_last == awTag) & _awFIFOMap_10_T_21},
-     {(awFIFOMap_9_count == 3'h0 | awFIFOMap_9_last == awTag) & _awFIFOMap_9_T_21},
-     {(awFIFOMap_8_count == 3'h0 | awFIFOMap_8_last == awTag) & _awFIFOMap_8_T_21},
-     {(awFIFOMap_7_count == 3'h0 | awFIFOMap_7_last == awTag) & _awFIFOMap_7_T_21},
-     {(awFIFOMap_6_count == 3'h0 | awFIFOMap_6_last == awTag) & _awFIFOMap_6_T_21},
-     {(awFIFOMap_5_count == 3'h0 | awFIFOMap_5_last == awTag) & _awFIFOMap_5_T_21},
-     {(awFIFOMap_4_count == 3'h0 | awFIFOMap_4_last == awTag) & _awFIFOMap_4_T_21},
-     {(awFIFOMap_3_count == 3'h0 | awFIFOMap_3_last == awTag) & _awFIFOMap_3_T_21},
-     {(awFIFOMap_2_count == 3'h0 | awFIFOMap_2_last == awTag) & _awFIFOMap_2_T_21},
-     {(awFIFOMap_1_count == 3'h0 | awFIFOMap_1_last == awTag) & _awFIFOMap_1_T_21},
-     {(awFIFOMap_0_count == 3'h0 | awFIFOMap_0_last == awTag) & _awFIFOMap_0_T_21}};
+    {{(awFIFOMap_15_count == 3'h0 | awTag == 2'h0) & awFIFOMap_15_count != 3'h7},
+     {(awFIFOMap_14_count == 3'h0 | awTag == 2'h0) & awFIFOMap_14_count != 3'h7},
+     {(awFIFOMap_13_count == 3'h0 | awTag == 2'h0) & awFIFOMap_13_count != 3'h7},
+     {(awFIFOMap_12_count == 3'h0 | awTag == 2'h0) & awFIFOMap_12_count != 3'h7},
+     {(awFIFOMap_11_count == 3'h0 | awTag == 2'h0) & awFIFOMap_11_count != 3'h7},
+     {(awFIFOMap_10_count == 3'h0 | awTag == 2'h0) & awFIFOMap_10_count != 3'h7},
+     {(awFIFOMap_9_count == 3'h0 | awTag == 2'h0) & awFIFOMap_9_count != 3'h7},
+     {(awFIFOMap_8_count == 3'h0 | awTag == 2'h0) & awFIFOMap_8_count != 3'h7},
+     {(awFIFOMap_7_count == 3'h0 | awTag == 2'h0) & awFIFOMap_7_count != 3'h7},
+     {(awFIFOMap_6_count == 3'h0 | awTag == 2'h0) & awFIFOMap_6_count != 3'h7},
+     {(awFIFOMap_5_count == 3'h0 | awTag == 2'h0) & awFIFOMap_5_count != 3'h7},
+     {(awFIFOMap_4_count == 3'h0 | awTag == 2'h0) & awFIFOMap_4_count != 3'h7},
+     {(awFIFOMap_3_count == 3'h0 | awTag == 2'h0) & awFIFOMap_3_count != 3'h7},
+     {(awFIFOMap_2_count == 3'h0 | awTag == 2'h0) & awFIFOMap_2_count != 3'h7},
+     {(awFIFOMap_1_count == 3'h0 | awTag == 2'h0) & awFIFOMap_1_count != 3'h7},
+     {(awFIFOMap_0_count == 3'h0 | awTag == 2'h0) & awFIFOMap_0_count != 3'h7}};
   wire        in_0_aw_valid =
-    auto_in_0_aw_valid & _nodeIn_aw_ready_T & _GEN_3[auto_in_0_aw_bits_id];
-  assign nodeIn_aw_ready =
-    _portsAWOI_in_0_aw_ready_T_6 & _nodeIn_aw_ready_T & _GEN_3[auto_in_0_aw_bits_id];
+    auto_in_0_aw_valid & (latched | _awIn_0_io_enq_ready) & _GEN_3[auto_in_0_aw_bits_id];
   wire        _awIn_0_io_enq_valid_T_1 = auto_in_0_aw_valid & ~latched;
   wire        in_0_w_valid = auto_in_0_w_valid & _awIn_0_io_deq_valid;
   wire [5:0]  in_1_aw_bits_id = {1'h0, auto_in_1_aw_bits_id};
   wire [1:0]  awTag_1 =
     {|{requestAWIO_1_3, requestAWIO_1_2}, requestAWIO_1_3 | requestAWIO_1_1};
-  wire        _awFIFOMap_15_T_24 = nodeIn_1_aw_ready & auto_in_1_aw_valid;
-  wire        _awFIFOMap_16_T_2 = auto_in_1_aw_bits_id == 5'h10 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_15_T_27 = auto_in_1_b_ready & in_1_b_valid;
   wire        _awFIFOMap_16_T_5 = _in_1_b_bits_T_13 == 5'h10 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_16_count;
-  reg  [1:0]  awFIFOMap_16_last;
-  wire        _awFIFOMap_16_T_21 = awFIFOMap_16_count != 3'h7;
-  wire        _awFIFOMap_17_T_2 = auto_in_1_aw_bits_id == 5'h11 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_17_T_5 = _in_1_b_bits_T_13 == 5'h11 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_17_count;
-  reg  [1:0]  awFIFOMap_17_last;
-  wire        _awFIFOMap_17_T_21 = awFIFOMap_17_count != 3'h7;
-  wire        _awFIFOMap_18_T_2 = auto_in_1_aw_bits_id == 5'h12 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_18_T_5 = _in_1_b_bits_T_13 == 5'h12 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_18_count;
-  reg  [1:0]  awFIFOMap_18_last;
-  wire        _awFIFOMap_18_T_21 = awFIFOMap_18_count != 3'h7;
-  wire        _awFIFOMap_19_T_2 = auto_in_1_aw_bits_id == 5'h13 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_19_T_5 = _in_1_b_bits_T_13 == 5'h13 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_19_count;
-  reg  [1:0]  awFIFOMap_19_last;
-  wire        _awFIFOMap_19_T_21 = awFIFOMap_19_count != 3'h7;
-  wire        _awFIFOMap_20_T_2 = auto_in_1_aw_bits_id == 5'h14 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_20_T_5 = _in_1_b_bits_T_13 == 5'h14 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_20_count;
-  reg  [1:0]  awFIFOMap_20_last;
-  wire        _awFIFOMap_20_T_21 = awFIFOMap_20_count != 3'h7;
-  wire        _awFIFOMap_21_T_2 = auto_in_1_aw_bits_id == 5'h15 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_21_T_5 = _in_1_b_bits_T_13 == 5'h15 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_21_count;
-  reg  [1:0]  awFIFOMap_21_last;
-  wire        _awFIFOMap_21_T_21 = awFIFOMap_21_count != 3'h7;
-  wire        _awFIFOMap_22_T_2 = auto_in_1_aw_bits_id == 5'h16 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_22_T_5 = _in_1_b_bits_T_13 == 5'h16 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_22_count;
-  reg  [1:0]  awFIFOMap_22_last;
-  wire        _awFIFOMap_22_T_21 = awFIFOMap_22_count != 3'h7;
-  wire        _awFIFOMap_23_T_2 = auto_in_1_aw_bits_id == 5'h17 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_23_T_5 = _in_1_b_bits_T_13 == 5'h17 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_23_count;
-  reg  [1:0]  awFIFOMap_23_last;
-  wire        _awFIFOMap_23_T_21 = awFIFOMap_23_count != 3'h7;
-  wire        _awFIFOMap_24_T_2 = auto_in_1_aw_bits_id == 5'h18 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_24_T_5 = _in_1_b_bits_T_13 == 5'h18 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_24_count;
-  reg  [1:0]  awFIFOMap_24_last;
-  wire        _awFIFOMap_24_T_21 = awFIFOMap_24_count != 3'h7;
-  wire        _awFIFOMap_25_T_2 = auto_in_1_aw_bits_id == 5'h19 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_25_T_5 = _in_1_b_bits_T_13 == 5'h19 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_25_count;
-  reg  [1:0]  awFIFOMap_25_last;
-  wire        _awFIFOMap_25_T_21 = awFIFOMap_25_count != 3'h7;
-  wire        _awFIFOMap_26_T_2 = auto_in_1_aw_bits_id == 5'h1A & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_26_T_5 = _in_1_b_bits_T_13 == 5'h1A & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_26_count;
-  reg  [1:0]  awFIFOMap_26_last;
-  wire        _awFIFOMap_26_T_21 = awFIFOMap_26_count != 3'h7;
-  wire        _awFIFOMap_27_T_2 = auto_in_1_aw_bits_id == 5'h1B & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_27_T_5 = _in_1_b_bits_T_13 == 5'h1B & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_27_count;
-  reg  [1:0]  awFIFOMap_27_last;
-  wire        _awFIFOMap_27_T_21 = awFIFOMap_27_count != 3'h7;
-  wire        _awFIFOMap_28_T_2 = auto_in_1_aw_bits_id == 5'h1C & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_28_T_5 = _in_1_b_bits_T_13 == 5'h1C & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_28_count;
-  reg  [1:0]  awFIFOMap_28_last;
-  wire        _awFIFOMap_28_T_21 = awFIFOMap_28_count != 3'h7;
-  wire        _awFIFOMap_29_T_2 = auto_in_1_aw_bits_id == 5'h1D & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_29_T_5 = _in_1_b_bits_T_13 == 5'h1D & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_29_count;
-  reg  [1:0]  awFIFOMap_29_last;
-  wire        _awFIFOMap_29_T_21 = awFIFOMap_29_count != 3'h7;
-  wire        _awFIFOMap_30_T_2 = auto_in_1_aw_bits_id == 5'h1E & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_30_T_5 = _in_1_b_bits_T_13 == 5'h1E & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_30_count;
-  reg  [1:0]  awFIFOMap_30_last;
-  wire        _awFIFOMap_30_T_21 = awFIFOMap_30_count != 3'h7;
-  wire        _awFIFOMap_31_T_2 = (&auto_in_1_aw_bits_id) & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_31_T_5 = (&_in_1_b_bits_T_13) & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_31_count;
-  reg  [1:0]  awFIFOMap_31_last;
-  wire        _awFIFOMap_31_T_21 = awFIFOMap_31_count != 3'h7;
-  wire        _awFIFOMap_0_T_25 = auto_in_1_aw_bits_id == 5'h0 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_0_T_28 = _in_1_b_bits_T_13 == 5'h0 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_0_count_1;
-  reg  [1:0]  awFIFOMap_0_last_1;
-  wire        _awFIFOMap_0_T_44 = awFIFOMap_0_count_1 != 3'h7;
-  wire        _awFIFOMap_1_T_25 = auto_in_1_aw_bits_id == 5'h1 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_1_T_28 = _in_1_b_bits_T_13 == 5'h1 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_1_count_1;
-  reg  [1:0]  awFIFOMap_1_last_1;
-  wire        _awFIFOMap_1_T_44 = awFIFOMap_1_count_1 != 3'h7;
-  wire        _awFIFOMap_2_T_25 = auto_in_1_aw_bits_id == 5'h2 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_2_T_28 = _in_1_b_bits_T_13 == 5'h2 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_2_count_1;
-  reg  [1:0]  awFIFOMap_2_last_1;
-  wire        _awFIFOMap_2_T_44 = awFIFOMap_2_count_1 != 3'h7;
-  wire        _awFIFOMap_3_T_25 = auto_in_1_aw_bits_id == 5'h3 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_3_T_28 = _in_1_b_bits_T_13 == 5'h3 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_3_count_1;
-  reg  [1:0]  awFIFOMap_3_last_1;
-  wire        _awFIFOMap_3_T_44 = awFIFOMap_3_count_1 != 3'h7;
-  wire        _awFIFOMap_4_T_25 = auto_in_1_aw_bits_id == 5'h4 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_4_T_28 = _in_1_b_bits_T_13 == 5'h4 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_4_count_1;
-  reg  [1:0]  awFIFOMap_4_last_1;
-  wire        _awFIFOMap_4_T_44 = awFIFOMap_4_count_1 != 3'h7;
-  wire        _awFIFOMap_5_T_25 = auto_in_1_aw_bits_id == 5'h5 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_5_T_28 = _in_1_b_bits_T_13 == 5'h5 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_5_count_1;
-  reg  [1:0]  awFIFOMap_5_last_1;
-  wire        _awFIFOMap_5_T_44 = awFIFOMap_5_count_1 != 3'h7;
-  wire        _awFIFOMap_6_T_25 = auto_in_1_aw_bits_id == 5'h6 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_6_T_28 = _in_1_b_bits_T_13 == 5'h6 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_6_count_1;
-  reg  [1:0]  awFIFOMap_6_last_1;
-  wire        _awFIFOMap_6_T_44 = awFIFOMap_6_count_1 != 3'h7;
-  wire        _awFIFOMap_7_T_25 = auto_in_1_aw_bits_id == 5'h7 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_7_T_28 = _in_1_b_bits_T_13 == 5'h7 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_7_count_1;
-  reg  [1:0]  awFIFOMap_7_last_1;
-  wire        _awFIFOMap_7_T_44 = awFIFOMap_7_count_1 != 3'h7;
-  wire        _awFIFOMap_8_T_25 = auto_in_1_aw_bits_id == 5'h8 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_8_T_28 = _in_1_b_bits_T_13 == 5'h8 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_8_count_1;
-  reg  [1:0]  awFIFOMap_8_last_1;
-  wire        _awFIFOMap_8_T_44 = awFIFOMap_8_count_1 != 3'h7;
-  wire        _awFIFOMap_9_T_25 = auto_in_1_aw_bits_id == 5'h9 & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_9_T_28 = _in_1_b_bits_T_13 == 5'h9 & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_9_count_1;
-  reg  [1:0]  awFIFOMap_9_last_1;
-  wire        _awFIFOMap_9_T_44 = awFIFOMap_9_count_1 != 3'h7;
-  wire        _awFIFOMap_10_T_25 = auto_in_1_aw_bits_id == 5'hA & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_10_T_28 = _in_1_b_bits_T_13 == 5'hA & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_10_count_1;
-  reg  [1:0]  awFIFOMap_10_last_1;
-  wire        _awFIFOMap_10_T_44 = awFIFOMap_10_count_1 != 3'h7;
-  wire        _awFIFOMap_11_T_25 = auto_in_1_aw_bits_id == 5'hB & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_11_T_28 = _in_1_b_bits_T_13 == 5'hB & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_11_count_1;
-  reg  [1:0]  awFIFOMap_11_last_1;
-  wire        _awFIFOMap_11_T_44 = awFIFOMap_11_count_1 != 3'h7;
-  wire        _awFIFOMap_12_T_25 = auto_in_1_aw_bits_id == 5'hC & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_12_T_28 = _in_1_b_bits_T_13 == 5'hC & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_12_count_1;
-  reg  [1:0]  awFIFOMap_12_last_1;
-  wire        _awFIFOMap_12_T_44 = awFIFOMap_12_count_1 != 3'h7;
-  wire        _awFIFOMap_13_T_25 = auto_in_1_aw_bits_id == 5'hD & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_13_T_28 = _in_1_b_bits_T_13 == 5'hD & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_13_count_1;
-  reg  [1:0]  awFIFOMap_13_last_1;
-  wire        _awFIFOMap_13_T_44 = awFIFOMap_13_count_1 != 3'h7;
-  wire        _awFIFOMap_14_T_25 = auto_in_1_aw_bits_id == 5'hE & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_14_T_28 = _in_1_b_bits_T_13 == 5'hE & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_14_count_1;
-  reg  [1:0]  awFIFOMap_14_last_1;
-  wire        _awFIFOMap_14_T_44 = awFIFOMap_14_count_1 != 3'h7;
-  wire        _awFIFOMap_15_T_25 = auto_in_1_aw_bits_id == 5'hF & _awFIFOMap_15_T_24;
   wire        _awFIFOMap_15_T_28 = _in_1_b_bits_T_13 == 5'hF & _awFIFOMap_15_T_27;
   reg  [2:0]  awFIFOMap_15_count_1;
-  reg  [1:0]  awFIFOMap_15_last_1;
-  wire        _awFIFOMap_15_T_44 = awFIFOMap_15_count_1 != 3'h7;
   reg         latched_1;
-  wire        _nodeIn_aw_ready_T_3 = latched_1 | _awIn_1_io_enq_ready;
   wire [31:0] _GEN_4 =
-    {{(awFIFOMap_31_count == 3'h0 | awFIFOMap_31_last == awTag_1) & _awFIFOMap_31_T_21},
-     {(awFIFOMap_30_count == 3'h0 | awFIFOMap_30_last == awTag_1) & _awFIFOMap_30_T_21},
-     {(awFIFOMap_29_count == 3'h0 | awFIFOMap_29_last == awTag_1) & _awFIFOMap_29_T_21},
-     {(awFIFOMap_28_count == 3'h0 | awFIFOMap_28_last == awTag_1) & _awFIFOMap_28_T_21},
-     {(awFIFOMap_27_count == 3'h0 | awFIFOMap_27_last == awTag_1) & _awFIFOMap_27_T_21},
-     {(awFIFOMap_26_count == 3'h0 | awFIFOMap_26_last == awTag_1) & _awFIFOMap_26_T_21},
-     {(awFIFOMap_25_count == 3'h0 | awFIFOMap_25_last == awTag_1) & _awFIFOMap_25_T_21},
-     {(awFIFOMap_24_count == 3'h0 | awFIFOMap_24_last == awTag_1) & _awFIFOMap_24_T_21},
-     {(awFIFOMap_23_count == 3'h0 | awFIFOMap_23_last == awTag_1) & _awFIFOMap_23_T_21},
-     {(awFIFOMap_22_count == 3'h0 | awFIFOMap_22_last == awTag_1) & _awFIFOMap_22_T_21},
-     {(awFIFOMap_21_count == 3'h0 | awFIFOMap_21_last == awTag_1) & _awFIFOMap_21_T_21},
-     {(awFIFOMap_20_count == 3'h0 | awFIFOMap_20_last == awTag_1) & _awFIFOMap_20_T_21},
-     {(awFIFOMap_19_count == 3'h0 | awFIFOMap_19_last == awTag_1) & _awFIFOMap_19_T_21},
-     {(awFIFOMap_18_count == 3'h0 | awFIFOMap_18_last == awTag_1) & _awFIFOMap_18_T_21},
-     {(awFIFOMap_17_count == 3'h0 | awFIFOMap_17_last == awTag_1) & _awFIFOMap_17_T_21},
-     {(awFIFOMap_16_count == 3'h0 | awFIFOMap_16_last == awTag_1) & _awFIFOMap_16_T_21},
-     {(awFIFOMap_15_count_1 == 3'h0 | awFIFOMap_15_last_1 == awTag_1)
-        & _awFIFOMap_15_T_44},
-     {(awFIFOMap_14_count_1 == 3'h0 | awFIFOMap_14_last_1 == awTag_1)
-        & _awFIFOMap_14_T_44},
-     {(awFIFOMap_13_count_1 == 3'h0 | awFIFOMap_13_last_1 == awTag_1)
-        & _awFIFOMap_13_T_44},
-     {(awFIFOMap_12_count_1 == 3'h0 | awFIFOMap_12_last_1 == awTag_1)
-        & _awFIFOMap_12_T_44},
-     {(awFIFOMap_11_count_1 == 3'h0 | awFIFOMap_11_last_1 == awTag_1)
-        & _awFIFOMap_11_T_44},
-     {(awFIFOMap_10_count_1 == 3'h0 | awFIFOMap_10_last_1 == awTag_1)
-        & _awFIFOMap_10_T_44},
-     {(awFIFOMap_9_count_1 == 3'h0 | awFIFOMap_9_last_1 == awTag_1) & _awFIFOMap_9_T_44},
-     {(awFIFOMap_8_count_1 == 3'h0 | awFIFOMap_8_last_1 == awTag_1) & _awFIFOMap_8_T_44},
-     {(awFIFOMap_7_count_1 == 3'h0 | awFIFOMap_7_last_1 == awTag_1) & _awFIFOMap_7_T_44},
-     {(awFIFOMap_6_count_1 == 3'h0 | awFIFOMap_6_last_1 == awTag_1) & _awFIFOMap_6_T_44},
-     {(awFIFOMap_5_count_1 == 3'h0 | awFIFOMap_5_last_1 == awTag_1) & _awFIFOMap_5_T_44},
-     {(awFIFOMap_4_count_1 == 3'h0 | awFIFOMap_4_last_1 == awTag_1) & _awFIFOMap_4_T_44},
-     {(awFIFOMap_3_count_1 == 3'h0 | awFIFOMap_3_last_1 == awTag_1) & _awFIFOMap_3_T_44},
-     {(awFIFOMap_2_count_1 == 3'h0 | awFIFOMap_2_last_1 == awTag_1) & _awFIFOMap_2_T_44},
-     {(awFIFOMap_1_count_1 == 3'h0 | awFIFOMap_1_last_1 == awTag_1) & _awFIFOMap_1_T_44},
-     {(awFIFOMap_0_count_1 == 3'h0 | awFIFOMap_0_last_1 == awTag_1) & _awFIFOMap_0_T_44}};
+    {{(awFIFOMap_31_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_31_count != 3'h7},
+     {(awFIFOMap_30_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_30_count != 3'h7},
+     {(awFIFOMap_29_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_29_count != 3'h7},
+     {(awFIFOMap_28_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_28_count != 3'h7},
+     {(awFIFOMap_27_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_27_count != 3'h7},
+     {(awFIFOMap_26_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_26_count != 3'h7},
+     {(awFIFOMap_25_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_25_count != 3'h7},
+     {(awFIFOMap_24_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_24_count != 3'h7},
+     {(awFIFOMap_23_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_23_count != 3'h7},
+     {(awFIFOMap_22_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_22_count != 3'h7},
+     {(awFIFOMap_21_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_21_count != 3'h7},
+     {(awFIFOMap_20_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_20_count != 3'h7},
+     {(awFIFOMap_19_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_19_count != 3'h7},
+     {(awFIFOMap_18_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_18_count != 3'h7},
+     {(awFIFOMap_17_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_17_count != 3'h7},
+     {(awFIFOMap_16_count == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_16_count != 3'h7},
+     {(awFIFOMap_15_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_15_count_1 != 3'h7},
+     {(awFIFOMap_14_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_14_count_1 != 3'h7},
+     {(awFIFOMap_13_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_13_count_1 != 3'h7},
+     {(awFIFOMap_12_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_12_count_1 != 3'h7},
+     {(awFIFOMap_11_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_11_count_1 != 3'h7},
+     {(awFIFOMap_10_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_10_count_1 != 3'h7},
+     {(awFIFOMap_9_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_9_count_1 != 3'h7},
+     {(awFIFOMap_8_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_8_count_1 != 3'h7},
+     {(awFIFOMap_7_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_7_count_1 != 3'h7},
+     {(awFIFOMap_6_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_6_count_1 != 3'h7},
+     {(awFIFOMap_5_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_5_count_1 != 3'h7},
+     {(awFIFOMap_4_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_4_count_1 != 3'h7},
+     {(awFIFOMap_3_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_3_count_1 != 3'h7},
+     {(awFIFOMap_2_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_2_count_1 != 3'h7},
+     {(awFIFOMap_1_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_1_count_1 != 3'h7},
+     {(awFIFOMap_0_count_1 == 3'h0 | awTag_1 == 2'h0) & awFIFOMap_0_count_1 != 3'h7}};
   wire        in_1_aw_valid =
-    auto_in_1_aw_valid & _nodeIn_aw_ready_T_3 & _GEN_4[auto_in_1_aw_bits_id];
-  assign nodeIn_1_aw_ready =
-    _portsAWOI_in_1_aw_ready_T_6 & _nodeIn_aw_ready_T_3 & _GEN_4[auto_in_1_aw_bits_id];
+    auto_in_1_aw_valid & (latched_1 | _awIn_1_io_enq_ready)
+    & _GEN_4[auto_in_1_aw_bits_id];
   wire        _awIn_1_io_enq_valid_T_1 = auto_in_1_aw_valid & ~latched_1;
   wire        in_1_w_valid = auto_in_1_w_valid & _awIn_1_io_deq_valid;
   reg         latched_2;
-  wire        _out_0_aw_ready_T = latched_2 | _awOut_0_io_enq_ready;
-  wire        out_0_aw_ready = auto_out_0_aw_ready & _out_0_aw_ready_T;
   wire        _awOut_0_io_enq_valid_T_1 = out_0_aw_valid & ~latched_2;
-  wire        out_0_w_ready = auto_out_0_w_ready & _awOut_0_io_deq_valid;
   reg         latched_3;
-  wire        _out_1_aw_ready_T = latched_3 | _awOut_1_io_enq_ready;
-  wire        out_1_aw_ready = auto_out_1_aw_ready & _out_1_aw_ready_T;
   wire        _awOut_1_io_enq_valid_T_1 = out_1_aw_valid & ~latched_3;
-  wire        out_1_w_ready = auto_out_1_w_ready & _awOut_1_io_deq_valid;
   reg         latched_4;
-  wire        _out_2_aw_ready_T = latched_4 | _awOut_2_io_enq_ready;
-  wire        out_2_aw_ready = auto_out_2_aw_ready & _out_2_aw_ready_T;
   wire        _awOut_2_io_enq_valid_T_1 = out_2_aw_valid & ~latched_4;
-  wire        out_2_w_ready = auto_out_2_w_ready & _awOut_2_io_deq_valid;
   reg         latched_5;
-  wire        _out_3_aw_ready_T = latched_5 | _awOut_3_io_enq_ready;
-  wire        out_3_aw_ready = auto_out_3_aw_ready & _out_3_aw_ready_T;
   wire        _awOut_3_io_enq_valid_T_1 = out_3_aw_valid & ~latched_5;
-  wire        out_3_w_ready = auto_out_3_w_ready & _awOut_3_io_deq_valid;
   wire        portsAROI_filtered_0_valid = in_0_ar_valid & requestARIO_0_0;
   wire        portsAROI_filtered_1_valid = in_0_ar_valid & requestARIO_0_1;
   wire        portsAROI_filtered_2_valid = in_0_ar_valid & requestARIO_0_2;
@@ -768,30 +642,10 @@ module AXI4Xbar_1(
   wire        portsAWOI_filtered_1_valid = in_0_aw_valid & requestAWIO_0_1;
   wire        portsAWOI_filtered_2_valid = in_0_aw_valid & requestAWIO_0_2;
   wire        portsAWOI_filtered_3_valid = in_0_aw_valid & requestAWIO_0_3;
-  assign _portsAWOI_in_0_aw_ready_T_6 =
-    requestAWIO_0_0 & out_0_aw_ready & awOut_0_io_enq_bits_allowed_0 | requestAWIO_0_1
-    & out_1_aw_ready & awOut_1_io_enq_bits_allowed_0 | requestAWIO_0_2 & out_2_aw_ready
-    & awOut_2_io_enq_bits_allowed_0 | requestAWIO_0_3 & out_3_aw_ready
-    & awOut_3_io_enq_bits_allowed_0;
   wire        portsAWOI_filtered_1_0_valid = in_1_aw_valid & requestAWIO_1_0;
   wire        portsAWOI_filtered_1_1_valid = in_1_aw_valid & requestAWIO_1_1;
   wire        portsAWOI_filtered_1_2_valid = in_1_aw_valid & requestAWIO_1_2;
   wire        portsAWOI_filtered_1_3_valid = in_1_aw_valid & requestAWIO_1_3;
-  assign _portsAWOI_in_1_aw_ready_T_6 =
-    requestAWIO_1_0 & out_0_aw_ready & awOut_0_io_enq_bits_allowed_1 | requestAWIO_1_1
-    & out_1_aw_ready & awOut_1_io_enq_bits_allowed_1 | requestAWIO_1_2 & out_2_aw_ready
-    & awOut_2_io_enq_bits_allowed_1 | requestAWIO_1_3 & out_3_aw_ready
-    & awOut_3_io_enq_bits_allowed_1;
-  assign _portsWOI_in_0_w_ready_T_6 =
-    _awIn_0_io_deq_bits[0] & out_0_w_ready & _filtered_0_ready_T_2
-    | _awIn_0_io_deq_bits[1] & out_1_w_ready & _filtered_1_ready_T_2
-    | _awIn_0_io_deq_bits[2] & out_2_w_ready & _filtered_2_ready_T_2
-    | _awIn_0_io_deq_bits[3] & out_3_w_ready & _filtered_3_ready_T_2;
-  assign _portsWOI_in_1_w_ready_T_6 =
-    _awIn_1_io_deq_bits[0] & out_0_w_ready & _filtered_0_ready_T_4
-    | _awIn_1_io_deq_bits[1] & out_1_w_ready & _filtered_1_ready_T_4
-    | _awIn_1_io_deq_bits[2] & out_2_w_ready & _filtered_2_ready_T_4
-    | _awIn_1_io_deq_bits[3] & out_3_w_ready & _filtered_3_ready_T_4;
   wire        portsRIO_filtered_0_valid = auto_out_0_r_valid & requestROI_0_0;
   wire        portsRIO_filtered_1_valid = auto_out_0_r_valid & ~(auto_out_0_r_bits_id[5]);
   wire        portsRIO_filtered_1_0_valid = auto_out_1_r_valid & requestROI_1_0;
@@ -837,14 +691,6 @@ module AXI4Xbar_1(
     awOut_0_io_enq_bits_idle ? awOut_0_io_enq_bits_winner_0 : awOut_0_io_enq_bits_state_0;
   wire        awOut_0_io_enq_bits_muxState_1 =
     awOut_0_io_enq_bits_idle ? awOut_0_io_enq_bits_winner_1 : awOut_0_io_enq_bits_state_1;
-  assign awOut_0_io_enq_bits_allowed_0 =
-    awOut_0_io_enq_bits_idle
-      ? awOut_0_io_enq_bits_readys_readys[0]
-      : awOut_0_io_enq_bits_state_0;
-  assign awOut_0_io_enq_bits_allowed_1 =
-    awOut_0_io_enq_bits_idle
-      ? awOut_0_io_enq_bits_readys_readys[1]
-      : awOut_0_io_enq_bits_state_1;
   assign out_0_aw_valid =
     awOut_0_io_enq_bits_idle
       ? awOut_0_io_enq_bits_anyValid
@@ -862,14 +708,9 @@ module AXI4Xbar_1(
   wire        muxState_0 = idle ? winner_0 : state_0;
   assign allowed_0 = idle ? readys_readys[0] : state_0;
   wire        out_0_ar_valid = (idle | state_0) & portsAROI_filtered_0_valid;
-  assign _filtered_0_ready_T_2 = _awOut_0_io_deq_bits[0];
-  assign _filtered_0_ready_T_4 = _awOut_0_io_deq_bits[1];
   assign _out_0_w_valid_T_4 =
-    _filtered_0_ready_T_2 & in_0_w_valid & _awIn_0_io_deq_bits[0] | _filtered_0_ready_T_4
-    & in_1_w_valid & _awIn_1_io_deq_bits[0];
-  assign _out_0_w_bits_T_4 =
-    _filtered_0_ready_T_2 & auto_in_0_w_bits_last | _filtered_0_ready_T_4
-    & auto_in_1_w_bits_last;
+    _awOut_0_io_deq_bits[0] & in_0_w_valid & _awIn_0_io_deq_bits[0]
+    | _awOut_0_io_deq_bits[1] & in_1_w_valid & _awIn_1_io_deq_bits[0];
   reg         awOut_1_io_enq_bits_idle;
   wire        awOut_1_io_enq_bits_anyValid =
     portsAWOI_filtered_1_valid | portsAWOI_filtered_1_1_valid;
@@ -893,14 +734,6 @@ module AXI4Xbar_1(
     awOut_1_io_enq_bits_idle ? awOut_1_io_enq_bits_winner_0 : awOut_1_io_enq_bits_state_0;
   wire        awOut_1_io_enq_bits_muxState_1 =
     awOut_1_io_enq_bits_idle ? awOut_1_io_enq_bits_winner_1 : awOut_1_io_enq_bits_state_1;
-  assign awOut_1_io_enq_bits_allowed_0 =
-    awOut_1_io_enq_bits_idle
-      ? awOut_1_io_enq_bits_readys_readys[0]
-      : awOut_1_io_enq_bits_state_0;
-  assign awOut_1_io_enq_bits_allowed_1 =
-    awOut_1_io_enq_bits_idle
-      ? awOut_1_io_enq_bits_readys_readys[1]
-      : awOut_1_io_enq_bits_state_1;
   assign out_1_aw_valid =
     awOut_1_io_enq_bits_idle
       ? awOut_1_io_enq_bits_anyValid
@@ -918,14 +751,9 @@ module AXI4Xbar_1(
   wire        muxState_1_0 = idle_1 ? winner_1_0 : state_1_0;
   assign allowed_1_0 = idle_1 ? readys_readys_1[0] : state_1_0;
   wire        out_1_ar_valid = (idle_1 | state_1_0) & portsAROI_filtered_1_valid;
-  assign _filtered_1_ready_T_2 = _awOut_1_io_deq_bits[0];
-  assign _filtered_1_ready_T_4 = _awOut_1_io_deq_bits[1];
   assign _out_1_w_valid_T_4 =
-    _filtered_1_ready_T_2 & in_0_w_valid & _awIn_0_io_deq_bits[1] | _filtered_1_ready_T_4
-    & in_1_w_valid & _awIn_1_io_deq_bits[1];
-  assign _out_1_w_bits_T_4 =
-    _filtered_1_ready_T_2 & auto_in_0_w_bits_last | _filtered_1_ready_T_4
-    & auto_in_1_w_bits_last;
+    _awOut_1_io_deq_bits[0] & in_0_w_valid & _awIn_0_io_deq_bits[1]
+    | _awOut_1_io_deq_bits[1] & in_1_w_valid & _awIn_1_io_deq_bits[1];
   reg         awOut_2_io_enq_bits_idle;
   wire        awOut_2_io_enq_bits_anyValid =
     portsAWOI_filtered_2_valid | portsAWOI_filtered_1_2_valid;
@@ -949,14 +777,6 @@ module AXI4Xbar_1(
     awOut_2_io_enq_bits_idle ? awOut_2_io_enq_bits_winner_0 : awOut_2_io_enq_bits_state_0;
   wire        awOut_2_io_enq_bits_muxState_1 =
     awOut_2_io_enq_bits_idle ? awOut_2_io_enq_bits_winner_1 : awOut_2_io_enq_bits_state_1;
-  assign awOut_2_io_enq_bits_allowed_0 =
-    awOut_2_io_enq_bits_idle
-      ? awOut_2_io_enq_bits_readys_readys[0]
-      : awOut_2_io_enq_bits_state_0;
-  assign awOut_2_io_enq_bits_allowed_1 =
-    awOut_2_io_enq_bits_idle
-      ? awOut_2_io_enq_bits_readys_readys[1]
-      : awOut_2_io_enq_bits_state_1;
   assign out_2_aw_valid =
     awOut_2_io_enq_bits_idle
       ? awOut_2_io_enq_bits_anyValid
@@ -974,14 +794,9 @@ module AXI4Xbar_1(
   wire        muxState_2_0 = idle_2 ? winner_2_0 : state_2_0;
   assign allowed_2_0 = idle_2 ? readys_readys_2[0] : state_2_0;
   wire        out_2_ar_valid = (idle_2 | state_2_0) & portsAROI_filtered_2_valid;
-  assign _filtered_2_ready_T_2 = _awOut_2_io_deq_bits[0];
-  assign _filtered_2_ready_T_4 = _awOut_2_io_deq_bits[1];
   assign _out_2_w_valid_T_4 =
-    _filtered_2_ready_T_2 & in_0_w_valid & _awIn_0_io_deq_bits[2] | _filtered_2_ready_T_4
-    & in_1_w_valid & _awIn_1_io_deq_bits[2];
-  assign _out_2_w_bits_T_4 =
-    _filtered_2_ready_T_2 & auto_in_0_w_bits_last | _filtered_2_ready_T_4
-    & auto_in_1_w_bits_last;
+    _awOut_2_io_deq_bits[0] & in_0_w_valid & _awIn_0_io_deq_bits[2]
+    | _awOut_2_io_deq_bits[1] & in_1_w_valid & _awIn_1_io_deq_bits[2];
   reg         awOut_3_io_enq_bits_idle;
   wire        awOut_3_io_enq_bits_anyValid =
     portsAWOI_filtered_3_valid | portsAWOI_filtered_1_3_valid;
@@ -1005,14 +820,6 @@ module AXI4Xbar_1(
     awOut_3_io_enq_bits_idle ? awOut_3_io_enq_bits_winner_0 : awOut_3_io_enq_bits_state_0;
   wire        awOut_3_io_enq_bits_muxState_1 =
     awOut_3_io_enq_bits_idle ? awOut_3_io_enq_bits_winner_1 : awOut_3_io_enq_bits_state_1;
-  assign awOut_3_io_enq_bits_allowed_0 =
-    awOut_3_io_enq_bits_idle
-      ? awOut_3_io_enq_bits_readys_readys[0]
-      : awOut_3_io_enq_bits_state_0;
-  assign awOut_3_io_enq_bits_allowed_1 =
-    awOut_3_io_enq_bits_idle
-      ? awOut_3_io_enq_bits_readys_readys[1]
-      : awOut_3_io_enq_bits_state_1;
   assign out_3_aw_valid =
     awOut_3_io_enq_bits_idle
       ? awOut_3_io_enq_bits_anyValid
@@ -1030,14 +837,9 @@ module AXI4Xbar_1(
   wire        muxState_3_0 = idle_3 ? winner_3_0 : state_3_0;
   assign allowed_3_0 = idle_3 ? readys_readys_3[0] : state_3_0;
   wire        out_3_ar_valid = (idle_3 | state_3_0) & portsAROI_filtered_3_valid;
-  assign _filtered_3_ready_T_2 = _awOut_3_io_deq_bits[0];
-  assign _filtered_3_ready_T_4 = _awOut_3_io_deq_bits[1];
   assign _out_3_w_valid_T_4 =
-    _filtered_3_ready_T_2 & in_0_w_valid & _awIn_0_io_deq_bits[3] | _filtered_3_ready_T_4
-    & in_1_w_valid & _awIn_1_io_deq_bits[3];
-  assign _out_3_w_bits_T_4 =
-    _filtered_3_ready_T_2 & auto_in_0_w_bits_last | _filtered_3_ready_T_4
-    & auto_in_1_w_bits_last;
+    _awOut_3_io_deq_bits[0] & in_0_w_valid & _awIn_0_io_deq_bits[3]
+    | _awOut_3_io_deq_bits[1] & in_1_w_valid & _awIn_1_io_deq_bits[3];
   reg         idle_4;
   wire        anyValid_4 =
     portsRIO_filtered_0_valid | portsRIO_filtered_1_0_valid | portsRIO_filtered_2_0_valid
@@ -1122,6 +924,10 @@ module AXI4Xbar_1(
   reg         state_5_1;
   reg         state_5_2;
   reg         state_5_3;
+  wire        muxState_5_0 = idle_5 ? winner_5_0 : state_5_0;
+  wire        muxState_5_1 = idle_5 ? winner_5_1 : state_5_1;
+  wire        muxState_5_2 = idle_5 ? winner_5_2 : state_5_2;
+  wire        muxState_5_3 = idle_5 ? winner_5_3 : state_5_3;
   assign allowed_5_0 = idle_5 ? readys_readys_5[0] : state_5_0;
   assign allowed_5_1 = idle_5 ? readys_readys_5[1] : state_5_1;
   assign allowed_5_2 = idle_5 ? readys_readys_5[2] : state_5_2;
@@ -1133,10 +939,10 @@ module AXI4Xbar_1(
         | state_5_2 & portsBIO_filtered_2_0_valid | state_5_3
         & portsBIO_filtered_3_0_valid;
   assign _in_0_b_bits_T_13 =
-    ((idle_5 ? winner_5_0 : state_5_0) ? auto_out_0_b_bits_id[3:0] : 4'h0)
-    | ((idle_5 ? winner_5_1 : state_5_1) ? auto_out_1_b_bits_id[3:0] : 4'h0)
-    | ((idle_5 ? winner_5_2 : state_5_2) ? auto_out_2_b_bits_id[3:0] : 4'h0)
-    | ((idle_5 ? winner_5_3 : state_5_3) ? auto_out_3_b_bits_id[3:0] : 4'h0);
+    (muxState_5_0 ? auto_out_0_b_bits_id[3:0] : 4'h0)
+    | (muxState_5_1 ? auto_out_1_b_bits_id[3:0] : 4'h0)
+    | (muxState_5_2 ? auto_out_2_b_bits_id[3:0] : 4'h0)
+    | (muxState_5_3 ? auto_out_3_b_bits_id[3:0] : 4'h0);
   reg         idle_6;
   wire        anyValid_6 =
     portsRIO_filtered_1_valid | portsRIO_filtered_1_1_valid | portsRIO_filtered_2_1_valid
@@ -1219,12 +1025,6 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_0_T_2 | _awFIFOMap_0_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_1_T_6 | (|arFIFOMap_1_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1240,12 +1040,6 @@ module AXI4Xbar_1(
       if (~reset & ~(~_awFIFOMap_1_T_5 | (|awFIFOMap_1_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_1_T_2 | _awFIFOMap_1_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1267,12 +1061,6 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_2_T_2 | _awFIFOMap_2_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_3_T_6 | (|arFIFOMap_3_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1288,12 +1076,6 @@ module AXI4Xbar_1(
       if (~reset & ~(~_awFIFOMap_3_T_5 | (|awFIFOMap_3_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_3_T_2 | _awFIFOMap_3_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1315,12 +1097,6 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_4_T_2 | _awFIFOMap_4_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_5_T_6 | (|arFIFOMap_5_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1336,12 +1112,6 @@ module AXI4Xbar_1(
       if (~reset & ~(~_awFIFOMap_5_T_5 | (|awFIFOMap_5_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_5_T_2 | _awFIFOMap_5_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1363,12 +1133,6 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_6_T_2 | _awFIFOMap_6_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_7_T_6 | (|arFIFOMap_7_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1384,12 +1148,6 @@ module AXI4Xbar_1(
       if (~reset & ~(~_awFIFOMap_7_T_5 | (|awFIFOMap_7_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_7_T_2 | _awFIFOMap_7_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1411,12 +1169,6 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_8_T_2 | _awFIFOMap_8_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_9_T_6 | (|arFIFOMap_9_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1432,12 +1184,6 @@ module AXI4Xbar_1(
       if (~reset & ~(~_awFIFOMap_9_T_5 | (|awFIFOMap_9_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_9_T_2 | _awFIFOMap_9_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1459,12 +1205,6 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_10_T_2 | _awFIFOMap_10_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_11_T_6 | (|arFIFOMap_11_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1480,12 +1220,6 @@ module AXI4Xbar_1(
       if (~reset & ~(~_awFIFOMap_11_T_5 | (|awFIFOMap_11_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_11_T_2 | _awFIFOMap_11_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1507,12 +1241,6 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_12_T_2 | _awFIFOMap_12_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_13_T_6 | (|arFIFOMap_13_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1528,12 +1256,6 @@ module AXI4Xbar_1(
       if (~reset & ~(~_awFIFOMap_13_T_5 | (|awFIFOMap_13_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_13_T_2 | _awFIFOMap_13_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1555,12 +1277,6 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_14_T_2 | _awFIFOMap_14_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_15_T_6 | (|arFIFOMap_15_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1579,21 +1295,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_15_T_2 | _awFIFOMap_15_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_16_T_5 | (|awFIFOMap_16_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_16_T_2 | _awFIFOMap_16_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1603,21 +1307,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_17_T_2 | _awFIFOMap_17_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_18_T_5 | (|awFIFOMap_18_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_18_T_2 | _awFIFOMap_18_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1627,21 +1319,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_19_T_2 | _awFIFOMap_19_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_20_T_5 | (|awFIFOMap_20_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_20_T_2 | _awFIFOMap_20_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1651,21 +1331,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_21_T_2 | _awFIFOMap_21_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_22_T_5 | (|awFIFOMap_22_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_22_T_2 | _awFIFOMap_22_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1675,21 +1343,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_23_T_2 | _awFIFOMap_23_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_24_T_5 | (|awFIFOMap_24_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_24_T_2 | _awFIFOMap_24_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1699,21 +1355,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_25_T_2 | _awFIFOMap_25_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_26_T_5 | (|awFIFOMap_26_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_26_T_2 | _awFIFOMap_26_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1723,21 +1367,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_27_T_2 | _awFIFOMap_27_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_28_T_5 | (|awFIFOMap_28_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_28_T_2 | _awFIFOMap_28_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1747,21 +1379,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_29_T_2 | _awFIFOMap_29_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_30_T_5 | (|awFIFOMap_30_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_30_T_2 | _awFIFOMap_30_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1771,21 +1391,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_31_T_2 | _awFIFOMap_31_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_0_T_28 | (|awFIFOMap_0_count_1))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_0_T_25 | _awFIFOMap_0_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1795,21 +1403,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_1_T_25 | _awFIFOMap_1_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_2_T_28 | (|awFIFOMap_2_count_1))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_2_T_25 | _awFIFOMap_2_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1819,21 +1415,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_3_T_25 | _awFIFOMap_3_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_4_T_28 | (|awFIFOMap_4_count_1))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_4_T_25 | _awFIFOMap_4_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1843,21 +1427,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_5_T_25 | _awFIFOMap_5_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_6_T_28 | (|awFIFOMap_6_count_1))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_6_T_25 | _awFIFOMap_6_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1867,21 +1439,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_7_T_25 | _awFIFOMap_7_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_8_T_28 | (|awFIFOMap_8_count_1))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_8_T_25 | _awFIFOMap_8_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1891,21 +1451,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_9_T_25 | _awFIFOMap_9_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_10_T_28 | (|awFIFOMap_10_count_1))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_10_T_25 | _awFIFOMap_10_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1915,21 +1463,9 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_11_T_25 | _awFIFOMap_11_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_12_T_28 | (|awFIFOMap_12_count_1))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_12_T_25 | _awFIFOMap_12_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1939,33 +1475,15 @@ module AXI4Xbar_1(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_13_T_25 | _awFIFOMap_13_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_14_T_28 | (|awFIFOMap_14_count_1))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_14_T_25 | _awFIFOMap_14_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_awFIFOMap_15_T_28 | (|awFIFOMap_15_count_1))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_15_T_25 | _awFIFOMap_15_T_44)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -2150,10 +1668,6 @@ module AXI4Xbar_1(
   wire [3:0]  _readys_mask_T_39 = _readys_mask_T_36 | {_readys_mask_T_36[2:0], 1'h0};
   wire [3:0]  _readys_mask_T_44 = readys_readys_7 & readys_valid_7;
   wire [3:0]  _readys_mask_T_47 = _readys_mask_T_44 | {_readys_mask_T_44[2:0], 1'h0};
-  wire        _awOut_0_io_enq_bits_T_16 = out_0_aw_ready & out_0_aw_valid;
-  wire        _awOut_1_io_enq_bits_T_16 = out_1_aw_ready & out_1_aw_valid;
-  wire        _awOut_2_io_enq_bits_T_16 = out_2_aw_ready & out_2_aw_valid;
-  wire        _awOut_3_io_enq_bits_T_16 = out_3_aw_ready & out_3_aw_valid;
   always @(posedge clock) begin
     if (reset) begin
       arFIFOMap_0_count <= 3'h0;
@@ -2282,197 +1796,98 @@ module AXI4Xbar_1(
     else begin
       arFIFOMap_0_count <=
         3'(3'(arFIFOMap_0_count + {2'h0, _arFIFOMap_0_T_2}) - {2'h0, _arFIFOMap_0_T_6});
-      awFIFOMap_0_count <=
-        3'(3'(awFIFOMap_0_count + {2'h0, _awFIFOMap_0_T_2}) - {2'h0, _awFIFOMap_0_T_5});
+      awFIFOMap_0_count <= 3'(awFIFOMap_0_count - {2'h0, _awFIFOMap_0_T_5});
       arFIFOMap_1_count <=
         3'(3'(arFIFOMap_1_count + {2'h0, _arFIFOMap_1_T_2}) - {2'h0, _arFIFOMap_1_T_6});
-      awFIFOMap_1_count <=
-        3'(3'(awFIFOMap_1_count + {2'h0, _awFIFOMap_1_T_2}) - {2'h0, _awFIFOMap_1_T_5});
+      awFIFOMap_1_count <= 3'(awFIFOMap_1_count - {2'h0, _awFIFOMap_1_T_5});
       arFIFOMap_2_count <=
         3'(3'(arFIFOMap_2_count + {2'h0, _arFIFOMap_2_T_2}) - {2'h0, _arFIFOMap_2_T_6});
-      awFIFOMap_2_count <=
-        3'(3'(awFIFOMap_2_count + {2'h0, _awFIFOMap_2_T_2}) - {2'h0, _awFIFOMap_2_T_5});
+      awFIFOMap_2_count <= 3'(awFIFOMap_2_count - {2'h0, _awFIFOMap_2_T_5});
       arFIFOMap_3_count <=
         3'(3'(arFIFOMap_3_count + {2'h0, _arFIFOMap_3_T_2}) - {2'h0, _arFIFOMap_3_T_6});
-      awFIFOMap_3_count <=
-        3'(3'(awFIFOMap_3_count + {2'h0, _awFIFOMap_3_T_2}) - {2'h0, _awFIFOMap_3_T_5});
+      awFIFOMap_3_count <= 3'(awFIFOMap_3_count - {2'h0, _awFIFOMap_3_T_5});
       arFIFOMap_4_count <=
         3'(3'(arFIFOMap_4_count + {2'h0, _arFIFOMap_4_T_2}) - {2'h0, _arFIFOMap_4_T_6});
-      awFIFOMap_4_count <=
-        3'(3'(awFIFOMap_4_count + {2'h0, _awFIFOMap_4_T_2}) - {2'h0, _awFIFOMap_4_T_5});
+      awFIFOMap_4_count <= 3'(awFIFOMap_4_count - {2'h0, _awFIFOMap_4_T_5});
       arFIFOMap_5_count <=
         3'(3'(arFIFOMap_5_count + {2'h0, _arFIFOMap_5_T_2}) - {2'h0, _arFIFOMap_5_T_6});
-      awFIFOMap_5_count <=
-        3'(3'(awFIFOMap_5_count + {2'h0, _awFIFOMap_5_T_2}) - {2'h0, _awFIFOMap_5_T_5});
+      awFIFOMap_5_count <= 3'(awFIFOMap_5_count - {2'h0, _awFIFOMap_5_T_5});
       arFIFOMap_6_count <=
         3'(3'(arFIFOMap_6_count + {2'h0, _arFIFOMap_6_T_2}) - {2'h0, _arFIFOMap_6_T_6});
-      awFIFOMap_6_count <=
-        3'(3'(awFIFOMap_6_count + {2'h0, _awFIFOMap_6_T_2}) - {2'h0, _awFIFOMap_6_T_5});
+      awFIFOMap_6_count <= 3'(awFIFOMap_6_count - {2'h0, _awFIFOMap_6_T_5});
       arFIFOMap_7_count <=
         3'(3'(arFIFOMap_7_count + {2'h0, _arFIFOMap_7_T_2}) - {2'h0, _arFIFOMap_7_T_6});
-      awFIFOMap_7_count <=
-        3'(3'(awFIFOMap_7_count + {2'h0, _awFIFOMap_7_T_2}) - {2'h0, _awFIFOMap_7_T_5});
+      awFIFOMap_7_count <= 3'(awFIFOMap_7_count - {2'h0, _awFIFOMap_7_T_5});
       arFIFOMap_8_count <=
         3'(3'(arFIFOMap_8_count + {2'h0, _arFIFOMap_8_T_2}) - {2'h0, _arFIFOMap_8_T_6});
-      awFIFOMap_8_count <=
-        3'(3'(awFIFOMap_8_count + {2'h0, _awFIFOMap_8_T_2}) - {2'h0, _awFIFOMap_8_T_5});
+      awFIFOMap_8_count <= 3'(awFIFOMap_8_count - {2'h0, _awFIFOMap_8_T_5});
       arFIFOMap_9_count <=
         3'(3'(arFIFOMap_9_count + {2'h0, _arFIFOMap_9_T_2}) - {2'h0, _arFIFOMap_9_T_6});
-      awFIFOMap_9_count <=
-        3'(3'(awFIFOMap_9_count + {2'h0, _awFIFOMap_9_T_2}) - {2'h0, _awFIFOMap_9_T_5});
+      awFIFOMap_9_count <= 3'(awFIFOMap_9_count - {2'h0, _awFIFOMap_9_T_5});
       arFIFOMap_10_count <=
         3'(3'(arFIFOMap_10_count + {2'h0, _arFIFOMap_10_T_2})
            - {2'h0, _arFIFOMap_10_T_6});
-      awFIFOMap_10_count <=
-        3'(3'(awFIFOMap_10_count + {2'h0, _awFIFOMap_10_T_2})
-           - {2'h0, _awFIFOMap_10_T_5});
+      awFIFOMap_10_count <= 3'(awFIFOMap_10_count - {2'h0, _awFIFOMap_10_T_5});
       arFIFOMap_11_count <=
         3'(3'(arFIFOMap_11_count + {2'h0, _arFIFOMap_11_T_2})
            - {2'h0, _arFIFOMap_11_T_6});
-      awFIFOMap_11_count <=
-        3'(3'(awFIFOMap_11_count + {2'h0, _awFIFOMap_11_T_2})
-           - {2'h0, _awFIFOMap_11_T_5});
+      awFIFOMap_11_count <= 3'(awFIFOMap_11_count - {2'h0, _awFIFOMap_11_T_5});
       arFIFOMap_12_count <=
         3'(3'(arFIFOMap_12_count + {2'h0, _arFIFOMap_12_T_2})
            - {2'h0, _arFIFOMap_12_T_6});
-      awFIFOMap_12_count <=
-        3'(3'(awFIFOMap_12_count + {2'h0, _awFIFOMap_12_T_2})
-           - {2'h0, _awFIFOMap_12_T_5});
+      awFIFOMap_12_count <= 3'(awFIFOMap_12_count - {2'h0, _awFIFOMap_12_T_5});
       arFIFOMap_13_count <=
         3'(3'(arFIFOMap_13_count + {2'h0, _arFIFOMap_13_T_2})
            - {2'h0, _arFIFOMap_13_T_6});
-      awFIFOMap_13_count <=
-        3'(3'(awFIFOMap_13_count + {2'h0, _awFIFOMap_13_T_2})
-           - {2'h0, _awFIFOMap_13_T_5});
+      awFIFOMap_13_count <= 3'(awFIFOMap_13_count - {2'h0, _awFIFOMap_13_T_5});
       arFIFOMap_14_count <=
         3'(3'(arFIFOMap_14_count + {2'h0, _arFIFOMap_14_T_2})
            - {2'h0, _arFIFOMap_14_T_6});
-      awFIFOMap_14_count <=
-        3'(3'(awFIFOMap_14_count + {2'h0, _awFIFOMap_14_T_2})
-           - {2'h0, _awFIFOMap_14_T_5});
+      awFIFOMap_14_count <= 3'(awFIFOMap_14_count - {2'h0, _awFIFOMap_14_T_5});
       arFIFOMap_15_count <=
         3'(3'(arFIFOMap_15_count + {2'h0, _arFIFOMap_15_T_2})
            - {2'h0, _arFIFOMap_15_T_6});
-      awFIFOMap_15_count <=
-        3'(3'(awFIFOMap_15_count + {2'h0, _awFIFOMap_15_T_2})
-           - {2'h0, _awFIFOMap_15_T_5});
-      latched <=
-        ~(_portsAWOI_in_0_aw_ready_T_6 & in_0_aw_valid)
-        & (_awIn_0_io_enq_ready & _awIn_0_io_enq_valid_T_1 | latched);
-      awFIFOMap_16_count <=
-        3'(3'(awFIFOMap_16_count + {2'h0, _awFIFOMap_16_T_2})
-           - {2'h0, _awFIFOMap_16_T_5});
-      awFIFOMap_17_count <=
-        3'(3'(awFIFOMap_17_count + {2'h0, _awFIFOMap_17_T_2})
-           - {2'h0, _awFIFOMap_17_T_5});
-      awFIFOMap_18_count <=
-        3'(3'(awFIFOMap_18_count + {2'h0, _awFIFOMap_18_T_2})
-           - {2'h0, _awFIFOMap_18_T_5});
-      awFIFOMap_19_count <=
-        3'(3'(awFIFOMap_19_count + {2'h0, _awFIFOMap_19_T_2})
-           - {2'h0, _awFIFOMap_19_T_5});
-      awFIFOMap_20_count <=
-        3'(3'(awFIFOMap_20_count + {2'h0, _awFIFOMap_20_T_2})
-           - {2'h0, _awFIFOMap_20_T_5});
-      awFIFOMap_21_count <=
-        3'(3'(awFIFOMap_21_count + {2'h0, _awFIFOMap_21_T_2})
-           - {2'h0, _awFIFOMap_21_T_5});
-      awFIFOMap_22_count <=
-        3'(3'(awFIFOMap_22_count + {2'h0, _awFIFOMap_22_T_2})
-           - {2'h0, _awFIFOMap_22_T_5});
-      awFIFOMap_23_count <=
-        3'(3'(awFIFOMap_23_count + {2'h0, _awFIFOMap_23_T_2})
-           - {2'h0, _awFIFOMap_23_T_5});
-      awFIFOMap_24_count <=
-        3'(3'(awFIFOMap_24_count + {2'h0, _awFIFOMap_24_T_2})
-           - {2'h0, _awFIFOMap_24_T_5});
-      awFIFOMap_25_count <=
-        3'(3'(awFIFOMap_25_count + {2'h0, _awFIFOMap_25_T_2})
-           - {2'h0, _awFIFOMap_25_T_5});
-      awFIFOMap_26_count <=
-        3'(3'(awFIFOMap_26_count + {2'h0, _awFIFOMap_26_T_2})
-           - {2'h0, _awFIFOMap_26_T_5});
-      awFIFOMap_27_count <=
-        3'(3'(awFIFOMap_27_count + {2'h0, _awFIFOMap_27_T_2})
-           - {2'h0, _awFIFOMap_27_T_5});
-      awFIFOMap_28_count <=
-        3'(3'(awFIFOMap_28_count + {2'h0, _awFIFOMap_28_T_2})
-           - {2'h0, _awFIFOMap_28_T_5});
-      awFIFOMap_29_count <=
-        3'(3'(awFIFOMap_29_count + {2'h0, _awFIFOMap_29_T_2})
-           - {2'h0, _awFIFOMap_29_T_5});
-      awFIFOMap_30_count <=
-        3'(3'(awFIFOMap_30_count + {2'h0, _awFIFOMap_30_T_2})
-           - {2'h0, _awFIFOMap_30_T_5});
-      awFIFOMap_31_count <=
-        3'(3'(awFIFOMap_31_count + {2'h0, _awFIFOMap_31_T_2})
-           - {2'h0, _awFIFOMap_31_T_5});
-      awFIFOMap_0_count_1 <=
-        3'(3'(awFIFOMap_0_count_1 + {2'h0, _awFIFOMap_0_T_25})
-           - {2'h0, _awFIFOMap_0_T_28});
-      awFIFOMap_1_count_1 <=
-        3'(3'(awFIFOMap_1_count_1 + {2'h0, _awFIFOMap_1_T_25})
-           - {2'h0, _awFIFOMap_1_T_28});
-      awFIFOMap_2_count_1 <=
-        3'(3'(awFIFOMap_2_count_1 + {2'h0, _awFIFOMap_2_T_25})
-           - {2'h0, _awFIFOMap_2_T_28});
-      awFIFOMap_3_count_1 <=
-        3'(3'(awFIFOMap_3_count_1 + {2'h0, _awFIFOMap_3_T_25})
-           - {2'h0, _awFIFOMap_3_T_28});
-      awFIFOMap_4_count_1 <=
-        3'(3'(awFIFOMap_4_count_1 + {2'h0, _awFIFOMap_4_T_25})
-           - {2'h0, _awFIFOMap_4_T_28});
-      awFIFOMap_5_count_1 <=
-        3'(3'(awFIFOMap_5_count_1 + {2'h0, _awFIFOMap_5_T_25})
-           - {2'h0, _awFIFOMap_5_T_28});
-      awFIFOMap_6_count_1 <=
-        3'(3'(awFIFOMap_6_count_1 + {2'h0, _awFIFOMap_6_T_25})
-           - {2'h0, _awFIFOMap_6_T_28});
-      awFIFOMap_7_count_1 <=
-        3'(3'(awFIFOMap_7_count_1 + {2'h0, _awFIFOMap_7_T_25})
-           - {2'h0, _awFIFOMap_7_T_28});
-      awFIFOMap_8_count_1 <=
-        3'(3'(awFIFOMap_8_count_1 + {2'h0, _awFIFOMap_8_T_25})
-           - {2'h0, _awFIFOMap_8_T_28});
-      awFIFOMap_9_count_1 <=
-        3'(3'(awFIFOMap_9_count_1 + {2'h0, _awFIFOMap_9_T_25})
-           - {2'h0, _awFIFOMap_9_T_28});
-      awFIFOMap_10_count_1 <=
-        3'(3'(awFIFOMap_10_count_1 + {2'h0, _awFIFOMap_10_T_25})
-           - {2'h0, _awFIFOMap_10_T_28});
-      awFIFOMap_11_count_1 <=
-        3'(3'(awFIFOMap_11_count_1 + {2'h0, _awFIFOMap_11_T_25})
-           - {2'h0, _awFIFOMap_11_T_28});
-      awFIFOMap_12_count_1 <=
-        3'(3'(awFIFOMap_12_count_1 + {2'h0, _awFIFOMap_12_T_25})
-           - {2'h0, _awFIFOMap_12_T_28});
-      awFIFOMap_13_count_1 <=
-        3'(3'(awFIFOMap_13_count_1 + {2'h0, _awFIFOMap_13_T_25})
-           - {2'h0, _awFIFOMap_13_T_28});
-      awFIFOMap_14_count_1 <=
-        3'(3'(awFIFOMap_14_count_1 + {2'h0, _awFIFOMap_14_T_25})
-           - {2'h0, _awFIFOMap_14_T_28});
-      awFIFOMap_15_count_1 <=
-        3'(3'(awFIFOMap_15_count_1 + {2'h0, _awFIFOMap_15_T_25})
-           - {2'h0, _awFIFOMap_15_T_28});
-      latched_1 <=
-        ~(_portsAWOI_in_1_aw_ready_T_6 & in_1_aw_valid)
-        & (_awIn_1_io_enq_ready & _awIn_1_io_enq_valid_T_1 | latched_1);
-      latched_2 <=
-        ~_awOut_0_io_enq_bits_T_16
-        & (_awOut_0_io_enq_ready & _awOut_0_io_enq_valid_T_1 | latched_2);
-      latched_3 <=
-        ~_awOut_1_io_enq_bits_T_16
-        & (_awOut_1_io_enq_ready & _awOut_1_io_enq_valid_T_1 | latched_3);
-      latched_4 <=
-        ~_awOut_2_io_enq_bits_T_16
-        & (_awOut_2_io_enq_ready & _awOut_2_io_enq_valid_T_1 | latched_4);
-      latched_5 <=
-        ~_awOut_3_io_enq_bits_T_16
-        & (_awOut_3_io_enq_ready & _awOut_3_io_enq_valid_T_1 | latched_5);
+      awFIFOMap_15_count <= 3'(awFIFOMap_15_count - {2'h0, _awFIFOMap_15_T_5});
+      latched <= _awIn_0_io_enq_ready & _awIn_0_io_enq_valid_T_1 | latched;
+      awFIFOMap_16_count <= 3'(awFIFOMap_16_count - {2'h0, _awFIFOMap_16_T_5});
+      awFIFOMap_17_count <= 3'(awFIFOMap_17_count - {2'h0, _awFIFOMap_17_T_5});
+      awFIFOMap_18_count <= 3'(awFIFOMap_18_count - {2'h0, _awFIFOMap_18_T_5});
+      awFIFOMap_19_count <= 3'(awFIFOMap_19_count - {2'h0, _awFIFOMap_19_T_5});
+      awFIFOMap_20_count <= 3'(awFIFOMap_20_count - {2'h0, _awFIFOMap_20_T_5});
+      awFIFOMap_21_count <= 3'(awFIFOMap_21_count - {2'h0, _awFIFOMap_21_T_5});
+      awFIFOMap_22_count <= 3'(awFIFOMap_22_count - {2'h0, _awFIFOMap_22_T_5});
+      awFIFOMap_23_count <= 3'(awFIFOMap_23_count - {2'h0, _awFIFOMap_23_T_5});
+      awFIFOMap_24_count <= 3'(awFIFOMap_24_count - {2'h0, _awFIFOMap_24_T_5});
+      awFIFOMap_25_count <= 3'(awFIFOMap_25_count - {2'h0, _awFIFOMap_25_T_5});
+      awFIFOMap_26_count <= 3'(awFIFOMap_26_count - {2'h0, _awFIFOMap_26_T_5});
+      awFIFOMap_27_count <= 3'(awFIFOMap_27_count - {2'h0, _awFIFOMap_27_T_5});
+      awFIFOMap_28_count <= 3'(awFIFOMap_28_count - {2'h0, _awFIFOMap_28_T_5});
+      awFIFOMap_29_count <= 3'(awFIFOMap_29_count - {2'h0, _awFIFOMap_29_T_5});
+      awFIFOMap_30_count <= 3'(awFIFOMap_30_count - {2'h0, _awFIFOMap_30_T_5});
+      awFIFOMap_31_count <= 3'(awFIFOMap_31_count - {2'h0, _awFIFOMap_31_T_5});
+      awFIFOMap_0_count_1 <= 3'(awFIFOMap_0_count_1 - {2'h0, _awFIFOMap_0_T_28});
+      awFIFOMap_1_count_1 <= 3'(awFIFOMap_1_count_1 - {2'h0, _awFIFOMap_1_T_28});
+      awFIFOMap_2_count_1 <= 3'(awFIFOMap_2_count_1 - {2'h0, _awFIFOMap_2_T_28});
+      awFIFOMap_3_count_1 <= 3'(awFIFOMap_3_count_1 - {2'h0, _awFIFOMap_3_T_28});
+      awFIFOMap_4_count_1 <= 3'(awFIFOMap_4_count_1 - {2'h0, _awFIFOMap_4_T_28});
+      awFIFOMap_5_count_1 <= 3'(awFIFOMap_5_count_1 - {2'h0, _awFIFOMap_5_T_28});
+      awFIFOMap_6_count_1 <= 3'(awFIFOMap_6_count_1 - {2'h0, _awFIFOMap_6_T_28});
+      awFIFOMap_7_count_1 <= 3'(awFIFOMap_7_count_1 - {2'h0, _awFIFOMap_7_T_28});
+      awFIFOMap_8_count_1 <= 3'(awFIFOMap_8_count_1 - {2'h0, _awFIFOMap_8_T_28});
+      awFIFOMap_9_count_1 <= 3'(awFIFOMap_9_count_1 - {2'h0, _awFIFOMap_9_T_28});
+      awFIFOMap_10_count_1 <= 3'(awFIFOMap_10_count_1 - {2'h0, _awFIFOMap_10_T_28});
+      awFIFOMap_11_count_1 <= 3'(awFIFOMap_11_count_1 - {2'h0, _awFIFOMap_11_T_28});
+      awFIFOMap_12_count_1 <= 3'(awFIFOMap_12_count_1 - {2'h0, _awFIFOMap_12_T_28});
+      awFIFOMap_13_count_1 <= 3'(awFIFOMap_13_count_1 - {2'h0, _awFIFOMap_13_T_28});
+      awFIFOMap_14_count_1 <= 3'(awFIFOMap_14_count_1 - {2'h0, _awFIFOMap_14_T_28});
+      awFIFOMap_15_count_1 <= 3'(awFIFOMap_15_count_1 - {2'h0, _awFIFOMap_15_T_28});
+      latched_1 <= _awIn_1_io_enq_ready & _awIn_1_io_enq_valid_T_1 | latched_1;
+      latched_2 <= _awOut_0_io_enq_ready & _awOut_0_io_enq_valid_T_1 | latched_2;
+      latched_3 <= _awOut_1_io_enq_ready & _awOut_1_io_enq_valid_T_1 | latched_3;
+      latched_4 <= _awOut_2_io_enq_ready & _awOut_2_io_enq_valid_T_1 | latched_4;
+      latched_5 <= _awOut_3_io_enq_ready & _awOut_3_io_enq_valid_T_1 | latched_5;
       awOut_0_io_enq_bits_idle <=
-        _awOut_0_io_enq_bits_T_16 | ~awOut_0_io_enq_bits_anyValid
-        & awOut_0_io_enq_bits_idle;
+        ~awOut_0_io_enq_bits_anyValid & awOut_0_io_enq_bits_idle;
       if (awOut_0_io_enq_bits_idle & (|awOut_0_io_enq_bits_readys_valid))
         awOut_0_io_enq_bits_readys_mask <=
           _awOut_0_io_enq_bits_readys_mask_T
@@ -2487,8 +1902,7 @@ module AXI4Xbar_1(
       if (idle)
         state_0 <= winner_0;
       awOut_1_io_enq_bits_idle <=
-        _awOut_1_io_enq_bits_T_16 | ~awOut_1_io_enq_bits_anyValid
-        & awOut_1_io_enq_bits_idle;
+        ~awOut_1_io_enq_bits_anyValid & awOut_1_io_enq_bits_idle;
       if (awOut_1_io_enq_bits_idle & (|awOut_1_io_enq_bits_readys_valid))
         awOut_1_io_enq_bits_readys_mask <=
           _awOut_1_io_enq_bits_readys_mask_T
@@ -2504,8 +1918,7 @@ module AXI4Xbar_1(
       if (idle_1)
         state_1_0 <= winner_1_0;
       awOut_2_io_enq_bits_idle <=
-        _awOut_2_io_enq_bits_T_16 | ~awOut_2_io_enq_bits_anyValid
-        & awOut_2_io_enq_bits_idle;
+        ~awOut_2_io_enq_bits_anyValid & awOut_2_io_enq_bits_idle;
       if (awOut_2_io_enq_bits_idle & (|awOut_2_io_enq_bits_readys_valid))
         awOut_2_io_enq_bits_readys_mask <=
           _awOut_2_io_enq_bits_readys_mask_T
@@ -2521,8 +1934,7 @@ module AXI4Xbar_1(
       if (idle_2)
         state_2_0 <= winner_2_0;
       awOut_3_io_enq_bits_idle <=
-        _awOut_3_io_enq_bits_T_16 | ~awOut_3_io_enq_bits_anyValid
-        & awOut_3_io_enq_bits_idle;
+        ~awOut_3_io_enq_bits_anyValid & awOut_3_io_enq_bits_idle;
       if (awOut_3_io_enq_bits_idle & (|awOut_3_io_enq_bits_readys_valid))
         awOut_3_io_enq_bits_readys_mask <=
           _awOut_3_io_enq_bits_readys_mask_T
@@ -2576,132 +1988,36 @@ module AXI4Xbar_1(
     end
     if (_arFIFOMap_0_T_2)
       arFIFOMap_0_last <= arTag;
-    if (_awFIFOMap_0_T_2)
-      awFIFOMap_0_last <= awTag;
     if (_arFIFOMap_1_T_2)
       arFIFOMap_1_last <= arTag;
-    if (_awFIFOMap_1_T_2)
-      awFIFOMap_1_last <= awTag;
     if (_arFIFOMap_2_T_2)
       arFIFOMap_2_last <= arTag;
-    if (_awFIFOMap_2_T_2)
-      awFIFOMap_2_last <= awTag;
     if (_arFIFOMap_3_T_2)
       arFIFOMap_3_last <= arTag;
-    if (_awFIFOMap_3_T_2)
-      awFIFOMap_3_last <= awTag;
     if (_arFIFOMap_4_T_2)
       arFIFOMap_4_last <= arTag;
-    if (_awFIFOMap_4_T_2)
-      awFIFOMap_4_last <= awTag;
     if (_arFIFOMap_5_T_2)
       arFIFOMap_5_last <= arTag;
-    if (_awFIFOMap_5_T_2)
-      awFIFOMap_5_last <= awTag;
     if (_arFIFOMap_6_T_2)
       arFIFOMap_6_last <= arTag;
-    if (_awFIFOMap_6_T_2)
-      awFIFOMap_6_last <= awTag;
     if (_arFIFOMap_7_T_2)
       arFIFOMap_7_last <= arTag;
-    if (_awFIFOMap_7_T_2)
-      awFIFOMap_7_last <= awTag;
     if (_arFIFOMap_8_T_2)
       arFIFOMap_8_last <= arTag;
-    if (_awFIFOMap_8_T_2)
-      awFIFOMap_8_last <= awTag;
     if (_arFIFOMap_9_T_2)
       arFIFOMap_9_last <= arTag;
-    if (_awFIFOMap_9_T_2)
-      awFIFOMap_9_last <= awTag;
     if (_arFIFOMap_10_T_2)
       arFIFOMap_10_last <= arTag;
-    if (_awFIFOMap_10_T_2)
-      awFIFOMap_10_last <= awTag;
     if (_arFIFOMap_11_T_2)
       arFIFOMap_11_last <= arTag;
-    if (_awFIFOMap_11_T_2)
-      awFIFOMap_11_last <= awTag;
     if (_arFIFOMap_12_T_2)
       arFIFOMap_12_last <= arTag;
-    if (_awFIFOMap_12_T_2)
-      awFIFOMap_12_last <= awTag;
     if (_arFIFOMap_13_T_2)
       arFIFOMap_13_last <= arTag;
-    if (_awFIFOMap_13_T_2)
-      awFIFOMap_13_last <= awTag;
     if (_arFIFOMap_14_T_2)
       arFIFOMap_14_last <= arTag;
-    if (_awFIFOMap_14_T_2)
-      awFIFOMap_14_last <= awTag;
     if (_arFIFOMap_15_T_2)
       arFIFOMap_15_last <= arTag;
-    if (_awFIFOMap_15_T_2)
-      awFIFOMap_15_last <= awTag;
-    if (_awFIFOMap_16_T_2)
-      awFIFOMap_16_last <= awTag_1;
-    if (_awFIFOMap_17_T_2)
-      awFIFOMap_17_last <= awTag_1;
-    if (_awFIFOMap_18_T_2)
-      awFIFOMap_18_last <= awTag_1;
-    if (_awFIFOMap_19_T_2)
-      awFIFOMap_19_last <= awTag_1;
-    if (_awFIFOMap_20_T_2)
-      awFIFOMap_20_last <= awTag_1;
-    if (_awFIFOMap_21_T_2)
-      awFIFOMap_21_last <= awTag_1;
-    if (_awFIFOMap_22_T_2)
-      awFIFOMap_22_last <= awTag_1;
-    if (_awFIFOMap_23_T_2)
-      awFIFOMap_23_last <= awTag_1;
-    if (_awFIFOMap_24_T_2)
-      awFIFOMap_24_last <= awTag_1;
-    if (_awFIFOMap_25_T_2)
-      awFIFOMap_25_last <= awTag_1;
-    if (_awFIFOMap_26_T_2)
-      awFIFOMap_26_last <= awTag_1;
-    if (_awFIFOMap_27_T_2)
-      awFIFOMap_27_last <= awTag_1;
-    if (_awFIFOMap_28_T_2)
-      awFIFOMap_28_last <= awTag_1;
-    if (_awFIFOMap_29_T_2)
-      awFIFOMap_29_last <= awTag_1;
-    if (_awFIFOMap_30_T_2)
-      awFIFOMap_30_last <= awTag_1;
-    if (_awFIFOMap_31_T_2)
-      awFIFOMap_31_last <= awTag_1;
-    if (_awFIFOMap_0_T_25)
-      awFIFOMap_0_last_1 <= awTag_1;
-    if (_awFIFOMap_1_T_25)
-      awFIFOMap_1_last_1 <= awTag_1;
-    if (_awFIFOMap_2_T_25)
-      awFIFOMap_2_last_1 <= awTag_1;
-    if (_awFIFOMap_3_T_25)
-      awFIFOMap_3_last_1 <= awTag_1;
-    if (_awFIFOMap_4_T_25)
-      awFIFOMap_4_last_1 <= awTag_1;
-    if (_awFIFOMap_5_T_25)
-      awFIFOMap_5_last_1 <= awTag_1;
-    if (_awFIFOMap_6_T_25)
-      awFIFOMap_6_last_1 <= awTag_1;
-    if (_awFIFOMap_7_T_25)
-      awFIFOMap_7_last_1 <= awTag_1;
-    if (_awFIFOMap_8_T_25)
-      awFIFOMap_8_last_1 <= awTag_1;
-    if (_awFIFOMap_9_T_25)
-      awFIFOMap_9_last_1 <= awTag_1;
-    if (_awFIFOMap_10_T_25)
-      awFIFOMap_10_last_1 <= awTag_1;
-    if (_awFIFOMap_11_T_25)
-      awFIFOMap_11_last_1 <= awTag_1;
-    if (_awFIFOMap_12_T_25)
-      awFIFOMap_12_last_1 <= awTag_1;
-    if (_awFIFOMap_13_T_25)
-      awFIFOMap_13_last_1 <= awTag_1;
-    if (_awFIFOMap_14_T_25)
-      awFIFOMap_14_last_1 <= awTag_1;
-    if (_awFIFOMap_15_T_25)
-      awFIFOMap_15_last_1 <= awTag_1;
   end // always @(posedge)
   Queue2_UInt4 awIn_0 (
     .clock        (clock),
@@ -2709,8 +2025,6 @@ module AXI4Xbar_1(
     .io_enq_ready (_awIn_0_io_enq_ready),
     .io_enq_valid (_awIn_0_io_enq_valid_T_1),
     .io_enq_bits  ({requestAWIO_0_3, requestAWIO_0_2, requestAWIO_0_1, requestAWIO_0_0}),
-    .io_deq_ready
-      (auto_in_0_w_valid & auto_in_0_w_bits_last & _portsWOI_in_0_w_ready_T_6),
     .io_deq_valid (_awIn_0_io_deq_valid),
     .io_deq_bits  (_awIn_0_io_deq_bits)
   );
@@ -2720,8 +2034,6 @@ module AXI4Xbar_1(
     .io_enq_ready (_awIn_1_io_enq_ready),
     .io_enq_valid (_awIn_1_io_enq_valid_T_1),
     .io_enq_bits  ({requestAWIO_1_3, requestAWIO_1_2, requestAWIO_1_1, requestAWIO_1_0}),
-    .io_deq_ready
-      (auto_in_1_w_valid & auto_in_1_w_bits_last & _portsWOI_in_1_w_ready_T_6),
     .io_deq_valid (_awIn_1_io_deq_valid),
     .io_deq_bits  (_awIn_1_io_deq_bits)
   );
@@ -2731,7 +2043,7 @@ module AXI4Xbar_1(
     .io_enq_ready (_awOut_0_io_enq_ready),
     .io_enq_valid (_awOut_0_io_enq_valid_T_1),
     .io_enq_bits  ({awOut_0_io_enq_bits_muxState_1, awOut_0_io_enq_bits_muxState_0}),
-    .io_deq_ready (_out_0_w_valid_T_4 & _out_0_w_bits_T_4 & auto_out_0_w_ready),
+    .io_deq_ready (1'h0),
     .io_deq_valid (_awOut_0_io_deq_valid),
     .io_deq_bits  (_awOut_0_io_deq_bits)
   );
@@ -2741,7 +2053,7 @@ module AXI4Xbar_1(
     .io_enq_ready (_awOut_1_io_enq_ready),
     .io_enq_valid (_awOut_1_io_enq_valid_T_1),
     .io_enq_bits  ({awOut_1_io_enq_bits_muxState_1, awOut_1_io_enq_bits_muxState_0}),
-    .io_deq_ready (_out_1_w_valid_T_4 & _out_1_w_bits_T_4 & auto_out_1_w_ready),
+    .io_deq_ready (1'h0),
     .io_deq_valid (_awOut_1_io_deq_valid),
     .io_deq_bits  (_awOut_1_io_deq_bits)
   );
@@ -2751,7 +2063,7 @@ module AXI4Xbar_1(
     .io_enq_ready (_awOut_2_io_enq_ready),
     .io_enq_valid (_awOut_2_io_enq_valid_T_1),
     .io_enq_bits  ({awOut_2_io_enq_bits_muxState_1, awOut_2_io_enq_bits_muxState_0}),
-    .io_deq_ready (_out_2_w_valid_T_4 & _out_2_w_bits_T_4 & auto_out_2_w_ready),
+    .io_deq_ready (1'h0),
     .io_deq_valid (_awOut_2_io_deq_valid),
     .io_deq_bits  (_awOut_2_io_deq_bits)
   );
@@ -2761,12 +2073,10 @@ module AXI4Xbar_1(
     .io_enq_ready (_awOut_3_io_enq_ready),
     .io_enq_valid (_awOut_3_io_enq_valid_T_1),
     .io_enq_bits  ({awOut_3_io_enq_bits_muxState_1, awOut_3_io_enq_bits_muxState_0}),
-    .io_deq_ready (_out_3_w_valid_T_4 & _out_3_w_bits_T_4 & auto_out_3_w_ready),
+    .io_deq_ready (1'h0),
     .io_deq_valid (_awOut_3_io_deq_valid),
     .io_deq_bits  (_awOut_3_io_deq_bits)
   );
-  assign auto_in_1_aw_ready = nodeIn_1_aw_ready;
-  assign auto_in_1_w_ready = _portsWOI_in_1_w_ready_T_6 & _awIn_1_io_deq_valid;
   assign auto_in_1_b_valid = in_1_b_valid;
   assign auto_in_1_b_bits_id = _in_1_b_bits_T_13;
   assign auto_in_1_r_valid =
@@ -2780,105 +2090,210 @@ module AXI4Xbar_1(
     | ((idle_6 ? winner_6_1 : state_6_1) ? auto_out_1_r_bits_id[4:0] : 5'h0)
     | ((idle_6 ? winner_6_2 : state_6_2) ? auto_out_2_r_bits_id[4:0] : 5'h0)
     | ((idle_6 ? winner_6_3 : state_6_3) ? auto_out_3_r_bits_id[4:0] : 5'h0);
-  assign auto_in_0_aw_ready = nodeIn_aw_ready;
-  assign auto_in_0_w_ready = _portsWOI_in_0_w_ready_T_6 & _awIn_0_io_deq_valid;
   assign auto_in_0_b_valid = in_0_b_valid;
   assign auto_in_0_b_bits_id = _in_0_b_bits_T_13;
+  assign auto_in_0_b_bits_resp =
+    (muxState_5_0 ? auto_out_0_b_bits_resp : 2'h0)
+    | (muxState_5_1 ? auto_out_1_b_bits_resp : 2'h0)
+    | (muxState_5_2 ? auto_out_2_b_bits_resp : 2'h0)
+    | (muxState_5_3 ? auto_out_3_b_bits_resp : 2'h0);
   assign auto_in_0_ar_ready = nodeIn_ar_ready;
   assign auto_in_0_r_valid = in_0_r_valid;
   assign auto_in_0_r_bits_id = _in_0_r_bits_T_27;
+  assign auto_in_0_r_bits_data =
+    (muxState_4_0 ? auto_out_0_r_bits_data : 32'h0)
+    | (muxState_4_1 ? auto_out_1_r_bits_data : 32'h0)
+    | (muxState_4_2 ? auto_out_2_r_bits_data : 32'h0)
+    | (muxState_4_3 ? auto_out_3_r_bits_data : 32'h0);
+  assign auto_in_0_r_bits_resp =
+    (muxState_4_0 ? auto_out_0_r_bits_resp : 2'h0)
+    | (muxState_4_1 ? auto_out_1_r_bits_resp : 2'h0)
+    | (muxState_4_2 ? auto_out_2_r_bits_resp : 2'h0)
+    | (muxState_4_3 ? auto_out_3_r_bits_resp : 2'h0);
   assign auto_in_0_r_bits_last = _in_0_r_bits_T_6;
-  assign auto_out_3_aw_valid = out_3_aw_valid & _out_3_aw_ready_T;
+  assign auto_out_3_aw_valid = out_3_aw_valid & (latched_5 | _awOut_3_io_enq_ready);
   assign auto_out_3_aw_bits_id =
     (awOut_3_io_enq_bits_muxState_0 ? in_0_aw_bits_id : 6'h0)
     | (awOut_3_io_enq_bits_muxState_1 ? in_1_aw_bits_id : 6'h0);
   assign auto_out_3_aw_bits_addr =
     (awOut_3_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_addr : 32'h0)
     | (awOut_3_io_enq_bits_muxState_1 ? auto_in_1_aw_bits_addr : 32'h0);
+  assign auto_out_3_aw_bits_len =
+    awOut_3_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_len : 8'h0;
+  assign auto_out_3_aw_bits_size =
+    (awOut_3_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_size : 3'h0)
+    | (awOut_3_io_enq_bits_muxState_1 ? auto_in_1_aw_bits_size : 3'h0);
+  assign auto_out_3_aw_bits_burst =
+    awOut_3_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_burst : 2'h0;
+  assign auto_out_3_aw_bits_lock =
+    awOut_3_io_enq_bits_muxState_0 & auto_in_0_aw_bits_lock;
+  assign auto_out_3_aw_bits_cache =
+    awOut_3_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_cache : 4'h0;
+  assign auto_out_3_aw_bits_prot =
+    awOut_3_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_prot : 3'h0;
+  assign auto_out_3_aw_bits_qos =
+    awOut_3_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_qos : 4'h0;
   assign auto_out_3_w_valid = _out_3_w_valid_T_4 & _awOut_3_io_deq_valid;
   assign auto_out_3_w_bits_data =
-    (_filtered_3_ready_T_2 ? auto_in_0_w_bits_data : 64'h0)
-    | (_filtered_3_ready_T_4 ? auto_in_1_w_bits_data : 64'h0);
+    (_awOut_3_io_deq_bits[0] ? auto_in_0_w_bits_data : 32'h0)
+    | (_awOut_3_io_deq_bits[1] ? auto_in_1_w_bits_data : 32'h0);
   assign auto_out_3_w_bits_strb =
-    (_filtered_3_ready_T_2 ? auto_in_0_w_bits_strb : 8'h0)
-    | (_filtered_3_ready_T_4 ? auto_in_1_w_bits_strb : 8'h0);
-  assign auto_out_3_w_bits_last = _out_3_w_bits_T_4;
+    (_awOut_3_io_deq_bits[0] ? auto_in_0_w_bits_strb : 4'h0)
+    | (_awOut_3_io_deq_bits[1] ? auto_in_1_w_bits_strb : 4'h0);
+  assign auto_out_3_w_bits_last =
+    _awOut_3_io_deq_bits[0] & auto_in_0_w_bits_last | _awOut_3_io_deq_bits[1]
+    & auto_in_1_w_bits_last;
   assign auto_out_3_b_ready =
     requestBOI_3_0 & auto_in_0_b_ready & allowed_5_3 | ~(auto_out_3_b_bits_id[5])
     & auto_in_1_b_ready & allowed_7_3;
   assign auto_out_3_ar_valid = out_3_ar_valid;
   assign auto_out_3_ar_bits_id = muxState_3_0 ? in_0_ar_bits_id : 6'h0;
   assign auto_out_3_ar_bits_addr = muxState_3_0 ? auto_in_0_ar_bits_addr : 32'h0;
+  assign auto_out_3_ar_bits_len = muxState_3_0 ? auto_in_0_ar_bits_len : 8'h0;
   assign auto_out_3_ar_bits_size = muxState_3_0 ? auto_in_0_ar_bits_size : 3'h0;
+  assign auto_out_3_ar_bits_burst = muxState_3_0 ? auto_in_0_ar_bits_burst : 2'h0;
+  assign auto_out_3_ar_bits_lock = muxState_3_0 & auto_in_0_ar_bits_lock;
+  assign auto_out_3_ar_bits_cache = muxState_3_0 ? auto_in_0_ar_bits_cache : 4'h0;
+  assign auto_out_3_ar_bits_prot = muxState_3_0 ? auto_in_0_ar_bits_prot : 3'h0;
+  assign auto_out_3_ar_bits_qos = muxState_3_0 ? auto_in_0_ar_bits_qos : 4'h0;
   assign auto_out_3_r_ready = requestROI_3_0 & auto_in_0_r_ready & allowed_4_3;
-  assign auto_out_2_aw_valid = out_2_aw_valid & _out_2_aw_ready_T;
+  assign auto_out_2_aw_valid = out_2_aw_valid & (latched_4 | _awOut_2_io_enq_ready);
   assign auto_out_2_aw_bits_id =
     (awOut_2_io_enq_bits_muxState_0 ? in_0_aw_bits_id : 6'h0)
     | (awOut_2_io_enq_bits_muxState_1 ? in_1_aw_bits_id : 6'h0);
   assign auto_out_2_aw_bits_addr =
     (awOut_2_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_addr : 32'h0)
     | (awOut_2_io_enq_bits_muxState_1 ? auto_in_1_aw_bits_addr : 32'h0);
+  assign auto_out_2_aw_bits_len =
+    awOut_2_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_len : 8'h0;
+  assign auto_out_2_aw_bits_size =
+    (awOut_2_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_size : 3'h0)
+    | (awOut_2_io_enq_bits_muxState_1 ? auto_in_1_aw_bits_size : 3'h0);
+  assign auto_out_2_aw_bits_burst =
+    awOut_2_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_burst : 2'h0;
+  assign auto_out_2_aw_bits_lock =
+    awOut_2_io_enq_bits_muxState_0 & auto_in_0_aw_bits_lock;
+  assign auto_out_2_aw_bits_cache =
+    awOut_2_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_cache : 4'h0;
+  assign auto_out_2_aw_bits_prot =
+    awOut_2_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_prot : 3'h0;
+  assign auto_out_2_aw_bits_qos =
+    awOut_2_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_qos : 4'h0;
   assign auto_out_2_w_valid = _out_2_w_valid_T_4 & _awOut_2_io_deq_valid;
   assign auto_out_2_w_bits_data =
-    (_filtered_2_ready_T_2 ? auto_in_0_w_bits_data : 64'h0)
-    | (_filtered_2_ready_T_4 ? auto_in_1_w_bits_data : 64'h0);
+    (_awOut_2_io_deq_bits[0] ? auto_in_0_w_bits_data : 32'h0)
+    | (_awOut_2_io_deq_bits[1] ? auto_in_1_w_bits_data : 32'h0);
   assign auto_out_2_w_bits_strb =
-    (_filtered_2_ready_T_2 ? auto_in_0_w_bits_strb : 8'h0)
-    | (_filtered_2_ready_T_4 ? auto_in_1_w_bits_strb : 8'h0);
-  assign auto_out_2_w_bits_last = _out_2_w_bits_T_4;
+    (_awOut_2_io_deq_bits[0] ? auto_in_0_w_bits_strb : 4'h0)
+    | (_awOut_2_io_deq_bits[1] ? auto_in_1_w_bits_strb : 4'h0);
+  assign auto_out_2_w_bits_last =
+    _awOut_2_io_deq_bits[0] & auto_in_0_w_bits_last | _awOut_2_io_deq_bits[1]
+    & auto_in_1_w_bits_last;
   assign auto_out_2_b_ready =
     requestBOI_2_0 & auto_in_0_b_ready & allowed_5_2 | ~(auto_out_2_b_bits_id[5])
     & auto_in_1_b_ready & allowed_7_2;
   assign auto_out_2_ar_valid = out_2_ar_valid;
   assign auto_out_2_ar_bits_id = muxState_2_0 ? in_0_ar_bits_id : 6'h0;
   assign auto_out_2_ar_bits_addr = muxState_2_0 ? auto_in_0_ar_bits_addr : 32'h0;
+  assign auto_out_2_ar_bits_len = muxState_2_0 ? auto_in_0_ar_bits_len : 8'h0;
   assign auto_out_2_ar_bits_size = muxState_2_0 ? auto_in_0_ar_bits_size : 3'h0;
+  assign auto_out_2_ar_bits_burst = muxState_2_0 ? auto_in_0_ar_bits_burst : 2'h0;
+  assign auto_out_2_ar_bits_lock = muxState_2_0 & auto_in_0_ar_bits_lock;
+  assign auto_out_2_ar_bits_cache = muxState_2_0 ? auto_in_0_ar_bits_cache : 4'h0;
+  assign auto_out_2_ar_bits_prot = muxState_2_0 ? auto_in_0_ar_bits_prot : 3'h0;
+  assign auto_out_2_ar_bits_qos = muxState_2_0 ? auto_in_0_ar_bits_qos : 4'h0;
   assign auto_out_2_r_ready = requestROI_2_0 & auto_in_0_r_ready & allowed_4_2;
-  assign auto_out_1_aw_valid = out_1_aw_valid & _out_1_aw_ready_T;
+  assign auto_out_1_aw_valid = out_1_aw_valid & (latched_3 | _awOut_1_io_enq_ready);
   assign auto_out_1_aw_bits_id =
     (awOut_1_io_enq_bits_muxState_0 ? in_0_aw_bits_id : 6'h0)
     | (awOut_1_io_enq_bits_muxState_1 ? in_1_aw_bits_id : 6'h0);
   assign auto_out_1_aw_bits_addr =
     (awOut_1_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_addr : 32'h0)
     | (awOut_1_io_enq_bits_muxState_1 ? auto_in_1_aw_bits_addr : 32'h0);
+  assign auto_out_1_aw_bits_len =
+    awOut_1_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_len : 8'h0;
+  assign auto_out_1_aw_bits_size =
+    (awOut_1_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_size : 3'h0)
+    | (awOut_1_io_enq_bits_muxState_1 ? auto_in_1_aw_bits_size : 3'h0);
+  assign auto_out_1_aw_bits_burst =
+    awOut_1_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_burst : 2'h0;
+  assign auto_out_1_aw_bits_lock =
+    awOut_1_io_enq_bits_muxState_0 & auto_in_0_aw_bits_lock;
+  assign auto_out_1_aw_bits_cache =
+    awOut_1_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_cache : 4'h0;
+  assign auto_out_1_aw_bits_prot =
+    awOut_1_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_prot : 3'h0;
+  assign auto_out_1_aw_bits_qos =
+    awOut_1_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_qos : 4'h0;
   assign auto_out_1_w_valid = _out_1_w_valid_T_4 & _awOut_1_io_deq_valid;
   assign auto_out_1_w_bits_data =
-    (_filtered_1_ready_T_2 ? auto_in_0_w_bits_data : 64'h0)
-    | (_filtered_1_ready_T_4 ? auto_in_1_w_bits_data : 64'h0);
+    (_awOut_1_io_deq_bits[0] ? auto_in_0_w_bits_data : 32'h0)
+    | (_awOut_1_io_deq_bits[1] ? auto_in_1_w_bits_data : 32'h0);
   assign auto_out_1_w_bits_strb =
-    (_filtered_1_ready_T_2 ? auto_in_0_w_bits_strb : 8'h0)
-    | (_filtered_1_ready_T_4 ? auto_in_1_w_bits_strb : 8'h0);
-  assign auto_out_1_w_bits_last = _out_1_w_bits_T_4;
+    (_awOut_1_io_deq_bits[0] ? auto_in_0_w_bits_strb : 4'h0)
+    | (_awOut_1_io_deq_bits[1] ? auto_in_1_w_bits_strb : 4'h0);
+  assign auto_out_1_w_bits_last =
+    _awOut_1_io_deq_bits[0] & auto_in_0_w_bits_last | _awOut_1_io_deq_bits[1]
+    & auto_in_1_w_bits_last;
   assign auto_out_1_b_ready =
     requestBOI_1_0 & auto_in_0_b_ready & allowed_5_1 | ~(auto_out_1_b_bits_id[5])
     & auto_in_1_b_ready & allowed_7_1;
   assign auto_out_1_ar_valid = out_1_ar_valid;
   assign auto_out_1_ar_bits_id = muxState_1_0 ? in_0_ar_bits_id : 6'h0;
   assign auto_out_1_ar_bits_addr = muxState_1_0 ? auto_in_0_ar_bits_addr : 32'h0;
+  assign auto_out_1_ar_bits_len = muxState_1_0 ? auto_in_0_ar_bits_len : 8'h0;
   assign auto_out_1_ar_bits_size = muxState_1_0 ? auto_in_0_ar_bits_size : 3'h0;
+  assign auto_out_1_ar_bits_burst = muxState_1_0 ? auto_in_0_ar_bits_burst : 2'h0;
+  assign auto_out_1_ar_bits_lock = muxState_1_0 & auto_in_0_ar_bits_lock;
+  assign auto_out_1_ar_bits_cache = muxState_1_0 ? auto_in_0_ar_bits_cache : 4'h0;
+  assign auto_out_1_ar_bits_prot = muxState_1_0 ? auto_in_0_ar_bits_prot : 3'h0;
+  assign auto_out_1_ar_bits_qos = muxState_1_0 ? auto_in_0_ar_bits_qos : 4'h0;
   assign auto_out_1_r_ready = requestROI_1_0 & auto_in_0_r_ready & allowed_4_1;
-  assign auto_out_0_aw_valid = out_0_aw_valid & _out_0_aw_ready_T;
+  assign auto_out_0_aw_valid = out_0_aw_valid & (latched_2 | _awOut_0_io_enq_ready);
   assign auto_out_0_aw_bits_id =
     (awOut_0_io_enq_bits_muxState_0 ? in_0_aw_bits_id : 6'h0)
     | (awOut_0_io_enq_bits_muxState_1 ? in_1_aw_bits_id : 6'h0);
   assign auto_out_0_aw_bits_addr =
     (awOut_0_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_addr : 32'h0)
     | (awOut_0_io_enq_bits_muxState_1 ? auto_in_1_aw_bits_addr : 32'h0);
+  assign auto_out_0_aw_bits_len =
+    awOut_0_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_len : 8'h0;
+  assign auto_out_0_aw_bits_size =
+    (awOut_0_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_size : 3'h0)
+    | (awOut_0_io_enq_bits_muxState_1 ? auto_in_1_aw_bits_size : 3'h0);
+  assign auto_out_0_aw_bits_burst =
+    awOut_0_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_burst : 2'h0;
+  assign auto_out_0_aw_bits_lock =
+    awOut_0_io_enq_bits_muxState_0 & auto_in_0_aw_bits_lock;
+  assign auto_out_0_aw_bits_cache =
+    awOut_0_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_cache : 4'h0;
+  assign auto_out_0_aw_bits_prot =
+    awOut_0_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_prot : 3'h0;
+  assign auto_out_0_aw_bits_qos =
+    awOut_0_io_enq_bits_muxState_0 ? auto_in_0_aw_bits_qos : 4'h0;
   assign auto_out_0_w_valid = _out_0_w_valid_T_4 & _awOut_0_io_deq_valid;
   assign auto_out_0_w_bits_data =
-    (_filtered_0_ready_T_2 ? auto_in_0_w_bits_data : 64'h0)
-    | (_filtered_0_ready_T_4 ? auto_in_1_w_bits_data : 64'h0);
+    (_awOut_0_io_deq_bits[0] ? auto_in_0_w_bits_data : 32'h0)
+    | (_awOut_0_io_deq_bits[1] ? auto_in_1_w_bits_data : 32'h0);
   assign auto_out_0_w_bits_strb =
-    (_filtered_0_ready_T_2 ? auto_in_0_w_bits_strb : 8'h0)
-    | (_filtered_0_ready_T_4 ? auto_in_1_w_bits_strb : 8'h0);
-  assign auto_out_0_w_bits_last = _out_0_w_bits_T_4;
+    (_awOut_0_io_deq_bits[0] ? auto_in_0_w_bits_strb : 4'h0)
+    | (_awOut_0_io_deq_bits[1] ? auto_in_1_w_bits_strb : 4'h0);
+  assign auto_out_0_w_bits_last =
+    _awOut_0_io_deq_bits[0] & auto_in_0_w_bits_last | _awOut_0_io_deq_bits[1]
+    & auto_in_1_w_bits_last;
   assign auto_out_0_b_ready =
     requestBOI_0_0 & auto_in_0_b_ready & allowed_5_0 | ~(auto_out_0_b_bits_id[5])
     & auto_in_1_b_ready & allowed_7_0;
   assign auto_out_0_ar_valid = out_0_ar_valid;
   assign auto_out_0_ar_bits_id = muxState_0 ? in_0_ar_bits_id : 6'h0;
   assign auto_out_0_ar_bits_addr = muxState_0 ? auto_in_0_ar_bits_addr : 32'h0;
+  assign auto_out_0_ar_bits_len = muxState_0 ? auto_in_0_ar_bits_len : 8'h0;
   assign auto_out_0_ar_bits_size = muxState_0 ? auto_in_0_ar_bits_size : 3'h0;
+  assign auto_out_0_ar_bits_burst = muxState_0 ? auto_in_0_ar_bits_burst : 2'h0;
+  assign auto_out_0_ar_bits_lock = muxState_0 & auto_in_0_ar_bits_lock;
+  assign auto_out_0_ar_bits_cache = muxState_0 ? auto_in_0_ar_bits_cache : 4'h0;
+  assign auto_out_0_ar_bits_prot = muxState_0 ? auto_in_0_ar_bits_prot : 3'h0;
+  assign auto_out_0_ar_bits_qos = muxState_0 ? auto_in_0_ar_bits_qos : 4'h0;
   assign auto_out_0_r_ready = requestROI_0_0 & auto_in_0_r_ready & allowed_4_0;
 endmodule
 

@@ -22,65 +22,111 @@
 module AXI4Xbar_2(
   input         clock,
   input         reset,
-  output        auto_in_aw_ready,
   input         auto_in_aw_valid,
   input  [5:0]  auto_in_aw_bits_id,
   input  [16:0] auto_in_aw_bits_addr,
-  output        auto_in_w_ready,
+  input  [7:0]  auto_in_aw_bits_len,
+  input  [2:0]  auto_in_aw_bits_size,
+  input  [1:0]  auto_in_aw_bits_burst,
+  input         auto_in_aw_bits_lock,
+  input  [3:0]  auto_in_aw_bits_cache,
+  input  [2:0]  auto_in_aw_bits_prot,
+  input  [3:0]  auto_in_aw_bits_qos,
   input         auto_in_w_valid,
-  input  [63:0] auto_in_w_bits_data,
-  input  [7:0]  auto_in_w_bits_strb,
+  input  [31:0] auto_in_w_bits_data,
+  input  [3:0]  auto_in_w_bits_strb,
   input         auto_in_w_bits_last,
   input         auto_in_b_ready,
   output        auto_in_b_valid,
   output [5:0]  auto_in_b_bits_id,
+  output [1:0]  auto_in_b_bits_resp,
   output        auto_in_ar_ready,
   input         auto_in_ar_valid,
   input  [5:0]  auto_in_ar_bits_id,
   input  [16:0] auto_in_ar_bits_addr,
+  input  [7:0]  auto_in_ar_bits_len,
   input  [2:0]  auto_in_ar_bits_size,
+  input  [1:0]  auto_in_ar_bits_burst,
+  input         auto_in_ar_bits_lock,
+  input  [3:0]  auto_in_ar_bits_cache,
+  input  [2:0]  auto_in_ar_bits_prot,
+  input  [3:0]  auto_in_ar_bits_qos,
   input         auto_in_r_ready,
   output        auto_in_r_valid,
   output [5:0]  auto_in_r_bits_id,
+  output [31:0] auto_in_r_bits_data,
+  output [1:0]  auto_in_r_bits_resp,
   output        auto_in_r_bits_last,
-  input         auto_out_1_aw_ready,
   output        auto_out_1_aw_valid,
   output [5:0]  auto_out_1_aw_bits_id,
   output [16:0] auto_out_1_aw_bits_addr,
-  input         auto_out_1_w_ready,
+  output [7:0]  auto_out_1_aw_bits_len,
+  output [2:0]  auto_out_1_aw_bits_size,
+  output [1:0]  auto_out_1_aw_bits_burst,
+  output        auto_out_1_aw_bits_lock,
+  output [3:0]  auto_out_1_aw_bits_cache,
+  output [2:0]  auto_out_1_aw_bits_prot,
+  output [3:0]  auto_out_1_aw_bits_qos,
   output        auto_out_1_w_valid,
-  output [63:0] auto_out_1_w_bits_data,
-  output [7:0]  auto_out_1_w_bits_strb,
+  output [31:0] auto_out_1_w_bits_data,
+  output [3:0]  auto_out_1_w_bits_strb,
+  output        auto_out_1_w_bits_last,
   output        auto_out_1_b_ready,
   input         auto_out_1_b_valid,
   input  [5:0]  auto_out_1_b_bits_id,
+  input  [1:0]  auto_out_1_b_bits_resp,
   input         auto_out_1_ar_ready,
   output        auto_out_1_ar_valid,
   output [5:0]  auto_out_1_ar_bits_id,
   output [16:0] auto_out_1_ar_bits_addr,
+  output [7:0]  auto_out_1_ar_bits_len,
   output [2:0]  auto_out_1_ar_bits_size,
+  output [1:0]  auto_out_1_ar_bits_burst,
+  output        auto_out_1_ar_bits_lock,
+  output [3:0]  auto_out_1_ar_bits_cache,
+  output [2:0]  auto_out_1_ar_bits_prot,
+  output [3:0]  auto_out_1_ar_bits_qos,
   output        auto_out_1_r_ready,
   input         auto_out_1_r_valid,
   input  [5:0]  auto_out_1_r_bits_id,
-  input         auto_out_0_aw_ready,
+  input  [31:0] auto_out_1_r_bits_data,
+  input  [1:0]  auto_out_1_r_bits_resp,
+  input         auto_out_1_r_bits_last,
   output        auto_out_0_aw_valid,
   output [5:0]  auto_out_0_aw_bits_id,
   output [11:0] auto_out_0_aw_bits_addr,
-  input         auto_out_0_w_ready,
+  output [7:0]  auto_out_0_aw_bits_len,
+  output [2:0]  auto_out_0_aw_bits_size,
+  output [1:0]  auto_out_0_aw_bits_burst,
+  output        auto_out_0_aw_bits_lock,
+  output [3:0]  auto_out_0_aw_bits_cache,
+  output [2:0]  auto_out_0_aw_bits_prot,
+  output [3:0]  auto_out_0_aw_bits_qos,
   output        auto_out_0_w_valid,
-  output [63:0] auto_out_0_w_bits_data,
-  output [7:0]  auto_out_0_w_bits_strb,
+  output [31:0] auto_out_0_w_bits_data,
+  output [3:0]  auto_out_0_w_bits_strb,
+  output        auto_out_0_w_bits_last,
   output        auto_out_0_b_ready,
   input         auto_out_0_b_valid,
   input  [5:0]  auto_out_0_b_bits_id,
+  input  [1:0]  auto_out_0_b_bits_resp,
   input         auto_out_0_ar_ready,
   output        auto_out_0_ar_valid,
   output [5:0]  auto_out_0_ar_bits_id,
   output [11:0] auto_out_0_ar_bits_addr,
+  output [7:0]  auto_out_0_ar_bits_len,
   output [2:0]  auto_out_0_ar_bits_size,
+  output [1:0]  auto_out_0_ar_bits_burst,
+  output        auto_out_0_ar_bits_lock,
+  output [3:0]  auto_out_0_ar_bits_cache,
+  output [2:0]  auto_out_0_ar_bits_prot,
+  output [3:0]  auto_out_0_ar_bits_qos,
   output        auto_out_0_r_ready,
   input         auto_out_0_r_valid,
-  input  [5:0]  auto_out_0_r_bits_id
+  input  [5:0]  auto_out_0_r_bits_id,
+  input  [31:0] auto_out_0_r_bits_data,
+  input  [1:0]  auto_out_0_r_bits_resp,
+  input         auto_out_0_r_bits_last
 );
 
   wire [5:0]  _in_0_b_bits_T_5;
@@ -88,10 +134,7 @@ module AXI4Xbar_2(
   wire [5:0]  _in_0_r_bits_T_11;
   wire        _in_0_r_bits_T_2;
   wire        in_0_r_valid;
-  wire        _portsWOI_in_0_w_ready_T_2;
-  wire        _portsAWOI_in_0_aw_ready_T_2;
   wire        _portsAROI_in_0_ar_ready_T_2;
-  wire        nodeIn_aw_ready;
   wire        nodeIn_ar_ready;
   wire        _awIn_0_io_enq_ready;
   wire        _awIn_0_io_deq_valid;
@@ -104,354 +147,257 @@ module AXI4Xbar_2(
   reg  [2:0]  arFIFOMap_32_count;
   reg         arFIFOMap_32_last;
   wire        _arFIFOMap_32_T_22 = arFIFOMap_32_count != 3'h7;
-  wire        _awFIFOMap_15_T_1 = nodeIn_aw_ready & auto_in_aw_valid;
-  wire        _awFIFOMap_32_T_2 = auto_in_aw_bits_id == 6'h20 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_15_T_4 = auto_in_b_ready & in_0_b_valid;
   wire        _awFIFOMap_32_T_5 = _in_0_b_bits_T_5 == 6'h20 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_32_count;
-  reg         awFIFOMap_32_last;
-  wire        _awFIFOMap_32_T_21 = awFIFOMap_32_count != 3'h7;
   wire        _arFIFOMap_33_T_2 = auto_in_ar_bits_id == 6'h21 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_33_T_6 =
     _in_0_r_bits_T_11 == 6'h21 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_33_count;
   reg         arFIFOMap_33_last;
   wire        _arFIFOMap_33_T_22 = arFIFOMap_33_count != 3'h7;
-  wire        _awFIFOMap_33_T_2 = auto_in_aw_bits_id == 6'h21 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_33_T_5 = _in_0_b_bits_T_5 == 6'h21 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_33_count;
-  reg         awFIFOMap_33_last;
-  wire        _awFIFOMap_33_T_21 = awFIFOMap_33_count != 3'h7;
   wire        _arFIFOMap_34_T_2 = auto_in_ar_bits_id == 6'h22 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_34_T_6 =
     _in_0_r_bits_T_11 == 6'h22 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_34_count;
   reg         arFIFOMap_34_last;
   wire        _arFIFOMap_34_T_22 = arFIFOMap_34_count != 3'h7;
-  wire        _awFIFOMap_34_T_2 = auto_in_aw_bits_id == 6'h22 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_34_T_5 = _in_0_b_bits_T_5 == 6'h22 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_34_count;
-  reg         awFIFOMap_34_last;
-  wire        _awFIFOMap_34_T_21 = awFIFOMap_34_count != 3'h7;
   wire        _arFIFOMap_35_T_2 = auto_in_ar_bits_id == 6'h23 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_35_T_6 =
     _in_0_r_bits_T_11 == 6'h23 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_35_count;
   reg         arFIFOMap_35_last;
   wire        _arFIFOMap_35_T_22 = arFIFOMap_35_count != 3'h7;
-  wire        _awFIFOMap_35_T_2 = auto_in_aw_bits_id == 6'h23 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_35_T_5 = _in_0_b_bits_T_5 == 6'h23 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_35_count;
-  reg         awFIFOMap_35_last;
-  wire        _awFIFOMap_35_T_21 = awFIFOMap_35_count != 3'h7;
   wire        _arFIFOMap_36_T_2 = auto_in_ar_bits_id == 6'h24 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_36_T_6 =
     _in_0_r_bits_T_11 == 6'h24 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_36_count;
   reg         arFIFOMap_36_last;
   wire        _arFIFOMap_36_T_22 = arFIFOMap_36_count != 3'h7;
-  wire        _awFIFOMap_36_T_2 = auto_in_aw_bits_id == 6'h24 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_36_T_5 = _in_0_b_bits_T_5 == 6'h24 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_36_count;
-  reg         awFIFOMap_36_last;
-  wire        _awFIFOMap_36_T_21 = awFIFOMap_36_count != 3'h7;
   wire        _arFIFOMap_37_T_2 = auto_in_ar_bits_id == 6'h25 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_37_T_6 =
     _in_0_r_bits_T_11 == 6'h25 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_37_count;
   reg         arFIFOMap_37_last;
   wire        _arFIFOMap_37_T_22 = arFIFOMap_37_count != 3'h7;
-  wire        _awFIFOMap_37_T_2 = auto_in_aw_bits_id == 6'h25 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_37_T_5 = _in_0_b_bits_T_5 == 6'h25 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_37_count;
-  reg         awFIFOMap_37_last;
-  wire        _awFIFOMap_37_T_21 = awFIFOMap_37_count != 3'h7;
   wire        _arFIFOMap_38_T_2 = auto_in_ar_bits_id == 6'h26 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_38_T_6 =
     _in_0_r_bits_T_11 == 6'h26 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_38_count;
   reg         arFIFOMap_38_last;
   wire        _arFIFOMap_38_T_22 = arFIFOMap_38_count != 3'h7;
-  wire        _awFIFOMap_38_T_2 = auto_in_aw_bits_id == 6'h26 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_38_T_5 = _in_0_b_bits_T_5 == 6'h26 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_38_count;
-  reg         awFIFOMap_38_last;
-  wire        _awFIFOMap_38_T_21 = awFIFOMap_38_count != 3'h7;
   wire        _arFIFOMap_39_T_2 = auto_in_ar_bits_id == 6'h27 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_39_T_6 =
     _in_0_r_bits_T_11 == 6'h27 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_39_count;
   reg         arFIFOMap_39_last;
   wire        _arFIFOMap_39_T_22 = arFIFOMap_39_count != 3'h7;
-  wire        _awFIFOMap_39_T_2 = auto_in_aw_bits_id == 6'h27 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_39_T_5 = _in_0_b_bits_T_5 == 6'h27 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_39_count;
-  reg         awFIFOMap_39_last;
-  wire        _awFIFOMap_39_T_21 = awFIFOMap_39_count != 3'h7;
   wire        _arFIFOMap_40_T_2 = auto_in_ar_bits_id == 6'h28 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_40_T_6 =
     _in_0_r_bits_T_11 == 6'h28 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_40_count;
   reg         arFIFOMap_40_last;
   wire        _arFIFOMap_40_T_22 = arFIFOMap_40_count != 3'h7;
-  wire        _awFIFOMap_40_T_2 = auto_in_aw_bits_id == 6'h28 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_40_T_5 = _in_0_b_bits_T_5 == 6'h28 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_40_count;
-  reg         awFIFOMap_40_last;
-  wire        _awFIFOMap_40_T_21 = awFIFOMap_40_count != 3'h7;
   wire        _arFIFOMap_41_T_2 = auto_in_ar_bits_id == 6'h29 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_41_T_6 =
     _in_0_r_bits_T_11 == 6'h29 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_41_count;
   reg         arFIFOMap_41_last;
   wire        _arFIFOMap_41_T_22 = arFIFOMap_41_count != 3'h7;
-  wire        _awFIFOMap_41_T_2 = auto_in_aw_bits_id == 6'h29 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_41_T_5 = _in_0_b_bits_T_5 == 6'h29 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_41_count;
-  reg         awFIFOMap_41_last;
-  wire        _awFIFOMap_41_T_21 = awFIFOMap_41_count != 3'h7;
   wire        _arFIFOMap_42_T_2 = auto_in_ar_bits_id == 6'h2A & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_42_T_6 =
     _in_0_r_bits_T_11 == 6'h2A & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_42_count;
   reg         arFIFOMap_42_last;
   wire        _arFIFOMap_42_T_22 = arFIFOMap_42_count != 3'h7;
-  wire        _awFIFOMap_42_T_2 = auto_in_aw_bits_id == 6'h2A & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_42_T_5 = _in_0_b_bits_T_5 == 6'h2A & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_42_count;
-  reg         awFIFOMap_42_last;
-  wire        _awFIFOMap_42_T_21 = awFIFOMap_42_count != 3'h7;
   wire        _arFIFOMap_43_T_2 = auto_in_ar_bits_id == 6'h2B & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_43_T_6 =
     _in_0_r_bits_T_11 == 6'h2B & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_43_count;
   reg         arFIFOMap_43_last;
   wire        _arFIFOMap_43_T_22 = arFIFOMap_43_count != 3'h7;
-  wire        _awFIFOMap_43_T_2 = auto_in_aw_bits_id == 6'h2B & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_43_T_5 = _in_0_b_bits_T_5 == 6'h2B & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_43_count;
-  reg         awFIFOMap_43_last;
-  wire        _awFIFOMap_43_T_21 = awFIFOMap_43_count != 3'h7;
   wire        _arFIFOMap_44_T_2 = auto_in_ar_bits_id == 6'h2C & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_44_T_6 =
     _in_0_r_bits_T_11 == 6'h2C & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_44_count;
   reg         arFIFOMap_44_last;
   wire        _arFIFOMap_44_T_22 = arFIFOMap_44_count != 3'h7;
-  wire        _awFIFOMap_44_T_2 = auto_in_aw_bits_id == 6'h2C & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_44_T_5 = _in_0_b_bits_T_5 == 6'h2C & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_44_count;
-  reg         awFIFOMap_44_last;
-  wire        _awFIFOMap_44_T_21 = awFIFOMap_44_count != 3'h7;
   wire        _arFIFOMap_45_T_2 = auto_in_ar_bits_id == 6'h2D & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_45_T_6 =
     _in_0_r_bits_T_11 == 6'h2D & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_45_count;
   reg         arFIFOMap_45_last;
   wire        _arFIFOMap_45_T_22 = arFIFOMap_45_count != 3'h7;
-  wire        _awFIFOMap_45_T_2 = auto_in_aw_bits_id == 6'h2D & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_45_T_5 = _in_0_b_bits_T_5 == 6'h2D & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_45_count;
-  reg         awFIFOMap_45_last;
-  wire        _awFIFOMap_45_T_21 = awFIFOMap_45_count != 3'h7;
   wire        _arFIFOMap_46_T_2 = auto_in_ar_bits_id == 6'h2E & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_46_T_6 =
     _in_0_r_bits_T_11 == 6'h2E & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_46_count;
   reg         arFIFOMap_46_last;
   wire        _arFIFOMap_46_T_22 = arFIFOMap_46_count != 3'h7;
-  wire        _awFIFOMap_46_T_2 = auto_in_aw_bits_id == 6'h2E & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_46_T_5 = _in_0_b_bits_T_5 == 6'h2E & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_46_count;
-  reg         awFIFOMap_46_last;
-  wire        _awFIFOMap_46_T_21 = awFIFOMap_46_count != 3'h7;
   wire        _arFIFOMap_47_T_2 = auto_in_ar_bits_id == 6'h2F & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_47_T_6 =
     _in_0_r_bits_T_11 == 6'h2F & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_47_count;
   reg         arFIFOMap_47_last;
   wire        _arFIFOMap_47_T_22 = arFIFOMap_47_count != 3'h7;
-  wire        _awFIFOMap_47_T_2 = auto_in_aw_bits_id == 6'h2F & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_47_T_5 = _in_0_b_bits_T_5 == 6'h2F & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_47_count;
-  reg         awFIFOMap_47_last;
-  wire        _awFIFOMap_47_T_21 = awFIFOMap_47_count != 3'h7;
   wire        _arFIFOMap_16_T_2 = auto_in_ar_bits_id == 6'h10 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_16_T_6 =
     _in_0_r_bits_T_11 == 6'h10 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_16_count;
   reg         arFIFOMap_16_last;
   wire        _arFIFOMap_16_T_22 = arFIFOMap_16_count != 3'h7;
-  wire        _awFIFOMap_16_T_2 = auto_in_aw_bits_id == 6'h10 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_16_T_5 = _in_0_b_bits_T_5 == 6'h10 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_16_count;
-  reg         awFIFOMap_16_last;
-  wire        _awFIFOMap_16_T_21 = awFIFOMap_16_count != 3'h7;
   wire        _arFIFOMap_17_T_2 = auto_in_ar_bits_id == 6'h11 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_17_T_6 =
     _in_0_r_bits_T_11 == 6'h11 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_17_count;
   reg         arFIFOMap_17_last;
   wire        _arFIFOMap_17_T_22 = arFIFOMap_17_count != 3'h7;
-  wire        _awFIFOMap_17_T_2 = auto_in_aw_bits_id == 6'h11 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_17_T_5 = _in_0_b_bits_T_5 == 6'h11 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_17_count;
-  reg         awFIFOMap_17_last;
-  wire        _awFIFOMap_17_T_21 = awFIFOMap_17_count != 3'h7;
   wire        _arFIFOMap_18_T_2 = auto_in_ar_bits_id == 6'h12 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_18_T_6 =
     _in_0_r_bits_T_11 == 6'h12 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_18_count;
   reg         arFIFOMap_18_last;
   wire        _arFIFOMap_18_T_22 = arFIFOMap_18_count != 3'h7;
-  wire        _awFIFOMap_18_T_2 = auto_in_aw_bits_id == 6'h12 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_18_T_5 = _in_0_b_bits_T_5 == 6'h12 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_18_count;
-  reg         awFIFOMap_18_last;
-  wire        _awFIFOMap_18_T_21 = awFIFOMap_18_count != 3'h7;
   wire        _arFIFOMap_19_T_2 = auto_in_ar_bits_id == 6'h13 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_19_T_6 =
     _in_0_r_bits_T_11 == 6'h13 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_19_count;
   reg         arFIFOMap_19_last;
   wire        _arFIFOMap_19_T_22 = arFIFOMap_19_count != 3'h7;
-  wire        _awFIFOMap_19_T_2 = auto_in_aw_bits_id == 6'h13 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_19_T_5 = _in_0_b_bits_T_5 == 6'h13 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_19_count;
-  reg         awFIFOMap_19_last;
-  wire        _awFIFOMap_19_T_21 = awFIFOMap_19_count != 3'h7;
   wire        _arFIFOMap_20_T_2 = auto_in_ar_bits_id == 6'h14 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_20_T_6 =
     _in_0_r_bits_T_11 == 6'h14 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_20_count;
   reg         arFIFOMap_20_last;
   wire        _arFIFOMap_20_T_22 = arFIFOMap_20_count != 3'h7;
-  wire        _awFIFOMap_20_T_2 = auto_in_aw_bits_id == 6'h14 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_20_T_5 = _in_0_b_bits_T_5 == 6'h14 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_20_count;
-  reg         awFIFOMap_20_last;
-  wire        _awFIFOMap_20_T_21 = awFIFOMap_20_count != 3'h7;
   wire        _arFIFOMap_21_T_2 = auto_in_ar_bits_id == 6'h15 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_21_T_6 =
     _in_0_r_bits_T_11 == 6'h15 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_21_count;
   reg         arFIFOMap_21_last;
   wire        _arFIFOMap_21_T_22 = arFIFOMap_21_count != 3'h7;
-  wire        _awFIFOMap_21_T_2 = auto_in_aw_bits_id == 6'h15 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_21_T_5 = _in_0_b_bits_T_5 == 6'h15 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_21_count;
-  reg         awFIFOMap_21_last;
-  wire        _awFIFOMap_21_T_21 = awFIFOMap_21_count != 3'h7;
   wire        _arFIFOMap_22_T_2 = auto_in_ar_bits_id == 6'h16 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_22_T_6 =
     _in_0_r_bits_T_11 == 6'h16 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_22_count;
   reg         arFIFOMap_22_last;
   wire        _arFIFOMap_22_T_22 = arFIFOMap_22_count != 3'h7;
-  wire        _awFIFOMap_22_T_2 = auto_in_aw_bits_id == 6'h16 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_22_T_5 = _in_0_b_bits_T_5 == 6'h16 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_22_count;
-  reg         awFIFOMap_22_last;
-  wire        _awFIFOMap_22_T_21 = awFIFOMap_22_count != 3'h7;
   wire        _arFIFOMap_23_T_2 = auto_in_ar_bits_id == 6'h17 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_23_T_6 =
     _in_0_r_bits_T_11 == 6'h17 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_23_count;
   reg         arFIFOMap_23_last;
   wire        _arFIFOMap_23_T_22 = arFIFOMap_23_count != 3'h7;
-  wire        _awFIFOMap_23_T_2 = auto_in_aw_bits_id == 6'h17 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_23_T_5 = _in_0_b_bits_T_5 == 6'h17 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_23_count;
-  reg         awFIFOMap_23_last;
-  wire        _awFIFOMap_23_T_21 = awFIFOMap_23_count != 3'h7;
   wire        _arFIFOMap_24_T_2 = auto_in_ar_bits_id == 6'h18 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_24_T_6 =
     _in_0_r_bits_T_11 == 6'h18 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_24_count;
   reg         arFIFOMap_24_last;
   wire        _arFIFOMap_24_T_22 = arFIFOMap_24_count != 3'h7;
-  wire        _awFIFOMap_24_T_2 = auto_in_aw_bits_id == 6'h18 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_24_T_5 = _in_0_b_bits_T_5 == 6'h18 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_24_count;
-  reg         awFIFOMap_24_last;
-  wire        _awFIFOMap_24_T_21 = awFIFOMap_24_count != 3'h7;
   wire        _arFIFOMap_25_T_2 = auto_in_ar_bits_id == 6'h19 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_25_T_6 =
     _in_0_r_bits_T_11 == 6'h19 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_25_count;
   reg         arFIFOMap_25_last;
   wire        _arFIFOMap_25_T_22 = arFIFOMap_25_count != 3'h7;
-  wire        _awFIFOMap_25_T_2 = auto_in_aw_bits_id == 6'h19 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_25_T_5 = _in_0_b_bits_T_5 == 6'h19 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_25_count;
-  reg         awFIFOMap_25_last;
-  wire        _awFIFOMap_25_T_21 = awFIFOMap_25_count != 3'h7;
   wire        _arFIFOMap_26_T_2 = auto_in_ar_bits_id == 6'h1A & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_26_T_6 =
     _in_0_r_bits_T_11 == 6'h1A & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_26_count;
   reg         arFIFOMap_26_last;
   wire        _arFIFOMap_26_T_22 = arFIFOMap_26_count != 3'h7;
-  wire        _awFIFOMap_26_T_2 = auto_in_aw_bits_id == 6'h1A & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_26_T_5 = _in_0_b_bits_T_5 == 6'h1A & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_26_count;
-  reg         awFIFOMap_26_last;
-  wire        _awFIFOMap_26_T_21 = awFIFOMap_26_count != 3'h7;
   wire        _arFIFOMap_27_T_2 = auto_in_ar_bits_id == 6'h1B & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_27_T_6 =
     _in_0_r_bits_T_11 == 6'h1B & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_27_count;
   reg         arFIFOMap_27_last;
   wire        _arFIFOMap_27_T_22 = arFIFOMap_27_count != 3'h7;
-  wire        _awFIFOMap_27_T_2 = auto_in_aw_bits_id == 6'h1B & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_27_T_5 = _in_0_b_bits_T_5 == 6'h1B & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_27_count;
-  reg         awFIFOMap_27_last;
-  wire        _awFIFOMap_27_T_21 = awFIFOMap_27_count != 3'h7;
   wire        _arFIFOMap_28_T_2 = auto_in_ar_bits_id == 6'h1C & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_28_T_6 =
     _in_0_r_bits_T_11 == 6'h1C & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_28_count;
   reg         arFIFOMap_28_last;
   wire        _arFIFOMap_28_T_22 = arFIFOMap_28_count != 3'h7;
-  wire        _awFIFOMap_28_T_2 = auto_in_aw_bits_id == 6'h1C & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_28_T_5 = _in_0_b_bits_T_5 == 6'h1C & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_28_count;
-  reg         awFIFOMap_28_last;
-  wire        _awFIFOMap_28_T_21 = awFIFOMap_28_count != 3'h7;
   wire        _arFIFOMap_29_T_2 = auto_in_ar_bits_id == 6'h1D & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_29_T_6 =
     _in_0_r_bits_T_11 == 6'h1D & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_29_count;
   reg         arFIFOMap_29_last;
   wire        _arFIFOMap_29_T_22 = arFIFOMap_29_count != 3'h7;
-  wire        _awFIFOMap_29_T_2 = auto_in_aw_bits_id == 6'h1D & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_29_T_5 = _in_0_b_bits_T_5 == 6'h1D & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_29_count;
-  reg         awFIFOMap_29_last;
-  wire        _awFIFOMap_29_T_21 = awFIFOMap_29_count != 3'h7;
   wire        _arFIFOMap_30_T_2 = auto_in_ar_bits_id == 6'h1E & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_30_T_6 =
     _in_0_r_bits_T_11 == 6'h1E & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_30_count;
   reg         arFIFOMap_30_last;
   wire        _arFIFOMap_30_T_22 = arFIFOMap_30_count != 3'h7;
-  wire        _awFIFOMap_30_T_2 = auto_in_aw_bits_id == 6'h1E & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_30_T_5 = _in_0_b_bits_T_5 == 6'h1E & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_30_count;
-  reg         awFIFOMap_30_last;
-  wire        _awFIFOMap_30_T_21 = awFIFOMap_30_count != 3'h7;
   wire        _arFIFOMap_31_T_2 = auto_in_ar_bits_id == 6'h1F & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_31_T_6 =
     _in_0_r_bits_T_11 == 6'h1F & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_31_count;
   reg         arFIFOMap_31_last;
   wire        _arFIFOMap_31_T_22 = arFIFOMap_31_count != 3'h7;
-  wire        _awFIFOMap_31_T_2 = auto_in_aw_bits_id == 6'h1F & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_31_T_5 = _in_0_b_bits_T_5 == 6'h1F & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_31_count;
-  reg         awFIFOMap_31_last;
-  wire        _awFIFOMap_31_T_21 = awFIFOMap_31_count != 3'h7;
   wire        _arFIFOMap_0_T_2 = auto_in_ar_bits_id == 6'h0 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_0_T_6 =
     _in_0_r_bits_T_11 == 6'h0 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
@@ -461,179 +407,130 @@ module AXI4Xbar_2(
   wire        arFIFOMap_0 =
     (arFIFOMap_0_count == 3'h0 | arFIFOMap_0_last == auto_in_ar_bits_addr[16])
     & _arFIFOMap_0_T_22;
-  wire        _awFIFOMap_0_T_2 = auto_in_aw_bits_id == 6'h0 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_0_T_5 = _in_0_b_bits_T_5 == 6'h0 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_0_count;
-  reg         awFIFOMap_0_last;
-  wire        _awFIFOMap_0_T_21 = awFIFOMap_0_count != 3'h7;
   wire        awFIFOMap_0 =
-    (awFIFOMap_0_count == 3'h0 | awFIFOMap_0_last == auto_in_aw_bits_addr[16])
-    & _awFIFOMap_0_T_21;
+    (awFIFOMap_0_count == 3'h0 | ~(auto_in_aw_bits_addr[16])) & awFIFOMap_0_count != 3'h7;
   wire        _arFIFOMap_1_T_2 = auto_in_ar_bits_id == 6'h1 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_1_T_6 =
     _in_0_r_bits_T_11 == 6'h1 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_1_count;
   reg         arFIFOMap_1_last;
   wire        _arFIFOMap_1_T_22 = arFIFOMap_1_count != 3'h7;
-  wire        _awFIFOMap_1_T_2 = auto_in_aw_bits_id == 6'h1 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_1_T_5 = _in_0_b_bits_T_5 == 6'h1 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_1_count;
-  reg         awFIFOMap_1_last;
-  wire        _awFIFOMap_1_T_21 = awFIFOMap_1_count != 3'h7;
   wire        _arFIFOMap_2_T_2 = auto_in_ar_bits_id == 6'h2 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_2_T_6 =
     _in_0_r_bits_T_11 == 6'h2 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_2_count;
   reg         arFIFOMap_2_last;
   wire        _arFIFOMap_2_T_22 = arFIFOMap_2_count != 3'h7;
-  wire        _awFIFOMap_2_T_2 = auto_in_aw_bits_id == 6'h2 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_2_T_5 = _in_0_b_bits_T_5 == 6'h2 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_2_count;
-  reg         awFIFOMap_2_last;
-  wire        _awFIFOMap_2_T_21 = awFIFOMap_2_count != 3'h7;
   wire        _arFIFOMap_3_T_2 = auto_in_ar_bits_id == 6'h3 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_3_T_6 =
     _in_0_r_bits_T_11 == 6'h3 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_3_count;
   reg         arFIFOMap_3_last;
   wire        _arFIFOMap_3_T_22 = arFIFOMap_3_count != 3'h7;
-  wire        _awFIFOMap_3_T_2 = auto_in_aw_bits_id == 6'h3 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_3_T_5 = _in_0_b_bits_T_5 == 6'h3 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_3_count;
-  reg         awFIFOMap_3_last;
-  wire        _awFIFOMap_3_T_21 = awFIFOMap_3_count != 3'h7;
   wire        _arFIFOMap_4_T_2 = auto_in_ar_bits_id == 6'h4 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_4_T_6 =
     _in_0_r_bits_T_11 == 6'h4 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_4_count;
   reg         arFIFOMap_4_last;
   wire        _arFIFOMap_4_T_22 = arFIFOMap_4_count != 3'h7;
-  wire        _awFIFOMap_4_T_2 = auto_in_aw_bits_id == 6'h4 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_4_T_5 = _in_0_b_bits_T_5 == 6'h4 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_4_count;
-  reg         awFIFOMap_4_last;
-  wire        _awFIFOMap_4_T_21 = awFIFOMap_4_count != 3'h7;
   wire        _arFIFOMap_5_T_2 = auto_in_ar_bits_id == 6'h5 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_5_T_6 =
     _in_0_r_bits_T_11 == 6'h5 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_5_count;
   reg         arFIFOMap_5_last;
   wire        _arFIFOMap_5_T_22 = arFIFOMap_5_count != 3'h7;
-  wire        _awFIFOMap_5_T_2 = auto_in_aw_bits_id == 6'h5 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_5_T_5 = _in_0_b_bits_T_5 == 6'h5 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_5_count;
-  reg         awFIFOMap_5_last;
-  wire        _awFIFOMap_5_T_21 = awFIFOMap_5_count != 3'h7;
   wire        _arFIFOMap_6_T_2 = auto_in_ar_bits_id == 6'h6 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_6_T_6 =
     _in_0_r_bits_T_11 == 6'h6 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_6_count;
   reg         arFIFOMap_6_last;
   wire        _arFIFOMap_6_T_22 = arFIFOMap_6_count != 3'h7;
-  wire        _awFIFOMap_6_T_2 = auto_in_aw_bits_id == 6'h6 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_6_T_5 = _in_0_b_bits_T_5 == 6'h6 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_6_count;
-  reg         awFIFOMap_6_last;
-  wire        _awFIFOMap_6_T_21 = awFIFOMap_6_count != 3'h7;
   wire        _arFIFOMap_7_T_2 = auto_in_ar_bits_id == 6'h7 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_7_T_6 =
     _in_0_r_bits_T_11 == 6'h7 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_7_count;
   reg         arFIFOMap_7_last;
   wire        _arFIFOMap_7_T_22 = arFIFOMap_7_count != 3'h7;
-  wire        _awFIFOMap_7_T_2 = auto_in_aw_bits_id == 6'h7 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_7_T_5 = _in_0_b_bits_T_5 == 6'h7 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_7_count;
-  reg         awFIFOMap_7_last;
-  wire        _awFIFOMap_7_T_21 = awFIFOMap_7_count != 3'h7;
   wire        _arFIFOMap_8_T_2 = auto_in_ar_bits_id == 6'h8 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_8_T_6 =
     _in_0_r_bits_T_11 == 6'h8 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_8_count;
   reg         arFIFOMap_8_last;
   wire        _arFIFOMap_8_T_22 = arFIFOMap_8_count != 3'h7;
-  wire        _awFIFOMap_8_T_2 = auto_in_aw_bits_id == 6'h8 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_8_T_5 = _in_0_b_bits_T_5 == 6'h8 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_8_count;
-  reg         awFIFOMap_8_last;
-  wire        _awFIFOMap_8_T_21 = awFIFOMap_8_count != 3'h7;
   wire        _arFIFOMap_9_T_2 = auto_in_ar_bits_id == 6'h9 & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_9_T_6 =
     _in_0_r_bits_T_11 == 6'h9 & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_9_count;
   reg         arFIFOMap_9_last;
   wire        _arFIFOMap_9_T_22 = arFIFOMap_9_count != 3'h7;
-  wire        _awFIFOMap_9_T_2 = auto_in_aw_bits_id == 6'h9 & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_9_T_5 = _in_0_b_bits_T_5 == 6'h9 & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_9_count;
-  reg         awFIFOMap_9_last;
-  wire        _awFIFOMap_9_T_21 = awFIFOMap_9_count != 3'h7;
   wire        _arFIFOMap_10_T_2 = auto_in_ar_bits_id == 6'hA & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_10_T_6 =
     _in_0_r_bits_T_11 == 6'hA & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_10_count;
   reg         arFIFOMap_10_last;
   wire        _arFIFOMap_10_T_22 = arFIFOMap_10_count != 3'h7;
-  wire        _awFIFOMap_10_T_2 = auto_in_aw_bits_id == 6'hA & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_10_T_5 = _in_0_b_bits_T_5 == 6'hA & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_10_count;
-  reg         awFIFOMap_10_last;
-  wire        _awFIFOMap_10_T_21 = awFIFOMap_10_count != 3'h7;
   wire        _arFIFOMap_11_T_2 = auto_in_ar_bits_id == 6'hB & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_11_T_6 =
     _in_0_r_bits_T_11 == 6'hB & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_11_count;
   reg         arFIFOMap_11_last;
   wire        _arFIFOMap_11_T_22 = arFIFOMap_11_count != 3'h7;
-  wire        _awFIFOMap_11_T_2 = auto_in_aw_bits_id == 6'hB & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_11_T_5 = _in_0_b_bits_T_5 == 6'hB & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_11_count;
-  reg         awFIFOMap_11_last;
-  wire        _awFIFOMap_11_T_21 = awFIFOMap_11_count != 3'h7;
   wire        _arFIFOMap_12_T_2 = auto_in_ar_bits_id == 6'hC & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_12_T_6 =
     _in_0_r_bits_T_11 == 6'hC & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_12_count;
   reg         arFIFOMap_12_last;
   wire        _arFIFOMap_12_T_22 = arFIFOMap_12_count != 3'h7;
-  wire        _awFIFOMap_12_T_2 = auto_in_aw_bits_id == 6'hC & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_12_T_5 = _in_0_b_bits_T_5 == 6'hC & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_12_count;
-  reg         awFIFOMap_12_last;
-  wire        _awFIFOMap_12_T_21 = awFIFOMap_12_count != 3'h7;
   wire        _arFIFOMap_13_T_2 = auto_in_ar_bits_id == 6'hD & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_13_T_6 =
     _in_0_r_bits_T_11 == 6'hD & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_13_count;
   reg         arFIFOMap_13_last;
   wire        _arFIFOMap_13_T_22 = arFIFOMap_13_count != 3'h7;
-  wire        _awFIFOMap_13_T_2 = auto_in_aw_bits_id == 6'hD & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_13_T_5 = _in_0_b_bits_T_5 == 6'hD & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_13_count;
-  reg         awFIFOMap_13_last;
-  wire        _awFIFOMap_13_T_21 = awFIFOMap_13_count != 3'h7;
   wire        _arFIFOMap_14_T_2 = auto_in_ar_bits_id == 6'hE & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_14_T_6 =
     _in_0_r_bits_T_11 == 6'hE & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_14_count;
   reg         arFIFOMap_14_last;
   wire        _arFIFOMap_14_T_22 = arFIFOMap_14_count != 3'h7;
-  wire        _awFIFOMap_14_T_2 = auto_in_aw_bits_id == 6'hE & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_14_T_5 = _in_0_b_bits_T_5 == 6'hE & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_14_count;
-  reg         awFIFOMap_14_last;
-  wire        _awFIFOMap_14_T_21 = awFIFOMap_14_count != 3'h7;
   wire        _arFIFOMap_15_T_2 = auto_in_ar_bits_id == 6'hF & _arFIFOMap_15_T_1;
   wire        _arFIFOMap_15_T_6 =
     _in_0_r_bits_T_11 == 6'hF & _arFIFOMap_15_T_4 & _in_0_r_bits_T_2;
   reg  [2:0]  arFIFOMap_15_count;
   reg         arFIFOMap_15_last;
   wire        _arFIFOMap_15_T_22 = arFIFOMap_15_count != 3'h7;
-  wire        _awFIFOMap_15_T_2 = auto_in_aw_bits_id == 6'hF & _awFIFOMap_15_T_1;
   wire        _awFIFOMap_15_T_5 = _in_0_b_bits_T_5 == 6'hF & _awFIFOMap_15_T_4;
   reg  [2:0]  awFIFOMap_15_count;
-  reg         awFIFOMap_15_last;
-  wire        _awFIFOMap_15_T_21 = awFIFOMap_15_count != 3'h7;
   wire [63:0] _GEN =
     {{arFIFOMap_0},
      {arFIFOMap_0},
@@ -749,7 +646,6 @@ module AXI4Xbar_2(
   wire        in_0_ar_valid = auto_in_ar_valid & _GEN[auto_in_ar_bits_id];
   assign nodeIn_ar_ready = _portsAROI_in_0_ar_ready_T_2 & _GEN[auto_in_ar_bits_id];
   reg         latched;
-  wire        _nodeIn_aw_ready_T = latched | _awIn_0_io_enq_ready;
   wire [63:0] _GEN_0 =
     {{awFIFOMap_0},
      {awFIFOMap_0},
@@ -767,116 +663,108 @@ module AXI4Xbar_2(
      {awFIFOMap_0},
      {awFIFOMap_0},
      {awFIFOMap_0},
-     {(awFIFOMap_47_count == 3'h0 | awFIFOMap_47_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_47_T_21},
-     {(awFIFOMap_46_count == 3'h0 | awFIFOMap_46_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_46_T_21},
-     {(awFIFOMap_45_count == 3'h0 | awFIFOMap_45_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_45_T_21},
-     {(awFIFOMap_44_count == 3'h0 | awFIFOMap_44_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_44_T_21},
-     {(awFIFOMap_43_count == 3'h0 | awFIFOMap_43_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_43_T_21},
-     {(awFIFOMap_42_count == 3'h0 | awFIFOMap_42_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_42_T_21},
-     {(awFIFOMap_41_count == 3'h0 | awFIFOMap_41_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_41_T_21},
-     {(awFIFOMap_40_count == 3'h0 | awFIFOMap_40_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_40_T_21},
-     {(awFIFOMap_39_count == 3'h0 | awFIFOMap_39_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_39_T_21},
-     {(awFIFOMap_38_count == 3'h0 | awFIFOMap_38_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_38_T_21},
-     {(awFIFOMap_37_count == 3'h0 | awFIFOMap_37_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_37_T_21},
-     {(awFIFOMap_36_count == 3'h0 | awFIFOMap_36_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_36_T_21},
-     {(awFIFOMap_35_count == 3'h0 | awFIFOMap_35_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_35_T_21},
-     {(awFIFOMap_34_count == 3'h0 | awFIFOMap_34_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_34_T_21},
-     {(awFIFOMap_33_count == 3'h0 | awFIFOMap_33_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_33_T_21},
-     {(awFIFOMap_32_count == 3'h0 | awFIFOMap_32_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_32_T_21},
-     {(awFIFOMap_31_count == 3'h0 | awFIFOMap_31_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_31_T_21},
-     {(awFIFOMap_30_count == 3'h0 | awFIFOMap_30_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_30_T_21},
-     {(awFIFOMap_29_count == 3'h0 | awFIFOMap_29_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_29_T_21},
-     {(awFIFOMap_28_count == 3'h0 | awFIFOMap_28_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_28_T_21},
-     {(awFIFOMap_27_count == 3'h0 | awFIFOMap_27_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_27_T_21},
-     {(awFIFOMap_26_count == 3'h0 | awFIFOMap_26_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_26_T_21},
-     {(awFIFOMap_25_count == 3'h0 | awFIFOMap_25_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_25_T_21},
-     {(awFIFOMap_24_count == 3'h0 | awFIFOMap_24_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_24_T_21},
-     {(awFIFOMap_23_count == 3'h0 | awFIFOMap_23_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_23_T_21},
-     {(awFIFOMap_22_count == 3'h0 | awFIFOMap_22_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_22_T_21},
-     {(awFIFOMap_21_count == 3'h0 | awFIFOMap_21_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_21_T_21},
-     {(awFIFOMap_20_count == 3'h0 | awFIFOMap_20_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_20_T_21},
-     {(awFIFOMap_19_count == 3'h0 | awFIFOMap_19_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_19_T_21},
-     {(awFIFOMap_18_count == 3'h0 | awFIFOMap_18_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_18_T_21},
-     {(awFIFOMap_17_count == 3'h0 | awFIFOMap_17_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_17_T_21},
-     {(awFIFOMap_16_count == 3'h0 | awFIFOMap_16_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_16_T_21},
-     {(awFIFOMap_15_count == 3'h0 | awFIFOMap_15_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_15_T_21},
-     {(awFIFOMap_14_count == 3'h0 | awFIFOMap_14_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_14_T_21},
-     {(awFIFOMap_13_count == 3'h0 | awFIFOMap_13_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_13_T_21},
-     {(awFIFOMap_12_count == 3'h0 | awFIFOMap_12_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_12_T_21},
-     {(awFIFOMap_11_count == 3'h0 | awFIFOMap_11_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_11_T_21},
-     {(awFIFOMap_10_count == 3'h0 | awFIFOMap_10_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_10_T_21},
-     {(awFIFOMap_9_count == 3'h0 | awFIFOMap_9_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_9_T_21},
-     {(awFIFOMap_8_count == 3'h0 | awFIFOMap_8_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_8_T_21},
-     {(awFIFOMap_7_count == 3'h0 | awFIFOMap_7_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_7_T_21},
-     {(awFIFOMap_6_count == 3'h0 | awFIFOMap_6_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_6_T_21},
-     {(awFIFOMap_5_count == 3'h0 | awFIFOMap_5_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_5_T_21},
-     {(awFIFOMap_4_count == 3'h0 | awFIFOMap_4_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_4_T_21},
-     {(awFIFOMap_3_count == 3'h0 | awFIFOMap_3_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_3_T_21},
-     {(awFIFOMap_2_count == 3'h0 | awFIFOMap_2_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_2_T_21},
-     {(awFIFOMap_1_count == 3'h0 | awFIFOMap_1_last == auto_in_aw_bits_addr[16])
-        & _awFIFOMap_1_T_21},
+     {(awFIFOMap_47_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_47_count != 3'h7},
+     {(awFIFOMap_46_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_46_count != 3'h7},
+     {(awFIFOMap_45_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_45_count != 3'h7},
+     {(awFIFOMap_44_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_44_count != 3'h7},
+     {(awFIFOMap_43_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_43_count != 3'h7},
+     {(awFIFOMap_42_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_42_count != 3'h7},
+     {(awFIFOMap_41_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_41_count != 3'h7},
+     {(awFIFOMap_40_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_40_count != 3'h7},
+     {(awFIFOMap_39_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_39_count != 3'h7},
+     {(awFIFOMap_38_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_38_count != 3'h7},
+     {(awFIFOMap_37_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_37_count != 3'h7},
+     {(awFIFOMap_36_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_36_count != 3'h7},
+     {(awFIFOMap_35_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_35_count != 3'h7},
+     {(awFIFOMap_34_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_34_count != 3'h7},
+     {(awFIFOMap_33_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_33_count != 3'h7},
+     {(awFIFOMap_32_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_32_count != 3'h7},
+     {(awFIFOMap_31_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_31_count != 3'h7},
+     {(awFIFOMap_30_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_30_count != 3'h7},
+     {(awFIFOMap_29_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_29_count != 3'h7},
+     {(awFIFOMap_28_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_28_count != 3'h7},
+     {(awFIFOMap_27_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_27_count != 3'h7},
+     {(awFIFOMap_26_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_26_count != 3'h7},
+     {(awFIFOMap_25_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_25_count != 3'h7},
+     {(awFIFOMap_24_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_24_count != 3'h7},
+     {(awFIFOMap_23_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_23_count != 3'h7},
+     {(awFIFOMap_22_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_22_count != 3'h7},
+     {(awFIFOMap_21_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_21_count != 3'h7},
+     {(awFIFOMap_20_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_20_count != 3'h7},
+     {(awFIFOMap_19_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_19_count != 3'h7},
+     {(awFIFOMap_18_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_18_count != 3'h7},
+     {(awFIFOMap_17_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_17_count != 3'h7},
+     {(awFIFOMap_16_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_16_count != 3'h7},
+     {(awFIFOMap_15_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_15_count != 3'h7},
+     {(awFIFOMap_14_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_14_count != 3'h7},
+     {(awFIFOMap_13_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_13_count != 3'h7},
+     {(awFIFOMap_12_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_12_count != 3'h7},
+     {(awFIFOMap_11_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_11_count != 3'h7},
+     {(awFIFOMap_10_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_10_count != 3'h7},
+     {(awFIFOMap_9_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_9_count != 3'h7},
+     {(awFIFOMap_8_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_8_count != 3'h7},
+     {(awFIFOMap_7_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_7_count != 3'h7},
+     {(awFIFOMap_6_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_6_count != 3'h7},
+     {(awFIFOMap_5_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_5_count != 3'h7},
+     {(awFIFOMap_4_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_4_count != 3'h7},
+     {(awFIFOMap_3_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_3_count != 3'h7},
+     {(awFIFOMap_2_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_2_count != 3'h7},
+     {(awFIFOMap_1_count == 3'h0 | ~(auto_in_aw_bits_addr[16]))
+        & awFIFOMap_1_count != 3'h7},
      {awFIFOMap_0}};
   wire        in_0_aw_valid =
-    auto_in_aw_valid & _nodeIn_aw_ready_T & _GEN_0[auto_in_aw_bits_id];
-  assign nodeIn_aw_ready =
-    _portsAWOI_in_0_aw_ready_T_2 & _nodeIn_aw_ready_T & _GEN_0[auto_in_aw_bits_id];
+    auto_in_aw_valid & (latched | _awIn_0_io_enq_ready) & _GEN_0[auto_in_aw_bits_id];
   wire        _awIn_0_io_enq_valid_T_1 = auto_in_aw_valid & ~latched;
   wire        in_0_w_valid = auto_in_w_valid & _awIn_0_io_deq_valid;
   assign _portsAROI_in_0_ar_ready_T_2 =
     ~(auto_in_ar_bits_addr[16]) & auto_out_0_ar_ready | auto_in_ar_bits_addr[16]
     & auto_out_1_ar_ready;
-  assign _portsAWOI_in_0_aw_ready_T_2 =
-    ~(auto_in_aw_bits_addr[16]) & auto_out_0_aw_ready | auto_in_aw_bits_addr[16]
-    & auto_out_1_aw_ready;
-  assign _portsWOI_in_0_w_ready_T_2 =
-    _awIn_0_io_deq_bits[0] & auto_out_0_w_ready | _awIn_0_io_deq_bits[1]
-    & auto_out_1_w_ready;
   reg         idle_2;
   wire        anyValid = auto_out_0_r_valid | auto_out_1_r_valid;
   wire [1:0]  readys_valid = {auto_out_1_r_valid, auto_out_0_r_valid};
@@ -893,7 +781,8 @@ module AXI4Xbar_2(
   wire        muxState_2_1 = idle_2 ? winner_2_1 : state_2_1;
   assign in_0_r_valid =
     idle_2 ? anyValid : state_2_0 & auto_out_0_r_valid | state_2_1 & auto_out_1_r_valid;
-  assign _in_0_r_bits_T_2 = muxState_2_0 | muxState_2_1;
+  assign _in_0_r_bits_T_2 =
+    muxState_2_0 & auto_out_0_r_bits_last | muxState_2_1 & auto_out_1_r_bits_last;
   assign _in_0_r_bits_T_11 =
     (muxState_2_0 ? auto_out_0_r_bits_id : 6'h0)
     | (muxState_2_1 ? auto_out_1_r_bits_id : 6'h0);
@@ -927,12 +816,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_32_T_2 | _awFIFOMap_32_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_33_T_6 | (|arFIFOMap_33_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -948,12 +831,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_33_T_5 | (|awFIFOMap_33_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_33_T_2 | _awFIFOMap_33_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -975,12 +852,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_34_T_2 | _awFIFOMap_34_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_35_T_6 | (|arFIFOMap_35_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -996,12 +867,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_35_T_5 | (|awFIFOMap_35_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_35_T_2 | _awFIFOMap_35_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1023,12 +888,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_36_T_2 | _awFIFOMap_36_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_37_T_6 | (|arFIFOMap_37_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1044,12 +903,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_37_T_5 | (|awFIFOMap_37_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_37_T_2 | _awFIFOMap_37_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1071,12 +924,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_38_T_2 | _awFIFOMap_38_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_39_T_6 | (|arFIFOMap_39_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1092,12 +939,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_39_T_5 | (|awFIFOMap_39_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_39_T_2 | _awFIFOMap_39_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1119,12 +960,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_40_T_2 | _awFIFOMap_40_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_41_T_6 | (|arFIFOMap_41_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1140,12 +975,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_41_T_5 | (|awFIFOMap_41_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_41_T_2 | _awFIFOMap_41_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1167,12 +996,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_42_T_2 | _awFIFOMap_42_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_43_T_6 | (|arFIFOMap_43_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1188,12 +1011,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_43_T_5 | (|awFIFOMap_43_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_43_T_2 | _awFIFOMap_43_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1215,12 +1032,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_44_T_2 | _awFIFOMap_44_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_45_T_6 | (|arFIFOMap_45_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1236,12 +1047,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_45_T_5 | (|awFIFOMap_45_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_45_T_2 | _awFIFOMap_45_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1263,12 +1068,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_46_T_2 | _awFIFOMap_46_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_47_T_6 | (|arFIFOMap_47_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1284,12 +1083,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_47_T_5 | (|awFIFOMap_47_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_47_T_2 | _awFIFOMap_47_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1311,12 +1104,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_16_T_2 | _awFIFOMap_16_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_17_T_6 | (|arFIFOMap_17_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1332,12 +1119,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_17_T_5 | (|awFIFOMap_17_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_17_T_2 | _awFIFOMap_17_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1359,12 +1140,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_18_T_2 | _awFIFOMap_18_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_19_T_6 | (|arFIFOMap_19_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1380,12 +1155,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_19_T_5 | (|awFIFOMap_19_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_19_T_2 | _awFIFOMap_19_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1407,12 +1176,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_20_T_2 | _awFIFOMap_20_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_21_T_6 | (|arFIFOMap_21_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1428,12 +1191,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_21_T_5 | (|awFIFOMap_21_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_21_T_2 | _awFIFOMap_21_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1455,12 +1212,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_22_T_2 | _awFIFOMap_22_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_23_T_6 | (|arFIFOMap_23_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1476,12 +1227,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_23_T_5 | (|awFIFOMap_23_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_23_T_2 | _awFIFOMap_23_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1503,12 +1248,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_24_T_2 | _awFIFOMap_24_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_25_T_6 | (|arFIFOMap_25_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1524,12 +1263,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_25_T_5 | (|awFIFOMap_25_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_25_T_2 | _awFIFOMap_25_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1551,12 +1284,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_26_T_2 | _awFIFOMap_26_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_27_T_6 | (|arFIFOMap_27_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1572,12 +1299,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_27_T_5 | (|awFIFOMap_27_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_27_T_2 | _awFIFOMap_27_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1599,12 +1320,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_28_T_2 | _awFIFOMap_28_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_29_T_6 | (|arFIFOMap_29_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1620,12 +1335,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_29_T_5 | (|awFIFOMap_29_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_29_T_2 | _awFIFOMap_29_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1647,12 +1356,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_30_T_2 | _awFIFOMap_30_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_31_T_6 | (|arFIFOMap_31_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1668,12 +1371,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_31_T_5 | (|awFIFOMap_31_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_31_T_2 | _awFIFOMap_31_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1695,12 +1392,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_0_T_2 | _awFIFOMap_0_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_1_T_6 | (|arFIFOMap_1_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1716,12 +1407,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_1_T_5 | (|awFIFOMap_1_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_1_T_2 | _awFIFOMap_1_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1743,12 +1428,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_2_T_2 | _awFIFOMap_2_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_3_T_6 | (|arFIFOMap_3_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1764,12 +1443,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_3_T_5 | (|awFIFOMap_3_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_3_T_2 | _awFIFOMap_3_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1791,12 +1464,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_4_T_2 | _awFIFOMap_4_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_5_T_6 | (|arFIFOMap_5_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1812,12 +1479,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_5_T_5 | (|awFIFOMap_5_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_5_T_2 | _awFIFOMap_5_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1839,12 +1500,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_6_T_2 | _awFIFOMap_6_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_7_T_6 | (|arFIFOMap_7_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1860,12 +1515,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_7_T_5 | (|awFIFOMap_7_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_7_T_2 | _awFIFOMap_7_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1887,12 +1536,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_8_T_2 | _awFIFOMap_8_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_9_T_6 | (|arFIFOMap_9_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1908,12 +1551,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_9_T_5 | (|awFIFOMap_9_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_9_T_2 | _awFIFOMap_9_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1935,12 +1572,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_10_T_2 | _awFIFOMap_10_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_11_T_6 | (|arFIFOMap_11_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -1956,12 +1587,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_11_T_5 | (|awFIFOMap_11_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_11_T_2 | _awFIFOMap_11_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -1983,12 +1608,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_12_T_2 | _awFIFOMap_12_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_13_T_6 | (|arFIFOMap_13_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -2004,12 +1623,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_13_T_5 | (|awFIFOMap_13_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_13_T_2 | _awFIFOMap_13_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -2031,12 +1644,6 @@ module AXI4Xbar_2(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & ~(~_awFIFOMap_14_T_2 | _awFIFOMap_14_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
       if (~reset & ~(~_arFIFOMap_15_T_6 | (|arFIFOMap_15_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
@@ -2052,12 +1659,6 @@ module AXI4Xbar_2(
       if (~reset & ~(~_awFIFOMap_15_T_5 | (|awFIFOMap_15_count))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed\n    at Xbar.scala:122 assert (!resp_fire || count =/= 0.U)\n");
-        if (`STOP_COND_)
-          $fatal;
-      end
-      if (~reset & ~(~_awFIFOMap_15_T_2 | _awFIFOMap_15_T_21)) begin
-        if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed\n    at Xbar.scala:123 assert (!req_fire  || count =/= flight.U)\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -2089,11 +1690,13 @@ module AXI4Xbar_2(
   `endif // not def SYNTHESIS
   reg         state_3_0;
   reg         state_3_1;
+  wire        muxState_3_0 = idle_3 ? winner_3_0 : state_3_0;
+  wire        muxState_3_1 = idle_3 ? winner_3_1 : state_3_1;
   assign in_0_b_valid =
     idle_3 ? anyValid_1 : state_3_0 & auto_out_0_b_valid | state_3_1 & auto_out_1_b_valid;
   assign _in_0_b_bits_T_5 =
-    ((idle_3 ? winner_3_0 : state_3_0) ? auto_out_0_b_bits_id : 6'h0)
-    | ((idle_3 ? winner_3_1 : state_3_1) ? auto_out_1_b_bits_id : 6'h0);
+    (muxState_3_0 ? auto_out_0_b_bits_id : 6'h0)
+    | (muxState_3_1 ? auto_out_1_b_bits_id : 6'h0);
   wire [1:0]  _readys_mask_T = readys_readys & readys_valid;
   wire [1:0]  _readys_mask_T_5 = readys_readys_1 & readys_valid_1;
   always @(posedge clock) begin
@@ -2208,274 +1811,186 @@ module AXI4Xbar_2(
       arFIFOMap_32_count <=
         3'(3'(arFIFOMap_32_count + {2'h0, _arFIFOMap_32_T_2})
            - {2'h0, _arFIFOMap_32_T_6});
-      awFIFOMap_32_count <=
-        3'(3'(awFIFOMap_32_count + {2'h0, _awFIFOMap_32_T_2})
-           - {2'h0, _awFIFOMap_32_T_5});
+      awFIFOMap_32_count <= 3'(awFIFOMap_32_count - {2'h0, _awFIFOMap_32_T_5});
       arFIFOMap_33_count <=
         3'(3'(arFIFOMap_33_count + {2'h0, _arFIFOMap_33_T_2})
            - {2'h0, _arFIFOMap_33_T_6});
-      awFIFOMap_33_count <=
-        3'(3'(awFIFOMap_33_count + {2'h0, _awFIFOMap_33_T_2})
-           - {2'h0, _awFIFOMap_33_T_5});
+      awFIFOMap_33_count <= 3'(awFIFOMap_33_count - {2'h0, _awFIFOMap_33_T_5});
       arFIFOMap_34_count <=
         3'(3'(arFIFOMap_34_count + {2'h0, _arFIFOMap_34_T_2})
            - {2'h0, _arFIFOMap_34_T_6});
-      awFIFOMap_34_count <=
-        3'(3'(awFIFOMap_34_count + {2'h0, _awFIFOMap_34_T_2})
-           - {2'h0, _awFIFOMap_34_T_5});
+      awFIFOMap_34_count <= 3'(awFIFOMap_34_count - {2'h0, _awFIFOMap_34_T_5});
       arFIFOMap_35_count <=
         3'(3'(arFIFOMap_35_count + {2'h0, _arFIFOMap_35_T_2})
            - {2'h0, _arFIFOMap_35_T_6});
-      awFIFOMap_35_count <=
-        3'(3'(awFIFOMap_35_count + {2'h0, _awFIFOMap_35_T_2})
-           - {2'h0, _awFIFOMap_35_T_5});
+      awFIFOMap_35_count <= 3'(awFIFOMap_35_count - {2'h0, _awFIFOMap_35_T_5});
       arFIFOMap_36_count <=
         3'(3'(arFIFOMap_36_count + {2'h0, _arFIFOMap_36_T_2})
            - {2'h0, _arFIFOMap_36_T_6});
-      awFIFOMap_36_count <=
-        3'(3'(awFIFOMap_36_count + {2'h0, _awFIFOMap_36_T_2})
-           - {2'h0, _awFIFOMap_36_T_5});
+      awFIFOMap_36_count <= 3'(awFIFOMap_36_count - {2'h0, _awFIFOMap_36_T_5});
       arFIFOMap_37_count <=
         3'(3'(arFIFOMap_37_count + {2'h0, _arFIFOMap_37_T_2})
            - {2'h0, _arFIFOMap_37_T_6});
-      awFIFOMap_37_count <=
-        3'(3'(awFIFOMap_37_count + {2'h0, _awFIFOMap_37_T_2})
-           - {2'h0, _awFIFOMap_37_T_5});
+      awFIFOMap_37_count <= 3'(awFIFOMap_37_count - {2'h0, _awFIFOMap_37_T_5});
       arFIFOMap_38_count <=
         3'(3'(arFIFOMap_38_count + {2'h0, _arFIFOMap_38_T_2})
            - {2'h0, _arFIFOMap_38_T_6});
-      awFIFOMap_38_count <=
-        3'(3'(awFIFOMap_38_count + {2'h0, _awFIFOMap_38_T_2})
-           - {2'h0, _awFIFOMap_38_T_5});
+      awFIFOMap_38_count <= 3'(awFIFOMap_38_count - {2'h0, _awFIFOMap_38_T_5});
       arFIFOMap_39_count <=
         3'(3'(arFIFOMap_39_count + {2'h0, _arFIFOMap_39_T_2})
            - {2'h0, _arFIFOMap_39_T_6});
-      awFIFOMap_39_count <=
-        3'(3'(awFIFOMap_39_count + {2'h0, _awFIFOMap_39_T_2})
-           - {2'h0, _awFIFOMap_39_T_5});
+      awFIFOMap_39_count <= 3'(awFIFOMap_39_count - {2'h0, _awFIFOMap_39_T_5});
       arFIFOMap_40_count <=
         3'(3'(arFIFOMap_40_count + {2'h0, _arFIFOMap_40_T_2})
            - {2'h0, _arFIFOMap_40_T_6});
-      awFIFOMap_40_count <=
-        3'(3'(awFIFOMap_40_count + {2'h0, _awFIFOMap_40_T_2})
-           - {2'h0, _awFIFOMap_40_T_5});
+      awFIFOMap_40_count <= 3'(awFIFOMap_40_count - {2'h0, _awFIFOMap_40_T_5});
       arFIFOMap_41_count <=
         3'(3'(arFIFOMap_41_count + {2'h0, _arFIFOMap_41_T_2})
            - {2'h0, _arFIFOMap_41_T_6});
-      awFIFOMap_41_count <=
-        3'(3'(awFIFOMap_41_count + {2'h0, _awFIFOMap_41_T_2})
-           - {2'h0, _awFIFOMap_41_T_5});
+      awFIFOMap_41_count <= 3'(awFIFOMap_41_count - {2'h0, _awFIFOMap_41_T_5});
       arFIFOMap_42_count <=
         3'(3'(arFIFOMap_42_count + {2'h0, _arFIFOMap_42_T_2})
            - {2'h0, _arFIFOMap_42_T_6});
-      awFIFOMap_42_count <=
-        3'(3'(awFIFOMap_42_count + {2'h0, _awFIFOMap_42_T_2})
-           - {2'h0, _awFIFOMap_42_T_5});
+      awFIFOMap_42_count <= 3'(awFIFOMap_42_count - {2'h0, _awFIFOMap_42_T_5});
       arFIFOMap_43_count <=
         3'(3'(arFIFOMap_43_count + {2'h0, _arFIFOMap_43_T_2})
            - {2'h0, _arFIFOMap_43_T_6});
-      awFIFOMap_43_count <=
-        3'(3'(awFIFOMap_43_count + {2'h0, _awFIFOMap_43_T_2})
-           - {2'h0, _awFIFOMap_43_T_5});
+      awFIFOMap_43_count <= 3'(awFIFOMap_43_count - {2'h0, _awFIFOMap_43_T_5});
       arFIFOMap_44_count <=
         3'(3'(arFIFOMap_44_count + {2'h0, _arFIFOMap_44_T_2})
            - {2'h0, _arFIFOMap_44_T_6});
-      awFIFOMap_44_count <=
-        3'(3'(awFIFOMap_44_count + {2'h0, _awFIFOMap_44_T_2})
-           - {2'h0, _awFIFOMap_44_T_5});
+      awFIFOMap_44_count <= 3'(awFIFOMap_44_count - {2'h0, _awFIFOMap_44_T_5});
       arFIFOMap_45_count <=
         3'(3'(arFIFOMap_45_count + {2'h0, _arFIFOMap_45_T_2})
            - {2'h0, _arFIFOMap_45_T_6});
-      awFIFOMap_45_count <=
-        3'(3'(awFIFOMap_45_count + {2'h0, _awFIFOMap_45_T_2})
-           - {2'h0, _awFIFOMap_45_T_5});
+      awFIFOMap_45_count <= 3'(awFIFOMap_45_count - {2'h0, _awFIFOMap_45_T_5});
       arFIFOMap_46_count <=
         3'(3'(arFIFOMap_46_count + {2'h0, _arFIFOMap_46_T_2})
            - {2'h0, _arFIFOMap_46_T_6});
-      awFIFOMap_46_count <=
-        3'(3'(awFIFOMap_46_count + {2'h0, _awFIFOMap_46_T_2})
-           - {2'h0, _awFIFOMap_46_T_5});
+      awFIFOMap_46_count <= 3'(awFIFOMap_46_count - {2'h0, _awFIFOMap_46_T_5});
       arFIFOMap_47_count <=
         3'(3'(arFIFOMap_47_count + {2'h0, _arFIFOMap_47_T_2})
            - {2'h0, _arFIFOMap_47_T_6});
-      awFIFOMap_47_count <=
-        3'(3'(awFIFOMap_47_count + {2'h0, _awFIFOMap_47_T_2})
-           - {2'h0, _awFIFOMap_47_T_5});
+      awFIFOMap_47_count <= 3'(awFIFOMap_47_count - {2'h0, _awFIFOMap_47_T_5});
       arFIFOMap_16_count <=
         3'(3'(arFIFOMap_16_count + {2'h0, _arFIFOMap_16_T_2})
            - {2'h0, _arFIFOMap_16_T_6});
-      awFIFOMap_16_count <=
-        3'(3'(awFIFOMap_16_count + {2'h0, _awFIFOMap_16_T_2})
-           - {2'h0, _awFIFOMap_16_T_5});
+      awFIFOMap_16_count <= 3'(awFIFOMap_16_count - {2'h0, _awFIFOMap_16_T_5});
       arFIFOMap_17_count <=
         3'(3'(arFIFOMap_17_count + {2'h0, _arFIFOMap_17_T_2})
            - {2'h0, _arFIFOMap_17_T_6});
-      awFIFOMap_17_count <=
-        3'(3'(awFIFOMap_17_count + {2'h0, _awFIFOMap_17_T_2})
-           - {2'h0, _awFIFOMap_17_T_5});
+      awFIFOMap_17_count <= 3'(awFIFOMap_17_count - {2'h0, _awFIFOMap_17_T_5});
       arFIFOMap_18_count <=
         3'(3'(arFIFOMap_18_count + {2'h0, _arFIFOMap_18_T_2})
            - {2'h0, _arFIFOMap_18_T_6});
-      awFIFOMap_18_count <=
-        3'(3'(awFIFOMap_18_count + {2'h0, _awFIFOMap_18_T_2})
-           - {2'h0, _awFIFOMap_18_T_5});
+      awFIFOMap_18_count <= 3'(awFIFOMap_18_count - {2'h0, _awFIFOMap_18_T_5});
       arFIFOMap_19_count <=
         3'(3'(arFIFOMap_19_count + {2'h0, _arFIFOMap_19_T_2})
            - {2'h0, _arFIFOMap_19_T_6});
-      awFIFOMap_19_count <=
-        3'(3'(awFIFOMap_19_count + {2'h0, _awFIFOMap_19_T_2})
-           - {2'h0, _awFIFOMap_19_T_5});
+      awFIFOMap_19_count <= 3'(awFIFOMap_19_count - {2'h0, _awFIFOMap_19_T_5});
       arFIFOMap_20_count <=
         3'(3'(arFIFOMap_20_count + {2'h0, _arFIFOMap_20_T_2})
            - {2'h0, _arFIFOMap_20_T_6});
-      awFIFOMap_20_count <=
-        3'(3'(awFIFOMap_20_count + {2'h0, _awFIFOMap_20_T_2})
-           - {2'h0, _awFIFOMap_20_T_5});
+      awFIFOMap_20_count <= 3'(awFIFOMap_20_count - {2'h0, _awFIFOMap_20_T_5});
       arFIFOMap_21_count <=
         3'(3'(arFIFOMap_21_count + {2'h0, _arFIFOMap_21_T_2})
            - {2'h0, _arFIFOMap_21_T_6});
-      awFIFOMap_21_count <=
-        3'(3'(awFIFOMap_21_count + {2'h0, _awFIFOMap_21_T_2})
-           - {2'h0, _awFIFOMap_21_T_5});
+      awFIFOMap_21_count <= 3'(awFIFOMap_21_count - {2'h0, _awFIFOMap_21_T_5});
       arFIFOMap_22_count <=
         3'(3'(arFIFOMap_22_count + {2'h0, _arFIFOMap_22_T_2})
            - {2'h0, _arFIFOMap_22_T_6});
-      awFIFOMap_22_count <=
-        3'(3'(awFIFOMap_22_count + {2'h0, _awFIFOMap_22_T_2})
-           - {2'h0, _awFIFOMap_22_T_5});
+      awFIFOMap_22_count <= 3'(awFIFOMap_22_count - {2'h0, _awFIFOMap_22_T_5});
       arFIFOMap_23_count <=
         3'(3'(arFIFOMap_23_count + {2'h0, _arFIFOMap_23_T_2})
            - {2'h0, _arFIFOMap_23_T_6});
-      awFIFOMap_23_count <=
-        3'(3'(awFIFOMap_23_count + {2'h0, _awFIFOMap_23_T_2})
-           - {2'h0, _awFIFOMap_23_T_5});
+      awFIFOMap_23_count <= 3'(awFIFOMap_23_count - {2'h0, _awFIFOMap_23_T_5});
       arFIFOMap_24_count <=
         3'(3'(arFIFOMap_24_count + {2'h0, _arFIFOMap_24_T_2})
            - {2'h0, _arFIFOMap_24_T_6});
-      awFIFOMap_24_count <=
-        3'(3'(awFIFOMap_24_count + {2'h0, _awFIFOMap_24_T_2})
-           - {2'h0, _awFIFOMap_24_T_5});
+      awFIFOMap_24_count <= 3'(awFIFOMap_24_count - {2'h0, _awFIFOMap_24_T_5});
       arFIFOMap_25_count <=
         3'(3'(arFIFOMap_25_count + {2'h0, _arFIFOMap_25_T_2})
            - {2'h0, _arFIFOMap_25_T_6});
-      awFIFOMap_25_count <=
-        3'(3'(awFIFOMap_25_count + {2'h0, _awFIFOMap_25_T_2})
-           - {2'h0, _awFIFOMap_25_T_5});
+      awFIFOMap_25_count <= 3'(awFIFOMap_25_count - {2'h0, _awFIFOMap_25_T_5});
       arFIFOMap_26_count <=
         3'(3'(arFIFOMap_26_count + {2'h0, _arFIFOMap_26_T_2})
            - {2'h0, _arFIFOMap_26_T_6});
-      awFIFOMap_26_count <=
-        3'(3'(awFIFOMap_26_count + {2'h0, _awFIFOMap_26_T_2})
-           - {2'h0, _awFIFOMap_26_T_5});
+      awFIFOMap_26_count <= 3'(awFIFOMap_26_count - {2'h0, _awFIFOMap_26_T_5});
       arFIFOMap_27_count <=
         3'(3'(arFIFOMap_27_count + {2'h0, _arFIFOMap_27_T_2})
            - {2'h0, _arFIFOMap_27_T_6});
-      awFIFOMap_27_count <=
-        3'(3'(awFIFOMap_27_count + {2'h0, _awFIFOMap_27_T_2})
-           - {2'h0, _awFIFOMap_27_T_5});
+      awFIFOMap_27_count <= 3'(awFIFOMap_27_count - {2'h0, _awFIFOMap_27_T_5});
       arFIFOMap_28_count <=
         3'(3'(arFIFOMap_28_count + {2'h0, _arFIFOMap_28_T_2})
            - {2'h0, _arFIFOMap_28_T_6});
-      awFIFOMap_28_count <=
-        3'(3'(awFIFOMap_28_count + {2'h0, _awFIFOMap_28_T_2})
-           - {2'h0, _awFIFOMap_28_T_5});
+      awFIFOMap_28_count <= 3'(awFIFOMap_28_count - {2'h0, _awFIFOMap_28_T_5});
       arFIFOMap_29_count <=
         3'(3'(arFIFOMap_29_count + {2'h0, _arFIFOMap_29_T_2})
            - {2'h0, _arFIFOMap_29_T_6});
-      awFIFOMap_29_count <=
-        3'(3'(awFIFOMap_29_count + {2'h0, _awFIFOMap_29_T_2})
-           - {2'h0, _awFIFOMap_29_T_5});
+      awFIFOMap_29_count <= 3'(awFIFOMap_29_count - {2'h0, _awFIFOMap_29_T_5});
       arFIFOMap_30_count <=
         3'(3'(arFIFOMap_30_count + {2'h0, _arFIFOMap_30_T_2})
            - {2'h0, _arFIFOMap_30_T_6});
-      awFIFOMap_30_count <=
-        3'(3'(awFIFOMap_30_count + {2'h0, _awFIFOMap_30_T_2})
-           - {2'h0, _awFIFOMap_30_T_5});
+      awFIFOMap_30_count <= 3'(awFIFOMap_30_count - {2'h0, _awFIFOMap_30_T_5});
       arFIFOMap_31_count <=
         3'(3'(arFIFOMap_31_count + {2'h0, _arFIFOMap_31_T_2})
            - {2'h0, _arFIFOMap_31_T_6});
-      awFIFOMap_31_count <=
-        3'(3'(awFIFOMap_31_count + {2'h0, _awFIFOMap_31_T_2})
-           - {2'h0, _awFIFOMap_31_T_5});
+      awFIFOMap_31_count <= 3'(awFIFOMap_31_count - {2'h0, _awFIFOMap_31_T_5});
       arFIFOMap_0_count <=
         3'(3'(arFIFOMap_0_count + {2'h0, _arFIFOMap_0_T_2}) - {2'h0, _arFIFOMap_0_T_6});
-      awFIFOMap_0_count <=
-        3'(3'(awFIFOMap_0_count + {2'h0, _awFIFOMap_0_T_2}) - {2'h0, _awFIFOMap_0_T_5});
+      awFIFOMap_0_count <= 3'(awFIFOMap_0_count - {2'h0, _awFIFOMap_0_T_5});
       arFIFOMap_1_count <=
         3'(3'(arFIFOMap_1_count + {2'h0, _arFIFOMap_1_T_2}) - {2'h0, _arFIFOMap_1_T_6});
-      awFIFOMap_1_count <=
-        3'(3'(awFIFOMap_1_count + {2'h0, _awFIFOMap_1_T_2}) - {2'h0, _awFIFOMap_1_T_5});
+      awFIFOMap_1_count <= 3'(awFIFOMap_1_count - {2'h0, _awFIFOMap_1_T_5});
       arFIFOMap_2_count <=
         3'(3'(arFIFOMap_2_count + {2'h0, _arFIFOMap_2_T_2}) - {2'h0, _arFIFOMap_2_T_6});
-      awFIFOMap_2_count <=
-        3'(3'(awFIFOMap_2_count + {2'h0, _awFIFOMap_2_T_2}) - {2'h0, _awFIFOMap_2_T_5});
+      awFIFOMap_2_count <= 3'(awFIFOMap_2_count - {2'h0, _awFIFOMap_2_T_5});
       arFIFOMap_3_count <=
         3'(3'(arFIFOMap_3_count + {2'h0, _arFIFOMap_3_T_2}) - {2'h0, _arFIFOMap_3_T_6});
-      awFIFOMap_3_count <=
-        3'(3'(awFIFOMap_3_count + {2'h0, _awFIFOMap_3_T_2}) - {2'h0, _awFIFOMap_3_T_5});
+      awFIFOMap_3_count <= 3'(awFIFOMap_3_count - {2'h0, _awFIFOMap_3_T_5});
       arFIFOMap_4_count <=
         3'(3'(arFIFOMap_4_count + {2'h0, _arFIFOMap_4_T_2}) - {2'h0, _arFIFOMap_4_T_6});
-      awFIFOMap_4_count <=
-        3'(3'(awFIFOMap_4_count + {2'h0, _awFIFOMap_4_T_2}) - {2'h0, _awFIFOMap_4_T_5});
+      awFIFOMap_4_count <= 3'(awFIFOMap_4_count - {2'h0, _awFIFOMap_4_T_5});
       arFIFOMap_5_count <=
         3'(3'(arFIFOMap_5_count + {2'h0, _arFIFOMap_5_T_2}) - {2'h0, _arFIFOMap_5_T_6});
-      awFIFOMap_5_count <=
-        3'(3'(awFIFOMap_5_count + {2'h0, _awFIFOMap_5_T_2}) - {2'h0, _awFIFOMap_5_T_5});
+      awFIFOMap_5_count <= 3'(awFIFOMap_5_count - {2'h0, _awFIFOMap_5_T_5});
       arFIFOMap_6_count <=
         3'(3'(arFIFOMap_6_count + {2'h0, _arFIFOMap_6_T_2}) - {2'h0, _arFIFOMap_6_T_6});
-      awFIFOMap_6_count <=
-        3'(3'(awFIFOMap_6_count + {2'h0, _awFIFOMap_6_T_2}) - {2'h0, _awFIFOMap_6_T_5});
+      awFIFOMap_6_count <= 3'(awFIFOMap_6_count - {2'h0, _awFIFOMap_6_T_5});
       arFIFOMap_7_count <=
         3'(3'(arFIFOMap_7_count + {2'h0, _arFIFOMap_7_T_2}) - {2'h0, _arFIFOMap_7_T_6});
-      awFIFOMap_7_count <=
-        3'(3'(awFIFOMap_7_count + {2'h0, _awFIFOMap_7_T_2}) - {2'h0, _awFIFOMap_7_T_5});
+      awFIFOMap_7_count <= 3'(awFIFOMap_7_count - {2'h0, _awFIFOMap_7_T_5});
       arFIFOMap_8_count <=
         3'(3'(arFIFOMap_8_count + {2'h0, _arFIFOMap_8_T_2}) - {2'h0, _arFIFOMap_8_T_6});
-      awFIFOMap_8_count <=
-        3'(3'(awFIFOMap_8_count + {2'h0, _awFIFOMap_8_T_2}) - {2'h0, _awFIFOMap_8_T_5});
+      awFIFOMap_8_count <= 3'(awFIFOMap_8_count - {2'h0, _awFIFOMap_8_T_5});
       arFIFOMap_9_count <=
         3'(3'(arFIFOMap_9_count + {2'h0, _arFIFOMap_9_T_2}) - {2'h0, _arFIFOMap_9_T_6});
-      awFIFOMap_9_count <=
-        3'(3'(awFIFOMap_9_count + {2'h0, _awFIFOMap_9_T_2}) - {2'h0, _awFIFOMap_9_T_5});
+      awFIFOMap_9_count <= 3'(awFIFOMap_9_count - {2'h0, _awFIFOMap_9_T_5});
       arFIFOMap_10_count <=
         3'(3'(arFIFOMap_10_count + {2'h0, _arFIFOMap_10_T_2})
            - {2'h0, _arFIFOMap_10_T_6});
-      awFIFOMap_10_count <=
-        3'(3'(awFIFOMap_10_count + {2'h0, _awFIFOMap_10_T_2})
-           - {2'h0, _awFIFOMap_10_T_5});
+      awFIFOMap_10_count <= 3'(awFIFOMap_10_count - {2'h0, _awFIFOMap_10_T_5});
       arFIFOMap_11_count <=
         3'(3'(arFIFOMap_11_count + {2'h0, _arFIFOMap_11_T_2})
            - {2'h0, _arFIFOMap_11_T_6});
-      awFIFOMap_11_count <=
-        3'(3'(awFIFOMap_11_count + {2'h0, _awFIFOMap_11_T_2})
-           - {2'h0, _awFIFOMap_11_T_5});
+      awFIFOMap_11_count <= 3'(awFIFOMap_11_count - {2'h0, _awFIFOMap_11_T_5});
       arFIFOMap_12_count <=
         3'(3'(arFIFOMap_12_count + {2'h0, _arFIFOMap_12_T_2})
            - {2'h0, _arFIFOMap_12_T_6});
-      awFIFOMap_12_count <=
-        3'(3'(awFIFOMap_12_count + {2'h0, _awFIFOMap_12_T_2})
-           - {2'h0, _awFIFOMap_12_T_5});
+      awFIFOMap_12_count <= 3'(awFIFOMap_12_count - {2'h0, _awFIFOMap_12_T_5});
       arFIFOMap_13_count <=
         3'(3'(arFIFOMap_13_count + {2'h0, _arFIFOMap_13_T_2})
            - {2'h0, _arFIFOMap_13_T_6});
-      awFIFOMap_13_count <=
-        3'(3'(awFIFOMap_13_count + {2'h0, _awFIFOMap_13_T_2})
-           - {2'h0, _awFIFOMap_13_T_5});
+      awFIFOMap_13_count <= 3'(awFIFOMap_13_count - {2'h0, _awFIFOMap_13_T_5});
       arFIFOMap_14_count <=
         3'(3'(arFIFOMap_14_count + {2'h0, _arFIFOMap_14_T_2})
            - {2'h0, _arFIFOMap_14_T_6});
-      awFIFOMap_14_count <=
-        3'(3'(awFIFOMap_14_count + {2'h0, _awFIFOMap_14_T_2})
-           - {2'h0, _awFIFOMap_14_T_5});
+      awFIFOMap_14_count <= 3'(awFIFOMap_14_count - {2'h0, _awFIFOMap_14_T_5});
       arFIFOMap_15_count <=
         3'(3'(arFIFOMap_15_count + {2'h0, _arFIFOMap_15_T_2})
            - {2'h0, _arFIFOMap_15_T_6});
-      awFIFOMap_15_count <=
-        3'(3'(awFIFOMap_15_count + {2'h0, _awFIFOMap_15_T_2})
-           - {2'h0, _awFIFOMap_15_T_5});
-      latched <=
-        ~(_portsAWOI_in_0_aw_ready_T_2 & in_0_aw_valid)
-        & (_awIn_0_io_enq_ready & _awIn_0_io_enq_valid_T_1 | latched);
+      awFIFOMap_15_count <= 3'(awFIFOMap_15_count - {2'h0, _awFIFOMap_15_T_5});
+      latched <= _awIn_0_io_enq_ready & _awIn_0_io_enq_valid_T_1 | latched;
       idle_2 <= auto_in_r_ready & in_0_r_valid | ~anyValid & idle_2;
       if (idle_2 & (|readys_valid))
         readys_mask <= _readys_mask_T | {_readys_mask_T[0], 1'h0};
@@ -2493,196 +2008,100 @@ module AXI4Xbar_2(
     end
     if (_arFIFOMap_32_T_2)
       arFIFOMap_32_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_32_T_2)
-      awFIFOMap_32_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_33_T_2)
       arFIFOMap_33_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_33_T_2)
-      awFIFOMap_33_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_34_T_2)
       arFIFOMap_34_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_34_T_2)
-      awFIFOMap_34_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_35_T_2)
       arFIFOMap_35_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_35_T_2)
-      awFIFOMap_35_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_36_T_2)
       arFIFOMap_36_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_36_T_2)
-      awFIFOMap_36_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_37_T_2)
       arFIFOMap_37_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_37_T_2)
-      awFIFOMap_37_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_38_T_2)
       arFIFOMap_38_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_38_T_2)
-      awFIFOMap_38_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_39_T_2)
       arFIFOMap_39_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_39_T_2)
-      awFIFOMap_39_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_40_T_2)
       arFIFOMap_40_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_40_T_2)
-      awFIFOMap_40_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_41_T_2)
       arFIFOMap_41_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_41_T_2)
-      awFIFOMap_41_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_42_T_2)
       arFIFOMap_42_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_42_T_2)
-      awFIFOMap_42_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_43_T_2)
       arFIFOMap_43_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_43_T_2)
-      awFIFOMap_43_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_44_T_2)
       arFIFOMap_44_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_44_T_2)
-      awFIFOMap_44_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_45_T_2)
       arFIFOMap_45_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_45_T_2)
-      awFIFOMap_45_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_46_T_2)
       arFIFOMap_46_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_46_T_2)
-      awFIFOMap_46_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_47_T_2)
       arFIFOMap_47_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_47_T_2)
-      awFIFOMap_47_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_16_T_2)
       arFIFOMap_16_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_16_T_2)
-      awFIFOMap_16_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_17_T_2)
       arFIFOMap_17_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_17_T_2)
-      awFIFOMap_17_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_18_T_2)
       arFIFOMap_18_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_18_T_2)
-      awFIFOMap_18_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_19_T_2)
       arFIFOMap_19_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_19_T_2)
-      awFIFOMap_19_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_20_T_2)
       arFIFOMap_20_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_20_T_2)
-      awFIFOMap_20_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_21_T_2)
       arFIFOMap_21_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_21_T_2)
-      awFIFOMap_21_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_22_T_2)
       arFIFOMap_22_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_22_T_2)
-      awFIFOMap_22_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_23_T_2)
       arFIFOMap_23_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_23_T_2)
-      awFIFOMap_23_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_24_T_2)
       arFIFOMap_24_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_24_T_2)
-      awFIFOMap_24_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_25_T_2)
       arFIFOMap_25_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_25_T_2)
-      awFIFOMap_25_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_26_T_2)
       arFIFOMap_26_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_26_T_2)
-      awFIFOMap_26_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_27_T_2)
       arFIFOMap_27_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_27_T_2)
-      awFIFOMap_27_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_28_T_2)
       arFIFOMap_28_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_28_T_2)
-      awFIFOMap_28_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_29_T_2)
       arFIFOMap_29_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_29_T_2)
-      awFIFOMap_29_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_30_T_2)
       arFIFOMap_30_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_30_T_2)
-      awFIFOMap_30_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_31_T_2)
       arFIFOMap_31_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_31_T_2)
-      awFIFOMap_31_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_0_T_2)
       arFIFOMap_0_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_0_T_2)
-      awFIFOMap_0_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_1_T_2)
       arFIFOMap_1_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_1_T_2)
-      awFIFOMap_1_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_2_T_2)
       arFIFOMap_2_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_2_T_2)
-      awFIFOMap_2_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_3_T_2)
       arFIFOMap_3_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_3_T_2)
-      awFIFOMap_3_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_4_T_2)
       arFIFOMap_4_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_4_T_2)
-      awFIFOMap_4_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_5_T_2)
       arFIFOMap_5_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_5_T_2)
-      awFIFOMap_5_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_6_T_2)
       arFIFOMap_6_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_6_T_2)
-      awFIFOMap_6_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_7_T_2)
       arFIFOMap_7_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_7_T_2)
-      awFIFOMap_7_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_8_T_2)
       arFIFOMap_8_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_8_T_2)
-      awFIFOMap_8_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_9_T_2)
       arFIFOMap_9_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_9_T_2)
-      awFIFOMap_9_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_10_T_2)
       arFIFOMap_10_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_10_T_2)
-      awFIFOMap_10_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_11_T_2)
       arFIFOMap_11_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_11_T_2)
-      awFIFOMap_11_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_12_T_2)
       arFIFOMap_12_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_12_T_2)
-      awFIFOMap_12_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_13_T_2)
       arFIFOMap_13_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_13_T_2)
-      awFIFOMap_13_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_14_T_2)
       arFIFOMap_14_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_14_T_2)
-      awFIFOMap_14_last <= auto_in_aw_bits_addr[16];
     if (_arFIFOMap_15_T_2)
       arFIFOMap_15_last <= auto_in_ar_bits_addr[16];
-    if (_awFIFOMap_15_T_2)
-      awFIFOMap_15_last <= auto_in_aw_bits_addr[16];
   end // always @(posedge)
   Queue2_UInt2 awIn_0 (
     .clock        (clock),
@@ -2690,41 +2109,76 @@ module AXI4Xbar_2(
     .io_enq_ready (_awIn_0_io_enq_ready),
     .io_enq_valid (_awIn_0_io_enq_valid_T_1),
     .io_enq_bits  ({auto_in_aw_bits_addr[16], ~(auto_in_aw_bits_addr[16])}),
-    .io_deq_ready (auto_in_w_valid & auto_in_w_bits_last & _portsWOI_in_0_w_ready_T_2),
+    .io_deq_ready (1'h0),
     .io_deq_valid (_awIn_0_io_deq_valid),
     .io_deq_bits  (_awIn_0_io_deq_bits)
   );
-  assign auto_in_aw_ready = nodeIn_aw_ready;
-  assign auto_in_w_ready = _portsWOI_in_0_w_ready_T_2 & _awIn_0_io_deq_valid;
   assign auto_in_b_valid = in_0_b_valid;
   assign auto_in_b_bits_id = _in_0_b_bits_T_5;
+  assign auto_in_b_bits_resp =
+    (muxState_3_0 ? auto_out_0_b_bits_resp : 2'h0)
+    | (muxState_3_1 ? auto_out_1_b_bits_resp : 2'h0);
   assign auto_in_ar_ready = nodeIn_ar_ready;
   assign auto_in_r_valid = in_0_r_valid;
   assign auto_in_r_bits_id = _in_0_r_bits_T_11;
+  assign auto_in_r_bits_data =
+    (muxState_2_0 ? auto_out_0_r_bits_data : 32'h0)
+    | (muxState_2_1 ? auto_out_1_r_bits_data : 32'h0);
+  assign auto_in_r_bits_resp =
+    (muxState_2_0 ? auto_out_0_r_bits_resp : 2'h0)
+    | (muxState_2_1 ? auto_out_1_r_bits_resp : 2'h0);
   assign auto_in_r_bits_last = _in_0_r_bits_T_2;
   assign auto_out_1_aw_valid = in_0_aw_valid & auto_in_aw_bits_addr[16];
   assign auto_out_1_aw_bits_id = auto_in_aw_bits_id;
   assign auto_out_1_aw_bits_addr = auto_in_aw_bits_addr;
+  assign auto_out_1_aw_bits_len = auto_in_aw_bits_len;
+  assign auto_out_1_aw_bits_size = auto_in_aw_bits_size;
+  assign auto_out_1_aw_bits_burst = auto_in_aw_bits_burst;
+  assign auto_out_1_aw_bits_lock = auto_in_aw_bits_lock;
+  assign auto_out_1_aw_bits_cache = auto_in_aw_bits_cache;
+  assign auto_out_1_aw_bits_prot = auto_in_aw_bits_prot;
+  assign auto_out_1_aw_bits_qos = auto_in_aw_bits_qos;
   assign auto_out_1_w_valid = in_0_w_valid & _awIn_0_io_deq_bits[1];
   assign auto_out_1_w_bits_data = auto_in_w_bits_data;
   assign auto_out_1_w_bits_strb = auto_in_w_bits_strb;
+  assign auto_out_1_w_bits_last = auto_in_w_bits_last;
   assign auto_out_1_b_ready = auto_in_b_ready & (idle_3 ? readys_readys_1[1] : state_3_1);
   assign auto_out_1_ar_valid = in_0_ar_valid & auto_in_ar_bits_addr[16];
   assign auto_out_1_ar_bits_id = auto_in_ar_bits_id;
   assign auto_out_1_ar_bits_addr = auto_in_ar_bits_addr;
+  assign auto_out_1_ar_bits_len = auto_in_ar_bits_len;
   assign auto_out_1_ar_bits_size = auto_in_ar_bits_size;
+  assign auto_out_1_ar_bits_burst = auto_in_ar_bits_burst;
+  assign auto_out_1_ar_bits_lock = auto_in_ar_bits_lock;
+  assign auto_out_1_ar_bits_cache = auto_in_ar_bits_cache;
+  assign auto_out_1_ar_bits_prot = auto_in_ar_bits_prot;
+  assign auto_out_1_ar_bits_qos = auto_in_ar_bits_qos;
   assign auto_out_1_r_ready = auto_in_r_ready & (idle_2 ? readys_readys[1] : state_2_1);
   assign auto_out_0_aw_valid = in_0_aw_valid & ~(auto_in_aw_bits_addr[16]);
   assign auto_out_0_aw_bits_id = auto_in_aw_bits_id;
   assign auto_out_0_aw_bits_addr = auto_in_aw_bits_addr[11:0];
+  assign auto_out_0_aw_bits_len = auto_in_aw_bits_len;
+  assign auto_out_0_aw_bits_size = auto_in_aw_bits_size;
+  assign auto_out_0_aw_bits_burst = auto_in_aw_bits_burst;
+  assign auto_out_0_aw_bits_lock = auto_in_aw_bits_lock;
+  assign auto_out_0_aw_bits_cache = auto_in_aw_bits_cache;
+  assign auto_out_0_aw_bits_prot = auto_in_aw_bits_prot;
+  assign auto_out_0_aw_bits_qos = auto_in_aw_bits_qos;
   assign auto_out_0_w_valid = in_0_w_valid & _awIn_0_io_deq_bits[0];
   assign auto_out_0_w_bits_data = auto_in_w_bits_data;
   assign auto_out_0_w_bits_strb = auto_in_w_bits_strb;
+  assign auto_out_0_w_bits_last = auto_in_w_bits_last;
   assign auto_out_0_b_ready = auto_in_b_ready & (idle_3 ? readys_readys_1[0] : state_3_0);
   assign auto_out_0_ar_valid = in_0_ar_valid & ~(auto_in_ar_bits_addr[16]);
   assign auto_out_0_ar_bits_id = auto_in_ar_bits_id;
   assign auto_out_0_ar_bits_addr = auto_in_ar_bits_addr[11:0];
+  assign auto_out_0_ar_bits_len = auto_in_ar_bits_len;
   assign auto_out_0_ar_bits_size = auto_in_ar_bits_size;
+  assign auto_out_0_ar_bits_burst = auto_in_ar_bits_burst;
+  assign auto_out_0_ar_bits_lock = auto_in_ar_bits_lock;
+  assign auto_out_0_ar_bits_cache = auto_in_ar_bits_cache;
+  assign auto_out_0_ar_bits_prot = auto_in_ar_bits_prot;
+  assign auto_out_0_ar_bits_qos = auto_in_ar_bits_qos;
   assign auto_out_0_r_ready = auto_in_r_ready & (idle_2 ? readys_readys[0] : state_2_0);
 endmodule
 

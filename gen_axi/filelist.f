@@ -6,11 +6,13 @@ Queue2_UInt4.sv
 AXI4Xbar_1.sv
 AXI4Map.sv
 AXI4Xbar_2.sv
+AXI4ToLite.sv
+AXI4ToLite_1.sv
 Queue1_RegMapperInput.sv
 Queue1_RegMapperInput_1.sv
 RegGen.sv
-ram_8x14.sv
-Queue8_UInt14.sv
+ram_8x11.sv
+Queue8_UInt11.sv
 AXIRegIMSIC.sv
 AXIRegIMSIC_WRAP.sv
 IMSICGateWay.sv

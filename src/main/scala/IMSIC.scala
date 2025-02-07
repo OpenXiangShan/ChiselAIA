@@ -134,7 +134,7 @@ case class IMSICParams(
 
 class IMSIC(
     params:    IMSICParams,
-    beatBytes: Int = 8
+    beatBytes: Int = 4
 )(implicit p: Parameters) extends Module {
   println(f"IMSICParams.geilen:            ${params.geilen}%d")
 
@@ -369,7 +369,7 @@ class IMSIC(
 //define IMSIC_WRAP: instance one imsic when HasCVMExtention is supported, else instance two imsic modules.
 class IMSIC_WRAP(
     params:    IMSICParams,
-    beatBytes: Int = 8
+    beatBytes: Int = 4
 )(implicit p: Parameters) extends Module {
   // define the ports
   val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
@@ -442,7 +442,7 @@ class IMSIC_WRAP(
 //generate TLIMSIC top module:including TLRegIMSIC_WRAP and IMSIC_WRAP
 class TLIMSIC(
     params:    IMSICParams,
-    beatBytes: Int = 8
+    beatBytes: Int = 4
 //  asyncQueueParams: AsyncQueueParams
 )(implicit p: Parameters) extends LazyModule with HasIMSICParameters {
   val axireg      = LazyModule(new TLRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
@@ -478,7 +478,7 @@ class TLIMSIC(
 
 class AXI4IMSIC(
     params:    IMSICParams,
-    beatBytes: Int = 8
+    beatBytes: Int = 4
 )(implicit p: Parameters) extends LazyModule with HasIMSICParameters {
   val axireg      = LazyModule(new AXIRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
   lazy val module = new Imp
@@ -514,7 +514,7 @@ class AXI4IMSIC(
 //generate TLRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one
 class TLRegIMSIC_WRAP(
     params:    IMSICParams,
-    beatBytes: Int = 8
+    beatBytes: Int = 4
 )(implicit p: Parameters) extends LazyModule {
   val axireg = LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))
   val tee_axireg =
@@ -545,7 +545,7 @@ class TLRegIMSIC_WRAP(
 //generate AXIRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one
 class AXIRegIMSIC_WRAP(
     params:    IMSICParams,
-    beatBytes: Int = 8
+    beatBytes: Int = 4
 )(implicit p: Parameters) extends LazyModule {
   val axireg = LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))
   //  val tee_axireg = if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(IMSICParams(teemode = true), beatBytes)(Parameters.empty))) else None
@@ -576,7 +576,7 @@ class AXIRegIMSIC_WRAP(
 
 class TLRegIMSIC(
     params:    IMSICParams,
-    beatBytes: Int = 8
+    beatBytes: Int = 4
 )(implicit p: Parameters) extends LazyModule {
   val fromMem = TLXbar()
   // val fromMem = LazyModule(new TLXbar).node
@@ -656,7 +656,7 @@ class TLRegIMSIC(
 //generate axi42reg for IMSIC
 class AXIRegIMSIC(
     params:    IMSICParams,
-    beatBytes: Int = 8
+    beatBytes: Int = 4
 )(implicit p: Parameters) extends LazyModule {
   val fromMem = AXI4Xbar()
 
@@ -673,7 +673,7 @@ class AXIRegIMSIC(
     intfileFromMem := axi4tolitenode := fromMem
     intfileFromMem
   }
-
+  
   lazy val module = new AXIRegIMSICImp(this)
   class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
     val io = IO(Output(new Bundle {
@@ -738,7 +738,7 @@ class AXIRegIMSIC(
 //integrated for async clock domain,kmh,zhaohong
 class RegGen(
     params:    IMSICParams,
-    beatBytes: Int = 8
+    beatBytes: Int = 4
 ) extends Module {
   val regmapIOs = Seq(
     params.intFileMemWidth,

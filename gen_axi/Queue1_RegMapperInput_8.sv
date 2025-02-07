@@ -25,18 +25,18 @@ module Queue1_RegMapperInput_8(
   output        io_enq_ready,
   input         io_enq_valid,
   input         io_enq_bits_read,
-  input  [10:0] io_enq_bits_index,
-  input  [63:0] io_enq_bits_data,
-  input  [7:0]  io_enq_bits_mask,
+  input  [11:0] io_enq_bits_index,
+  input  [31:0] io_enq_bits_data,
+  input  [3:0]  io_enq_bits_mask,
   input         io_deq_ready,
   output        io_deq_valid,
   output        io_deq_bits_read,
-  output [10:0] io_deq_bits_index,
-  output [63:0] io_deq_bits_data,
-  output [7:0]  io_deq_bits_mask
+  output [11:0] io_deq_bits_index,
+  output [31:0] io_deq_bits_data,
+  output [3:0]  io_deq_bits_mask
 );
 
-  reg  [83:0] ram;
+  reg  [48:0] ram;
   reg         full;
   wire        do_enq = ~full & io_enq_valid;
   always @(posedge clock) begin
@@ -50,8 +50,8 @@ module Queue1_RegMapperInput_8(
   assign io_enq_ready = ~full;
   assign io_deq_valid = full;
   assign io_deq_bits_read = ram[0];
-  assign io_deq_bits_index = ram[11:1];
-  assign io_deq_bits_data = ram[75:12];
-  assign io_deq_bits_mask = ram[83:76];
+  assign io_deq_bits_index = ram[12:1];
+  assign io_deq_bits_data = ram[44:13];
+  assign io_deq_bits_mask = ram[48:45];
 endmodule
 

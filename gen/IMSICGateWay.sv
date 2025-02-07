@@ -25,25 +25,25 @@ module IMSICGateWay(
   input         msiio_msi_vld_req,
   output        msiio_msi_vld_ack,
   input  [10:0] io_seteipnum,
-  input         io_valid,
-  output [10:0] msi_data_o,
-  output        msi_valid_o
+  output [7:0]  msi_data_o,
+  output [5:0]  msi_valid_o
 );
 
-  reg         msi_vld_ack_cpu;
-  reg  [10:0] msi_data_catch;
-  reg         msi_intf_valids;
-  wire        msi_vld_ris_cpu = msiio_msi_vld_req & ~msi_vld_ack_cpu;
+  reg        msi_vld_ack_cpu;
+  reg  [7:0] msi_data_catch;
+  reg  [5:0] msi_intf_valids;
+  wire       msi_vld_ris_cpu = msiio_msi_vld_req & ~msi_vld_ack_cpu;
+  wire [7:0] _msi_intf_valids_T_1 = 8'h1 << io_seteipnum[10:8];
   always @(posedge clock) begin
     msi_vld_ack_cpu <= msiio_msi_vld_req;
     if (reset) begin
-      msi_data_catch <= 11'h0;
-      msi_intf_valids <= 1'h0;
+      msi_data_catch <= 8'h0;
+      msi_intf_valids <= 6'h0;
     end
     else begin
       if (msi_vld_ris_cpu)
-        msi_data_catch <= io_seteipnum;
-      msi_intf_valids <= msi_vld_ris_cpu & io_valid;
+        msi_data_catch <= io_seteipnum[7:0];
+      msi_intf_valids <= msi_vld_ris_cpu ? _msi_intf_valids_T_1[5:0] : 6'h0;
     end
   end // always @(posedge)
   assign msiio_msi_vld_ack = msi_vld_ack_cpu;

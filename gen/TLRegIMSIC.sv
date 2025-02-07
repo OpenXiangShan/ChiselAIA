@@ -38,7 +38,6 @@ module TLRegIMSIC(
   output [1:0]  auto_xbar_in_d_bits_size,
   output [5:0]  auto_xbar_in_d_bits_source,
   output [10:0] io_seteipnum,
-  output        io_valid,
   output        msiio_msi_vld_req,
   input         msiio_msi_vld_ack
 );
@@ -46,7 +45,7 @@ module TLRegIMSIC(
   reg         msi_vld_req;
   wire        _fifo_sync_io_enq_ready;
   wire        _fifo_sync_io_deq_valid;
-  wire [11:0] _fifo_sync_io_deq_bits;
+  wire [10:0] _fifo_sync_io_deq_bits;
   wire        _reggen_regmapIOs_0_1_ready;
   wire        _reggen_regmapIOs_0_2_valid;
   wire        _reggen_regmapIOs_0_2_bits_read;
@@ -76,7 +75,6 @@ module TLRegIMSIC(
   wire        _xbar_auto_out_0_a_bits_corrupt;
   wire        _xbar_auto_out_0_d_ready;
   reg         msi_vld_ack_soc_1f;
-  reg         rvalids;
   reg  [10:0] msi_id_data;
   wire        _reggen_regmapIOs_0_1_bits_read_T = _xbar_auto_out_0_a_bits_opcode == 3'h4;
   reg  [5:0]  sourceReg;
@@ -98,11 +96,9 @@ module TLRegIMSIC(
     (_reggen_regmapIOs_1_2_bits_read | _fifo_sync_io_enq_ready)
     & _reggen_regmapIOs_1_2_valid;
   wire [2:0]  intfileFromMemIn_1_d_bits_opcode = {2'h0, _reggen_regmapIOs_1_2_bits_read};
-  wire        rdata_vld = ~msi_vld_req & _fifo_sync_io_deq_valid;
   always @(posedge clock) begin
     if (reset) begin
       msi_vld_req <= 1'h0;
-      rvalids <= 1'h0;
       msi_id_data <= 11'h0;
       sourceReg <= 6'h0;
       sizeReg <= 2'h0;
@@ -113,9 +109,8 @@ module TLRegIMSIC(
       msi_vld_req <=
         _fifo_sync_io_deq_valid | ~(msiio_msi_vld_ack & ~msi_vld_ack_soc_1f)
         & msi_vld_req;
-      rvalids <= rdata_vld & _fifo_sync_io_deq_bits[11];
-      if (rdata_vld)
-        msi_id_data <= _fifo_sync_io_deq_bits[10:0];
+      if (~msi_vld_req & _fifo_sync_io_deq_valid)
+        msi_id_data <= _fifo_sync_io_deq_bits;
       if (_xbar_auto_out_0_a_valid) begin
         sourceReg <= _xbar_auto_out_0_a_bits_source;
         sizeReg <= _xbar_auto_out_0_a_bits_size;
@@ -236,18 +231,17 @@ module TLRegIMSIC(
     .io_seteipnum             (_reggen_io_seteipnum),
     .io_valid                 (_reggen_io_valid)
   );
-  Queue8_UInt12 fifo_sync (
+  Queue8_UInt11 fifo_sync (
     .clock        (clock),
     .reset        (reset),
     .io_enq_ready (_fifo_sync_io_enq_ready),
     .io_enq_valid (_reggen_io_valid),
-    .io_enq_bits  ({_reggen_io_valid, _reggen_io_seteipnum}),
+    .io_enq_bits  (_reggen_io_seteipnum),
     .io_deq_ready (~msi_vld_req),
     .io_deq_valid (_fifo_sync_io_deq_valid),
     .io_deq_bits  (_fifo_sync_io_deq_bits)
   );
   assign io_seteipnum = msi_id_data;
-  assign io_valid = rvalids;
   assign msiio_msi_vld_req = msi_vld_req;
 endmodule
 

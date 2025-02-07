@@ -22,14 +22,13 @@
 module AXI4APLIC(
   input         clock,
   input         reset,
-  input         auto_toIMSIC_out_aw_ready,
   output        auto_toIMSIC_out_aw_valid,
   output [4:0]  auto_toIMSIC_out_aw_bits_id,
   output [31:0] auto_toIMSIC_out_aw_bits_addr,
-  input         auto_toIMSIC_out_w_ready,
+  output [2:0]  auto_toIMSIC_out_aw_bits_size,
   output        auto_toIMSIC_out_w_valid,
-  output [63:0] auto_toIMSIC_out_w_bits_data,
-  output [7:0]  auto_toIMSIC_out_w_bits_strb,
+  output [31:0] auto_toIMSIC_out_w_bits_data,
+  output [3:0]  auto_toIMSIC_out_w_bits_strb,
   output        auto_toIMSIC_out_w_bits_last,
   output        auto_toIMSIC_out_b_ready,
   input         auto_toIMSIC_out_b_valid,
@@ -40,23 +39,38 @@ module AXI4APLIC(
   input         auto_fromCPU_in_aw_valid,
   input  [3:0]  auto_fromCPU_in_aw_bits_id,
   input  [28:0] auto_fromCPU_in_aw_bits_addr,
+  input  [7:0]  auto_fromCPU_in_aw_bits_len,
+  input  [2:0]  auto_fromCPU_in_aw_bits_size,
+  input  [1:0]  auto_fromCPU_in_aw_bits_burst,
+  input         auto_fromCPU_in_aw_bits_lock,
+  input  [3:0]  auto_fromCPU_in_aw_bits_cache,
+  input  [2:0]  auto_fromCPU_in_aw_bits_prot,
+  input  [3:0]  auto_fromCPU_in_aw_bits_qos,
   output        auto_fromCPU_in_w_ready,
   input         auto_fromCPU_in_w_valid,
-  input  [63:0] auto_fromCPU_in_w_bits_data,
-  input  [7:0]  auto_fromCPU_in_w_bits_strb,
+  input  [31:0] auto_fromCPU_in_w_bits_data,
+  input  [3:0]  auto_fromCPU_in_w_bits_strb,
   input         auto_fromCPU_in_w_bits_last,
   input         auto_fromCPU_in_b_ready,
   output        auto_fromCPU_in_b_valid,
   output [3:0]  auto_fromCPU_in_b_bits_id,
+  output [1:0]  auto_fromCPU_in_b_bits_resp,
   output        auto_fromCPU_in_ar_ready,
   input         auto_fromCPU_in_ar_valid,
   input  [3:0]  auto_fromCPU_in_ar_bits_id,
   input  [28:0] auto_fromCPU_in_ar_bits_addr,
+  input  [7:0]  auto_fromCPU_in_ar_bits_len,
   input  [2:0]  auto_fromCPU_in_ar_bits_size,
+  input  [1:0]  auto_fromCPU_in_ar_bits_burst,
+  input         auto_fromCPU_in_ar_bits_lock,
+  input  [3:0]  auto_fromCPU_in_ar_bits_cache,
+  input  [2:0]  auto_fromCPU_in_ar_bits_prot,
+  input  [3:0]  auto_fromCPU_in_ar_bits_qos,
   input         auto_fromCPU_in_r_ready,
   output        auto_fromCPU_in_r_valid,
   output [3:0]  auto_fromCPU_in_r_bits_id,
-  output [63:0] auto_fromCPU_in_r_bits_data,
+  output [31:0] auto_fromCPU_in_r_bits_data,
+  output [1:0]  auto_fromCPU_in_r_bits_resp,
   output        auto_fromCPU_in_r_bits_last,
   input         intSrcs_1,
   input         intSrcs_2,
@@ -187,108 +201,98 @@ module AXI4APLIC(
   input         intSrcs_127
 );
 
+  wire [3:0]  domainFromCPUIn_1_ar_bits_qos;
+  wire [2:0]  domainFromCPUIn_1_ar_bits_prot;
+  wire [3:0]  domainFromCPUIn_1_ar_bits_cache;
+  wire        domainFromCPUIn_1_ar_bits_lock;
+  wire [1:0]  domainFromCPUIn_1_ar_bits_burst;
+  wire [7:0]  domainFromCPUIn_1_ar_bits_len;
+  wire        domainFromCPUIn_1_w_bits_last;
+  wire [31:0] domainFromCPUIn_1_w_bits_data;
+  wire [3:0]  domainFromCPUIn_1_aw_bits_qos;
+  wire [2:0]  domainFromCPUIn_1_aw_bits_prot;
+  wire [3:0]  domainFromCPUIn_1_aw_bits_cache;
+  wire        domainFromCPUIn_1_aw_bits_lock;
+  wire [1:0]  domainFromCPUIn_1_aw_bits_burst;
+  wire [2:0]  domainFromCPUIn_1_aw_bits_size;
+  wire [7:0]  domainFromCPUIn_1_aw_bits_len;
+  wire [3:0]  domainFromCPUIn_ar_bits_qos;
+  wire [2:0]  domainFromCPUIn_ar_bits_prot;
+  wire [3:0]  domainFromCPUIn_ar_bits_cache;
+  wire        domainFromCPUIn_ar_bits_lock;
+  wire [1:0]  domainFromCPUIn_ar_bits_burst;
+  wire [7:0]  domainFromCPUIn_ar_bits_len;
+  wire        domainFromCPUIn_w_bits_last;
+  wire [31:0] domainFromCPUIn_w_bits_data;
+  wire [3:0]  domainFromCPUIn_aw_bits_qos;
+  wire [2:0]  domainFromCPUIn_aw_bits_prot;
+  wire [3:0]  domainFromCPUIn_aw_bits_cache;
+  wire        domainFromCPUIn_aw_bits_lock;
+  wire [1:0]  domainFromCPUIn_aw_bits_burst;
+  wire [2:0]  domainFromCPUIn_aw_bits_size;
+  wire [7:0]  domainFromCPUIn_aw_bits_len;
   wire        _aplic_ios_0_msi_valid;
   wire [63:0] _aplic_ios_0_msi_bits_addr;
   wire [31:0] _aplic_ios_0_msi_bits_data;
   wire        _aplic_ios_0_regmapIn_ready;
   wire        _aplic_ios_0_regmapOut_valid;
   wire        _aplic_ios_0_regmapOut_bits_read;
-  wire [63:0] _aplic_ios_0_regmapOut_bits_data;
   wire        _aplic_ios_1_msi_valid;
   wire [63:0] _aplic_ios_1_msi_bits_addr;
   wire [31:0] _aplic_ios_1_msi_bits_data;
   wire        _aplic_ios_1_regmapIn_ready;
   wire        _aplic_ios_1_regmapOut_valid;
   wire        _aplic_ios_1_regmapOut_bits_read;
-  wire [63:0] _aplic_ios_1_regmapOut_bits_data;
-  wire        _toIMSIC_auto_in_1_aw_ready;
-  wire        _toIMSIC_auto_in_1_w_ready;
   wire        _toIMSIC_auto_in_1_b_valid;
-  wire        _toIMSIC_auto_in_0_aw_ready;
-  wire        _toIMSIC_auto_in_0_w_ready;
   wire        _toIMSIC_auto_in_0_b_valid;
   wire        _fromCPU_auto_out_1_aw_valid;
-  wire [3:0]  _fromCPU_auto_out_1_aw_bits_id;
-  wire [28:0] _fromCPU_auto_out_1_aw_bits_addr;
   wire        _fromCPU_auto_out_1_w_valid;
-  wire [63:0] _fromCPU_auto_out_1_w_bits_data;
-  wire [7:0]  _fromCPU_auto_out_1_w_bits_strb;
   wire        _fromCPU_auto_out_1_b_ready;
   wire        _fromCPU_auto_out_1_ar_valid;
-  wire [3:0]  _fromCPU_auto_out_1_ar_bits_id;
-  wire [28:0] _fromCPU_auto_out_1_ar_bits_addr;
-  wire [2:0]  _fromCPU_auto_out_1_ar_bits_size;
   wire        _fromCPU_auto_out_1_r_ready;
   wire        _fromCPU_auto_out_0_aw_valid;
-  wire [3:0]  _fromCPU_auto_out_0_aw_bits_id;
-  wire [28:0] _fromCPU_auto_out_0_aw_bits_addr;
   wire        _fromCPU_auto_out_0_w_valid;
-  wire [63:0] _fromCPU_auto_out_0_w_bits_data;
-  wire [7:0]  _fromCPU_auto_out_0_w_bits_strb;
   wire        _fromCPU_auto_out_0_b_ready;
   wire        _fromCPU_auto_out_0_ar_valid;
-  wire [3:0]  _fromCPU_auto_out_0_ar_bits_id;
-  wire [28:0] _fromCPU_auto_out_0_ar_bits_addr;
-  wire [2:0]  _fromCPU_auto_out_0_ar_bits_size;
   wire        _fromCPU_auto_out_0_r_ready;
-  wire        domainToIMSICOut_w_bits_strb_sub_0_2 =
-    ~(_aplic_ios_0_msi_bits_addr[2]) & ~(_aplic_ios_0_msi_bits_addr[1]);
-  wire        domainToIMSICOut_w_bits_strb_sub_1_2 =
-    ~(_aplic_ios_0_msi_bits_addr[2]) & _aplic_ios_0_msi_bits_addr[1];
-  wire        domainToIMSICOut_w_bits_strb_sub_2_2 =
-    _aplic_ios_0_msi_bits_addr[2] & ~(_aplic_ios_0_msi_bits_addr[1]);
-  wire        domainToIMSICOut_w_bits_strb_sub_3_2 =
-    _aplic_ios_0_msi_bits_addr[2] & _aplic_ios_0_msi_bits_addr[1];
-  wire        domainToIMSICOut_w_bits_strb_sub_0_2_1 =
-    ~(_aplic_ios_1_msi_bits_addr[2]) & ~(_aplic_ios_1_msi_bits_addr[1]);
-  wire        domainToIMSICOut_w_bits_strb_sub_1_2_1 =
-    ~(_aplic_ios_1_msi_bits_addr[2]) & _aplic_ios_1_msi_bits_addr[1];
-  wire        domainToIMSICOut_w_bits_strb_sub_2_2_1 =
-    _aplic_ios_1_msi_bits_addr[2] & ~(_aplic_ios_1_msi_bits_addr[1]);
-  wire        domainToIMSICOut_w_bits_strb_sub_3_2_1 =
-    _aplic_ios_1_msi_bits_addr[2] & _aplic_ios_1_msi_bits_addr[1];
+  wire [1:0]  domainFromCPUIn_b_bits_resp = 2'h0;
+  wire [1:0]  domainFromCPUIn_r_bits_resp = 2'h0;
+  wire [1:0]  domainFromCPUIn_1_b_bits_resp = 2'h0;
+  wire [1:0]  domainFromCPUIn_1_r_bits_resp = 2'h0;
+  wire        domainFromCPUIn_r_bits_last = 1'h1;
+  wire        domainFromCPUIn_1_r_bits_last = 1'h1;
   reg  [3:0]  arIdReg;
+  wire [3:0]  domainFromCPUIn_r_bits_id = arIdReg;
   reg  [3:0]  awIdReg;
-  wire        mask_sub_sub_sub_0_1 = _fromCPU_auto_out_0_ar_bits_size > 3'h2;
-  wire        mask_sub_sub_size = _fromCPU_auto_out_0_ar_bits_size[1:0] == 2'h2;
-  wire        mask_sub_sub_0_1 =
-    mask_sub_sub_sub_0_1 | mask_sub_sub_size & ~(_fromCPU_auto_out_0_ar_bits_addr[2]);
-  wire        mask_sub_sub_1_1 =
-    mask_sub_sub_sub_0_1 | mask_sub_sub_size & _fromCPU_auto_out_0_ar_bits_addr[2];
-  wire        mask_sub_size = _fromCPU_auto_out_0_ar_bits_size[1:0] == 2'h1;
-  wire        mask_sub_0_2 =
-    ~(_fromCPU_auto_out_0_ar_bits_addr[2]) & ~(_fromCPU_auto_out_0_ar_bits_addr[1]);
-  wire        mask_sub_0_1 = mask_sub_sub_0_1 | mask_sub_size & mask_sub_0_2;
-  wire        mask_sub_1_2 =
-    ~(_fromCPU_auto_out_0_ar_bits_addr[2]) & _fromCPU_auto_out_0_ar_bits_addr[1];
-  wire        mask_sub_1_1 = mask_sub_sub_0_1 | mask_sub_size & mask_sub_1_2;
-  wire        mask_sub_2_2 =
-    _fromCPU_auto_out_0_ar_bits_addr[2] & ~(_fromCPU_auto_out_0_ar_bits_addr[1]);
-  wire        mask_sub_2_1 = mask_sub_sub_1_1 | mask_sub_size & mask_sub_2_2;
-  wire        mask_sub_3_2 =
-    _fromCPU_auto_out_0_ar_bits_addr[2] & _fromCPU_auto_out_0_ar_bits_addr[1];
-  wire        mask_sub_3_1 = mask_sub_sub_1_1 | mask_sub_size & mask_sub_3_2;
+  wire [3:0]  domainFromCPUIn_b_bits_id = awIdReg;
+  wire [28:0] domainFromCPUIn_ar_bits_addr;
+  wire [28:0] domainFromCPUIn_aw_bits_addr;
+  wire [2:0]  domainFromCPUIn_ar_bits_size;
+  wire        mask_sub_0_1 =
+    (|(domainFromCPUIn_ar_bits_size[2:1])) | domainFromCPUIn_ar_bits_size[0]
+    & ~(domainFromCPUIn_ar_bits_addr[1]);
+  wire        mask_sub_1_1 =
+    (|(domainFromCPUIn_ar_bits_size[2:1])) | domainFromCPUIn_ar_bits_size[0]
+    & domainFromCPUIn_ar_bits_addr[1];
+  wire [3:0]  domainFromCPUIn_w_bits_strb;
   reg  [3:0]  arIdReg_1;
+  wire [3:0]  domainFromCPUIn_1_r_bits_id = arIdReg_1;
   reg  [3:0]  awIdReg_1;
-  wire        mask_sub_sub_sub_0_1_1 = _fromCPU_auto_out_1_ar_bits_size > 3'h2;
-  wire        mask_sub_sub_size_1 = _fromCPU_auto_out_1_ar_bits_size[1:0] == 2'h2;
-  wire        mask_sub_sub_0_1_1 =
-    mask_sub_sub_sub_0_1_1 | mask_sub_sub_size_1 & ~(_fromCPU_auto_out_1_ar_bits_addr[2]);
-  wire        mask_sub_sub_1_1_1 =
-    mask_sub_sub_sub_0_1_1 | mask_sub_sub_size_1 & _fromCPU_auto_out_1_ar_bits_addr[2];
-  wire        mask_sub_size_1 = _fromCPU_auto_out_1_ar_bits_size[1:0] == 2'h1;
-  wire        mask_sub_0_2_1 =
-    ~(_fromCPU_auto_out_1_ar_bits_addr[2]) & ~(_fromCPU_auto_out_1_ar_bits_addr[1]);
-  wire        mask_sub_0_1_1 = mask_sub_sub_0_1_1 | mask_sub_size_1 & mask_sub_0_2_1;
-  wire        mask_sub_1_2_1 =
-    ~(_fromCPU_auto_out_1_ar_bits_addr[2]) & _fromCPU_auto_out_1_ar_bits_addr[1];
-  wire        mask_sub_1_1_1 = mask_sub_sub_0_1_1 | mask_sub_size_1 & mask_sub_1_2_1;
-  wire        mask_sub_2_2_1 =
-    _fromCPU_auto_out_1_ar_bits_addr[2] & ~(_fromCPU_auto_out_1_ar_bits_addr[1]);
-  wire        mask_sub_2_1_1 = mask_sub_sub_1_1_1 | mask_sub_size_1 & mask_sub_2_2_1;
-  wire        mask_sub_3_2_1 =
-    _fromCPU_auto_out_1_ar_bits_addr[2] & _fromCPU_auto_out_1_ar_bits_addr[1];
-  wire        mask_sub_3_1_1 = mask_sub_sub_1_1_1 | mask_sub_size_1 & mask_sub_3_2_1;
+  wire [3:0]  domainFromCPUIn_1_b_bits_id = awIdReg_1;
+  wire [28:0] domainFromCPUIn_1_ar_bits_addr;
+  wire [28:0] domainFromCPUIn_1_aw_bits_addr;
+  wire [2:0]  domainFromCPUIn_1_ar_bits_size;
+  wire        mask_sub_0_1_1 =
+    (|(domainFromCPUIn_1_ar_bits_size[2:1])) | domainFromCPUIn_1_ar_bits_size[0]
+    & ~(domainFromCPUIn_1_ar_bits_addr[1]);
+  wire        mask_sub_1_1_1 =
+    (|(domainFromCPUIn_1_ar_bits_size[2:1])) | domainFromCPUIn_1_ar_bits_size[0]
+    & domainFromCPUIn_1_ar_bits_addr[1];
+  wire [3:0]  domainFromCPUIn_1_w_bits_strb;
+  wire [3:0]  domainFromCPUIn_aw_bits_id;
+  wire [3:0]  domainFromCPUIn_ar_bits_id;
+  wire [3:0]  domainFromCPUIn_1_aw_bits_id;
+  wire [3:0]  domainFromCPUIn_1_ar_bits_id;
   always @(posedge clock) begin
     if (reset) begin
       arIdReg <= 4'h0;
@@ -298,145 +302,157 @@ module AXI4APLIC(
     end
     else begin
       if (_fromCPU_auto_out_0_ar_valid)
-        arIdReg <= _fromCPU_auto_out_0_ar_bits_id;
+        arIdReg <= domainFromCPUIn_ar_bits_id;
       if (_fromCPU_auto_out_0_aw_valid)
-        awIdReg <= _fromCPU_auto_out_0_aw_bits_id;
+        awIdReg <= domainFromCPUIn_aw_bits_id;
       if (_fromCPU_auto_out_1_ar_valid)
-        arIdReg_1 <= _fromCPU_auto_out_1_ar_bits_id;
+        arIdReg_1 <= domainFromCPUIn_1_ar_bits_id;
       if (_fromCPU_auto_out_1_aw_valid)
-        awIdReg_1 <= _fromCPU_auto_out_1_aw_bits_id;
+        awIdReg_1 <= domainFromCPUIn_1_aw_bits_id;
     end
   end // always @(posedge)
+  wire [31:0] domainFromCPUIn_r_bits_data;
+  wire [31:0] domainFromCPUIn_1_r_bits_data;
   AXI4Xbar_6 fromCPU (
-    .clock                   (clock),
-    .reset                   (reset),
-    .auto_in_aw_ready        (auto_fromCPU_in_aw_ready),
-    .auto_in_aw_valid        (auto_fromCPU_in_aw_valid),
-    .auto_in_aw_bits_id      (auto_fromCPU_in_aw_bits_id),
-    .auto_in_aw_bits_addr    (auto_fromCPU_in_aw_bits_addr),
-    .auto_in_w_ready         (auto_fromCPU_in_w_ready),
-    .auto_in_w_valid         (auto_fromCPU_in_w_valid),
-    .auto_in_w_bits_data     (auto_fromCPU_in_w_bits_data),
-    .auto_in_w_bits_strb     (auto_fromCPU_in_w_bits_strb),
-    .auto_in_w_bits_last     (auto_fromCPU_in_w_bits_last),
-    .auto_in_b_ready         (auto_fromCPU_in_b_ready),
-    .auto_in_b_valid         (auto_fromCPU_in_b_valid),
-    .auto_in_b_bits_id       (auto_fromCPU_in_b_bits_id),
-    .auto_in_ar_ready        (auto_fromCPU_in_ar_ready),
-    .auto_in_ar_valid        (auto_fromCPU_in_ar_valid),
-    .auto_in_ar_bits_id      (auto_fromCPU_in_ar_bits_id),
-    .auto_in_ar_bits_addr    (auto_fromCPU_in_ar_bits_addr),
-    .auto_in_ar_bits_size    (auto_fromCPU_in_ar_bits_size),
-    .auto_in_r_ready         (auto_fromCPU_in_r_ready),
-    .auto_in_r_valid         (auto_fromCPU_in_r_valid),
-    .auto_in_r_bits_id       (auto_fromCPU_in_r_bits_id),
-    .auto_in_r_bits_data     (auto_fromCPU_in_r_bits_data),
-    .auto_in_r_bits_last     (auto_fromCPU_in_r_bits_last),
+    .clock                    (clock),
+    .reset                    (reset),
+    .auto_in_aw_ready         (auto_fromCPU_in_aw_ready),
+    .auto_in_aw_valid         (auto_fromCPU_in_aw_valid),
+    .auto_in_aw_bits_id       (auto_fromCPU_in_aw_bits_id),
+    .auto_in_aw_bits_addr     (auto_fromCPU_in_aw_bits_addr),
+    .auto_in_aw_bits_len      (auto_fromCPU_in_aw_bits_len),
+    .auto_in_aw_bits_size     (auto_fromCPU_in_aw_bits_size),
+    .auto_in_aw_bits_burst    (auto_fromCPU_in_aw_bits_burst),
+    .auto_in_aw_bits_lock     (auto_fromCPU_in_aw_bits_lock),
+    .auto_in_aw_bits_cache    (auto_fromCPU_in_aw_bits_cache),
+    .auto_in_aw_bits_prot     (auto_fromCPU_in_aw_bits_prot),
+    .auto_in_aw_bits_qos      (auto_fromCPU_in_aw_bits_qos),
+    .auto_in_w_ready          (auto_fromCPU_in_w_ready),
+    .auto_in_w_valid          (auto_fromCPU_in_w_valid),
+    .auto_in_w_bits_data      (auto_fromCPU_in_w_bits_data),
+    .auto_in_w_bits_strb      (auto_fromCPU_in_w_bits_strb),
+    .auto_in_w_bits_last      (auto_fromCPU_in_w_bits_last),
+    .auto_in_b_ready          (auto_fromCPU_in_b_ready),
+    .auto_in_b_valid          (auto_fromCPU_in_b_valid),
+    .auto_in_b_bits_id        (auto_fromCPU_in_b_bits_id),
+    .auto_in_b_bits_resp      (auto_fromCPU_in_b_bits_resp),
+    .auto_in_ar_ready         (auto_fromCPU_in_ar_ready),
+    .auto_in_ar_valid         (auto_fromCPU_in_ar_valid),
+    .auto_in_ar_bits_id       (auto_fromCPU_in_ar_bits_id),
+    .auto_in_ar_bits_addr     (auto_fromCPU_in_ar_bits_addr),
+    .auto_in_ar_bits_len      (auto_fromCPU_in_ar_bits_len),
+    .auto_in_ar_bits_size     (auto_fromCPU_in_ar_bits_size),
+    .auto_in_ar_bits_burst    (auto_fromCPU_in_ar_bits_burst),
+    .auto_in_ar_bits_lock     (auto_fromCPU_in_ar_bits_lock),
+    .auto_in_ar_bits_cache    (auto_fromCPU_in_ar_bits_cache),
+    .auto_in_ar_bits_prot     (auto_fromCPU_in_ar_bits_prot),
+    .auto_in_ar_bits_qos      (auto_fromCPU_in_ar_bits_qos),
+    .auto_in_r_ready          (auto_fromCPU_in_r_ready),
+    .auto_in_r_valid          (auto_fromCPU_in_r_valid),
+    .auto_in_r_bits_id        (auto_fromCPU_in_r_bits_id),
+    .auto_in_r_bits_data      (auto_fromCPU_in_r_bits_data),
+    .auto_in_r_bits_resp      (auto_fromCPU_in_r_bits_resp),
+    .auto_in_r_bits_last      (auto_fromCPU_in_r_bits_last),
     .auto_out_1_aw_ready
       (_aplic_ios_1_regmapIn_ready & ~_fromCPU_auto_out_1_ar_valid),
-    .auto_out_1_aw_valid     (_fromCPU_auto_out_1_aw_valid),
-    .auto_out_1_aw_bits_id   (_fromCPU_auto_out_1_aw_bits_id),
-    .auto_out_1_aw_bits_addr (_fromCPU_auto_out_1_aw_bits_addr),
+    .auto_out_1_aw_valid      (_fromCPU_auto_out_1_aw_valid),
+    .auto_out_1_aw_bits_id    (domainFromCPUIn_1_aw_bits_id),
+    .auto_out_1_aw_bits_addr  (domainFromCPUIn_1_aw_bits_addr),
+    .auto_out_1_aw_bits_len   (domainFromCPUIn_1_aw_bits_len),
+    .auto_out_1_aw_bits_size  (domainFromCPUIn_1_aw_bits_size),
+    .auto_out_1_aw_bits_burst (domainFromCPUIn_1_aw_bits_burst),
+    .auto_out_1_aw_bits_lock  (domainFromCPUIn_1_aw_bits_lock),
+    .auto_out_1_aw_bits_cache (domainFromCPUIn_1_aw_bits_cache),
+    .auto_out_1_aw_bits_prot  (domainFromCPUIn_1_aw_bits_prot),
+    .auto_out_1_aw_bits_qos   (domainFromCPUIn_1_aw_bits_qos),
     .auto_out_1_w_ready
       (_aplic_ios_1_regmapIn_ready & ~_fromCPU_auto_out_1_ar_valid),
-    .auto_out_1_w_valid      (_fromCPU_auto_out_1_w_valid),
-    .auto_out_1_w_bits_data  (_fromCPU_auto_out_1_w_bits_data),
-    .auto_out_1_w_bits_strb  (_fromCPU_auto_out_1_w_bits_strb),
-    .auto_out_1_b_ready      (_fromCPU_auto_out_1_b_ready),
+    .auto_out_1_w_valid       (_fromCPU_auto_out_1_w_valid),
+    .auto_out_1_w_bits_data   (domainFromCPUIn_1_w_bits_data),
+    .auto_out_1_w_bits_strb   (domainFromCPUIn_1_w_bits_strb),
+    .auto_out_1_w_bits_last   (domainFromCPUIn_1_w_bits_last),
+    .auto_out_1_b_ready       (_fromCPU_auto_out_1_b_ready),
     .auto_out_1_b_valid
       (_aplic_ios_1_regmapOut_valid & ~_aplic_ios_1_regmapOut_bits_read),
-    .auto_out_1_b_bits_id    (awIdReg_1),
-    .auto_out_1_ar_ready     (_aplic_ios_1_regmapIn_ready),
-    .auto_out_1_ar_valid     (_fromCPU_auto_out_1_ar_valid),
-    .auto_out_1_ar_bits_id   (_fromCPU_auto_out_1_ar_bits_id),
-    .auto_out_1_ar_bits_addr (_fromCPU_auto_out_1_ar_bits_addr),
-    .auto_out_1_ar_bits_size (_fromCPU_auto_out_1_ar_bits_size),
-    .auto_out_1_r_ready      (_fromCPU_auto_out_1_r_ready),
+    .auto_out_1_b_bits_id     (domainFromCPUIn_1_b_bits_id),
+    .auto_out_1_b_bits_resp   (domainFromCPUIn_1_b_bits_resp),
+    .auto_out_1_ar_ready      (_aplic_ios_1_regmapIn_ready),
+    .auto_out_1_ar_valid      (_fromCPU_auto_out_1_ar_valid),
+    .auto_out_1_ar_bits_id    (domainFromCPUIn_1_ar_bits_id),
+    .auto_out_1_ar_bits_addr  (domainFromCPUIn_1_ar_bits_addr),
+    .auto_out_1_ar_bits_len   (domainFromCPUIn_1_ar_bits_len),
+    .auto_out_1_ar_bits_size  (domainFromCPUIn_1_ar_bits_size),
+    .auto_out_1_ar_bits_burst (domainFromCPUIn_1_ar_bits_burst),
+    .auto_out_1_ar_bits_lock  (domainFromCPUIn_1_ar_bits_lock),
+    .auto_out_1_ar_bits_cache (domainFromCPUIn_1_ar_bits_cache),
+    .auto_out_1_ar_bits_prot  (domainFromCPUIn_1_ar_bits_prot),
+    .auto_out_1_ar_bits_qos   (domainFromCPUIn_1_ar_bits_qos),
+    .auto_out_1_r_ready       (_fromCPU_auto_out_1_r_ready),
     .auto_out_1_r_valid
       (_aplic_ios_1_regmapOut_valid & _aplic_ios_1_regmapOut_bits_read),
-    .auto_out_1_r_bits_id    (arIdReg_1),
-    .auto_out_1_r_bits_data  (_aplic_ios_1_regmapOut_bits_data),
+    .auto_out_1_r_bits_id     (domainFromCPUIn_1_r_bits_id),
+    .auto_out_1_r_bits_data   (domainFromCPUIn_1_r_bits_data),
+    .auto_out_1_r_bits_resp   (domainFromCPUIn_1_r_bits_resp),
+    .auto_out_1_r_bits_last   (domainFromCPUIn_1_r_bits_last),
     .auto_out_0_aw_ready
       (_aplic_ios_0_regmapIn_ready & ~_fromCPU_auto_out_0_ar_valid),
-    .auto_out_0_aw_valid     (_fromCPU_auto_out_0_aw_valid),
-    .auto_out_0_aw_bits_id   (_fromCPU_auto_out_0_aw_bits_id),
-    .auto_out_0_aw_bits_addr (_fromCPU_auto_out_0_aw_bits_addr),
+    .auto_out_0_aw_valid      (_fromCPU_auto_out_0_aw_valid),
+    .auto_out_0_aw_bits_id    (domainFromCPUIn_aw_bits_id),
+    .auto_out_0_aw_bits_addr  (domainFromCPUIn_aw_bits_addr),
+    .auto_out_0_aw_bits_len   (domainFromCPUIn_aw_bits_len),
+    .auto_out_0_aw_bits_size  (domainFromCPUIn_aw_bits_size),
+    .auto_out_0_aw_bits_burst (domainFromCPUIn_aw_bits_burst),
+    .auto_out_0_aw_bits_lock  (domainFromCPUIn_aw_bits_lock),
+    .auto_out_0_aw_bits_cache (domainFromCPUIn_aw_bits_cache),
+    .auto_out_0_aw_bits_prot  (domainFromCPUIn_aw_bits_prot),
+    .auto_out_0_aw_bits_qos   (domainFromCPUIn_aw_bits_qos),
     .auto_out_0_w_ready
       (_aplic_ios_0_regmapIn_ready & ~_fromCPU_auto_out_0_ar_valid),
-    .auto_out_0_w_valid      (_fromCPU_auto_out_0_w_valid),
-    .auto_out_0_w_bits_data  (_fromCPU_auto_out_0_w_bits_data),
-    .auto_out_0_w_bits_strb  (_fromCPU_auto_out_0_w_bits_strb),
-    .auto_out_0_b_ready      (_fromCPU_auto_out_0_b_ready),
+    .auto_out_0_w_valid       (_fromCPU_auto_out_0_w_valid),
+    .auto_out_0_w_bits_data   (domainFromCPUIn_w_bits_data),
+    .auto_out_0_w_bits_strb   (domainFromCPUIn_w_bits_strb),
+    .auto_out_0_w_bits_last   (domainFromCPUIn_w_bits_last),
+    .auto_out_0_b_ready       (_fromCPU_auto_out_0_b_ready),
     .auto_out_0_b_valid
       (_aplic_ios_0_regmapOut_valid & ~_aplic_ios_0_regmapOut_bits_read),
-    .auto_out_0_b_bits_id    (awIdReg),
-    .auto_out_0_ar_ready     (_aplic_ios_0_regmapIn_ready),
-    .auto_out_0_ar_valid     (_fromCPU_auto_out_0_ar_valid),
-    .auto_out_0_ar_bits_id   (_fromCPU_auto_out_0_ar_bits_id),
-    .auto_out_0_ar_bits_addr (_fromCPU_auto_out_0_ar_bits_addr),
-    .auto_out_0_ar_bits_size (_fromCPU_auto_out_0_ar_bits_size),
-    .auto_out_0_r_ready      (_fromCPU_auto_out_0_r_ready),
+    .auto_out_0_b_bits_id     (domainFromCPUIn_b_bits_id),
+    .auto_out_0_b_bits_resp   (domainFromCPUIn_b_bits_resp),
+    .auto_out_0_ar_ready      (_aplic_ios_0_regmapIn_ready),
+    .auto_out_0_ar_valid      (_fromCPU_auto_out_0_ar_valid),
+    .auto_out_0_ar_bits_id    (domainFromCPUIn_ar_bits_id),
+    .auto_out_0_ar_bits_addr  (domainFromCPUIn_ar_bits_addr),
+    .auto_out_0_ar_bits_len   (domainFromCPUIn_ar_bits_len),
+    .auto_out_0_ar_bits_size  (domainFromCPUIn_ar_bits_size),
+    .auto_out_0_ar_bits_burst (domainFromCPUIn_ar_bits_burst),
+    .auto_out_0_ar_bits_lock  (domainFromCPUIn_ar_bits_lock),
+    .auto_out_0_ar_bits_cache (domainFromCPUIn_ar_bits_cache),
+    .auto_out_0_ar_bits_prot  (domainFromCPUIn_ar_bits_prot),
+    .auto_out_0_ar_bits_qos   (domainFromCPUIn_ar_bits_qos),
+    .auto_out_0_r_ready       (_fromCPU_auto_out_0_r_ready),
     .auto_out_0_r_valid
       (_aplic_ios_0_regmapOut_valid & _aplic_ios_0_regmapOut_bits_read),
-    .auto_out_0_r_bits_id    (arIdReg),
-    .auto_out_0_r_bits_data  (_aplic_ios_0_regmapOut_bits_data)
+    .auto_out_0_r_bits_id     (domainFromCPUIn_r_bits_id),
+    .auto_out_0_r_bits_data   (domainFromCPUIn_r_bits_data),
+    .auto_out_0_r_bits_resp   (domainFromCPUIn_r_bits_resp),
+    .auto_out_0_r_bits_last   (domainFromCPUIn_r_bits_last)
   );
   AXI4Xbar_7 toIMSIC (
     .clock                  (clock),
     .reset                  (reset),
-    .auto_in_1_aw_ready     (_toIMSIC_auto_in_1_aw_ready),
     .auto_in_1_aw_valid     (_aplic_ios_1_msi_valid),
     .auto_in_1_aw_bits_addr (_aplic_ios_1_msi_bits_addr[31:0]),
-    .auto_in_1_w_ready      (_toIMSIC_auto_in_1_w_ready),
     .auto_in_1_w_valid      (_aplic_ios_1_msi_valid),
-    .auto_in_1_w_bits_data  ({32'h0, _aplic_ios_1_msi_bits_data}),
-    .auto_in_1_w_bits_strb
-      ({_aplic_ios_1_msi_bits_addr[2] | domainToIMSICOut_w_bits_strb_sub_3_2_1
-          & _aplic_ios_1_msi_bits_addr[0],
-        _aplic_ios_1_msi_bits_addr[2] | domainToIMSICOut_w_bits_strb_sub_3_2_1
-          & ~(_aplic_ios_1_msi_bits_addr[0]),
-        _aplic_ios_1_msi_bits_addr[2] | domainToIMSICOut_w_bits_strb_sub_2_2_1
-          & _aplic_ios_1_msi_bits_addr[0],
-        _aplic_ios_1_msi_bits_addr[2] | domainToIMSICOut_w_bits_strb_sub_2_2_1
-          & ~(_aplic_ios_1_msi_bits_addr[0]),
-        ~(_aplic_ios_1_msi_bits_addr[2]) | domainToIMSICOut_w_bits_strb_sub_1_2_1
-          & _aplic_ios_1_msi_bits_addr[0],
-        ~(_aplic_ios_1_msi_bits_addr[2]) | domainToIMSICOut_w_bits_strb_sub_1_2_1
-          & ~(_aplic_ios_1_msi_bits_addr[0]),
-        ~(_aplic_ios_1_msi_bits_addr[2]) | domainToIMSICOut_w_bits_strb_sub_0_2_1
-          & _aplic_ios_1_msi_bits_addr[0],
-        ~(_aplic_ios_1_msi_bits_addr[2]) | domainToIMSICOut_w_bits_strb_sub_0_2_1
-          & ~(_aplic_ios_1_msi_bits_addr[0])}),
+    .auto_in_1_w_bits_data  (_aplic_ios_1_msi_bits_data),
     .auto_in_1_b_valid      (_toIMSIC_auto_in_1_b_valid),
-    .auto_in_0_aw_ready     (_toIMSIC_auto_in_0_aw_ready),
     .auto_in_0_aw_valid     (_aplic_ios_0_msi_valid),
     .auto_in_0_aw_bits_addr (_aplic_ios_0_msi_bits_addr[31:0]),
-    .auto_in_0_w_ready      (_toIMSIC_auto_in_0_w_ready),
     .auto_in_0_w_valid      (_aplic_ios_0_msi_valid),
-    .auto_in_0_w_bits_data  ({32'h0, _aplic_ios_0_msi_bits_data}),
-    .auto_in_0_w_bits_strb
-      ({_aplic_ios_0_msi_bits_addr[2] | domainToIMSICOut_w_bits_strb_sub_3_2
-          & _aplic_ios_0_msi_bits_addr[0],
-        _aplic_ios_0_msi_bits_addr[2] | domainToIMSICOut_w_bits_strb_sub_3_2
-          & ~(_aplic_ios_0_msi_bits_addr[0]),
-        _aplic_ios_0_msi_bits_addr[2] | domainToIMSICOut_w_bits_strb_sub_2_2
-          & _aplic_ios_0_msi_bits_addr[0],
-        _aplic_ios_0_msi_bits_addr[2] | domainToIMSICOut_w_bits_strb_sub_2_2
-          & ~(_aplic_ios_0_msi_bits_addr[0]),
-        ~(_aplic_ios_0_msi_bits_addr[2]) | domainToIMSICOut_w_bits_strb_sub_1_2
-          & _aplic_ios_0_msi_bits_addr[0],
-        ~(_aplic_ios_0_msi_bits_addr[2]) | domainToIMSICOut_w_bits_strb_sub_1_2
-          & ~(_aplic_ios_0_msi_bits_addr[0]),
-        ~(_aplic_ios_0_msi_bits_addr[2]) | domainToIMSICOut_w_bits_strb_sub_0_2
-          & _aplic_ios_0_msi_bits_addr[0],
-        ~(_aplic_ios_0_msi_bits_addr[2]) | domainToIMSICOut_w_bits_strb_sub_0_2
-          & ~(_aplic_ios_0_msi_bits_addr[0])}),
+    .auto_in_0_w_bits_data  (_aplic_ios_0_msi_bits_data),
     .auto_in_0_b_valid      (_toIMSIC_auto_in_0_b_valid),
-    .auto_out_aw_ready      (auto_toIMSIC_out_aw_ready),
     .auto_out_aw_valid      (auto_toIMSIC_out_aw_valid),
     .auto_out_aw_bits_id    (auto_toIMSIC_out_aw_bits_id),
     .auto_out_aw_bits_addr  (auto_toIMSIC_out_aw_bits_addr),
-    .auto_out_w_ready       (auto_toIMSIC_out_w_ready),
+    .auto_out_aw_bits_size  (auto_toIMSIC_out_aw_bits_size),
     .auto_out_w_valid       (auto_toIMSIC_out_w_valid),
     .auto_out_w_bits_data   (auto_toIMSIC_out_w_bits_data),
     .auto_out_w_bits_strb   (auto_toIMSIC_out_w_bits_strb),
@@ -450,7 +466,6 @@ module AXI4APLIC(
   APLIC aplic (
     .clock                     (clock),
     .reset                     (reset),
-    .ios_0_msi_ready           (_toIMSIC_auto_in_0_aw_ready & _toIMSIC_auto_in_0_w_ready),
     .ios_0_msi_valid           (_aplic_ios_0_msi_valid),
     .ios_0_msi_bits_addr       (_aplic_ios_0_msi_bits_addr),
     .ios_0_msi_bits_data       (_aplic_ios_0_msi_bits_data),
@@ -462,28 +477,27 @@ module AXI4APLIC(
     .ios_0_regmapIn_bits_read  (_fromCPU_auto_out_0_ar_valid),
     .ios_0_regmapIn_bits_index
       (_fromCPU_auto_out_0_ar_valid
-         ? _fromCPU_auto_out_0_ar_bits_addr[13:3]
-         : _fromCPU_auto_out_0_aw_bits_addr[13:3]),
-    .ios_0_regmapIn_bits_data  (_fromCPU_auto_out_0_w_bits_data),
+         ? domainFromCPUIn_ar_bits_addr[13:2]
+         : domainFromCPUIn_aw_bits_addr[13:2]),
+    .ios_0_regmapIn_bits_data  (domainFromCPUIn_w_bits_data),
     .ios_0_regmapIn_bits_mask
       (_fromCPU_auto_out_0_ar_valid
-         ? {mask_sub_3_1 | mask_sub_3_2 & _fromCPU_auto_out_0_ar_bits_addr[0],
-            mask_sub_3_1 | mask_sub_3_2 & ~(_fromCPU_auto_out_0_ar_bits_addr[0]),
-            mask_sub_2_1 | mask_sub_2_2 & _fromCPU_auto_out_0_ar_bits_addr[0],
-            mask_sub_2_1 | mask_sub_2_2 & ~(_fromCPU_auto_out_0_ar_bits_addr[0]),
-            mask_sub_1_1 | mask_sub_1_2 & _fromCPU_auto_out_0_ar_bits_addr[0],
-            mask_sub_1_1 | mask_sub_1_2 & ~(_fromCPU_auto_out_0_ar_bits_addr[0]),
-            mask_sub_0_1 | mask_sub_0_2 & _fromCPU_auto_out_0_ar_bits_addr[0],
-            mask_sub_0_1 | mask_sub_0_2 & ~(_fromCPU_auto_out_0_ar_bits_addr[0])}
-         : _fromCPU_auto_out_0_w_bits_strb),
+         ? {mask_sub_1_1 | domainFromCPUIn_ar_bits_addr[1]
+              & domainFromCPUIn_ar_bits_addr[0],
+            mask_sub_1_1 | domainFromCPUIn_ar_bits_addr[1]
+              & ~(domainFromCPUIn_ar_bits_addr[0]),
+            mask_sub_0_1 | ~(domainFromCPUIn_ar_bits_addr[1])
+              & domainFromCPUIn_ar_bits_addr[0],
+            mask_sub_0_1 | ~(domainFromCPUIn_ar_bits_addr[1])
+              & ~(domainFromCPUIn_ar_bits_addr[0])}
+         : domainFromCPUIn_w_bits_strb),
     .ios_0_regmapOut_ready
       (_aplic_ios_0_regmapOut_bits_read
          ? _fromCPU_auto_out_0_r_ready
          : _fromCPU_auto_out_0_b_ready),
     .ios_0_regmapOut_valid     (_aplic_ios_0_regmapOut_valid),
     .ios_0_regmapOut_bits_read (_aplic_ios_0_regmapOut_bits_read),
-    .ios_0_regmapOut_bits_data (_aplic_ios_0_regmapOut_bits_data),
-    .ios_1_msi_ready           (_toIMSIC_auto_in_1_aw_ready & _toIMSIC_auto_in_1_w_ready),
+    .ios_0_regmapOut_bits_data (domainFromCPUIn_r_bits_data),
     .ios_1_msi_valid           (_aplic_ios_1_msi_valid),
     .ios_1_msi_bits_addr       (_aplic_ios_1_msi_bits_addr),
     .ios_1_msi_bits_data       (_aplic_ios_1_msi_bits_data),
@@ -495,27 +509,27 @@ module AXI4APLIC(
     .ios_1_regmapIn_bits_read  (_fromCPU_auto_out_1_ar_valid),
     .ios_1_regmapIn_bits_index
       (_fromCPU_auto_out_1_ar_valid
-         ? _fromCPU_auto_out_1_ar_bits_addr[13:3]
-         : _fromCPU_auto_out_1_aw_bits_addr[13:3]),
-    .ios_1_regmapIn_bits_data  (_fromCPU_auto_out_1_w_bits_data),
+         ? domainFromCPUIn_1_ar_bits_addr[13:2]
+         : domainFromCPUIn_1_aw_bits_addr[13:2]),
+    .ios_1_regmapIn_bits_data  (domainFromCPUIn_1_w_bits_data),
     .ios_1_regmapIn_bits_mask
       (_fromCPU_auto_out_1_ar_valid
-         ? {mask_sub_3_1_1 | mask_sub_3_2_1 & _fromCPU_auto_out_1_ar_bits_addr[0],
-            mask_sub_3_1_1 | mask_sub_3_2_1 & ~(_fromCPU_auto_out_1_ar_bits_addr[0]),
-            mask_sub_2_1_1 | mask_sub_2_2_1 & _fromCPU_auto_out_1_ar_bits_addr[0],
-            mask_sub_2_1_1 | mask_sub_2_2_1 & ~(_fromCPU_auto_out_1_ar_bits_addr[0]),
-            mask_sub_1_1_1 | mask_sub_1_2_1 & _fromCPU_auto_out_1_ar_bits_addr[0],
-            mask_sub_1_1_1 | mask_sub_1_2_1 & ~(_fromCPU_auto_out_1_ar_bits_addr[0]),
-            mask_sub_0_1_1 | mask_sub_0_2_1 & _fromCPU_auto_out_1_ar_bits_addr[0],
-            mask_sub_0_1_1 | mask_sub_0_2_1 & ~(_fromCPU_auto_out_1_ar_bits_addr[0])}
-         : _fromCPU_auto_out_1_w_bits_strb),
+         ? {mask_sub_1_1_1 | domainFromCPUIn_1_ar_bits_addr[1]
+              & domainFromCPUIn_1_ar_bits_addr[0],
+            mask_sub_1_1_1 | domainFromCPUIn_1_ar_bits_addr[1]
+              & ~(domainFromCPUIn_1_ar_bits_addr[0]),
+            mask_sub_0_1_1 | ~(domainFromCPUIn_1_ar_bits_addr[1])
+              & domainFromCPUIn_1_ar_bits_addr[0],
+            mask_sub_0_1_1 | ~(domainFromCPUIn_1_ar_bits_addr[1])
+              & ~(domainFromCPUIn_1_ar_bits_addr[0])}
+         : domainFromCPUIn_1_w_bits_strb),
     .ios_1_regmapOut_ready
       (_aplic_ios_1_regmapOut_bits_read
          ? _fromCPU_auto_out_1_r_ready
          : _fromCPU_auto_out_1_b_ready),
     .ios_1_regmapOut_valid     (_aplic_ios_1_regmapOut_valid),
     .ios_1_regmapOut_bits_read (_aplic_ios_1_regmapOut_bits_read),
-    .ios_1_regmapOut_bits_data (_aplic_ios_1_regmapOut_bits_data),
+    .ios_1_regmapOut_bits_data (domainFromCPUIn_1_r_bits_data),
     .intSrcs_1                 (intSrcs_1),
     .intSrcs_2                 (intSrcs_2),
     .intSrcs_3                 (intSrcs_3),

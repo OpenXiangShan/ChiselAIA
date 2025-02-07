@@ -25,28 +25,23 @@ module RegGen(
   output        regmapIOs_0_1_ready,
   input         regmapIOs_0_1_valid,
   input         regmapIOs_0_1_bits_read,
-  input  [8:0]  regmapIOs_0_1_bits_index,
-  input  [63:0] regmapIOs_0_1_bits_data,
-  input  [7:0]  regmapIOs_0_1_bits_mask,
+  input  [9:0]  regmapIOs_0_1_bits_index,
+  input  [31:0] regmapIOs_0_1_bits_data,
+  input  [3:0]  regmapIOs_0_1_bits_mask,
   input         regmapIOs_0_2_ready,
   output        regmapIOs_0_2_valid,
   output        regmapIOs_0_2_bits_read,
   output        regmapIOs_1_1_ready,
   input         regmapIOs_1_1_valid,
   input         regmapIOs_1_1_bits_read,
-  input  [11:0] regmapIOs_1_1_bits_index,
-  input  [63:0] regmapIOs_1_1_bits_data,
-  input  [7:0]  regmapIOs_1_1_bits_mask,
+  input  [12:0] regmapIOs_1_1_bits_index,
+  input  [31:0] regmapIOs_1_1_bits_data,
+  input  [3:0]  regmapIOs_1_1_bits_mask,
   input         regmapIOs_1_2_ready,
   output        regmapIOs_1_2_valid,
   output        regmapIOs_1_2_bits_read,
-  output [7:0]  io_seteipnum,
-  output        io_valid_0,
-  output        io_valid_1,
-  output        io_valid_2,
-  output        io_valid_3,
-  output        io_valid_4,
-  output        io_valid_5
+  output [10:0] io_seteipnum,
+  output        io_valid
 );
 
   wire        _regmapIOs_1_2_wofireMux_T_2;
@@ -58,15 +53,15 @@ module RegGen(
   wire        _regmapIOs_0_2_wofireMux_T_1;
   wire        _regmapIOs_1_2_back_q_io_deq_valid;
   wire        _regmapIOs_1_2_back_q_io_deq_bits_read;
-  wire [11:0] _regmapIOs_1_2_back_q_io_deq_bits_index;
-  wire [63:0] _regmapIOs_1_2_back_q_io_deq_bits_data;
-  wire [7:0]  _regmapIOs_1_2_back_q_io_deq_bits_mask;
+  wire [12:0] _regmapIOs_1_2_back_q_io_deq_bits_index;
+  wire [31:0] _regmapIOs_1_2_back_q_io_deq_bits_data;
+  wire [3:0]  _regmapIOs_1_2_back_q_io_deq_bits_mask;
   wire        _regmapIOs_0_2_back_q_io_deq_valid;
   wire        _regmapIOs_0_2_back_q_io_deq_bits_read;
-  wire [8:0]  _regmapIOs_0_2_back_q_io_deq_bits_index;
-  wire [63:0] _regmapIOs_0_2_back_q_io_deq_bits_data;
-  wire [7:0]  _regmapIOs_0_2_back_q_io_deq_bits_mask;
-  reg  [7:0]  outseteipnum;
+  wire [9:0]  _regmapIOs_0_2_back_q_io_deq_bits_index;
+  wire [31:0] _regmapIOs_0_2_back_q_io_deq_bits_data;
+  wire [3:0]  _regmapIOs_0_2_back_q_io_deq_bits_mask;
+  reg  [10:0] outseteipnum;
   reg         outvalids_0;
   reg         outvalids_1;
   reg         outvalids_2;
@@ -75,7 +70,7 @@ module RegGen(
   reg         outvalids_5;
   wire        seteipnum_valid =
     _regmapIOs_0_2_back_q_io_deq_valid & regmapIOs_0_2_ready
-    & _regmapIOs_0_2_wofireMux_T_1 & _regmapIOs_0_2_back_q_io_deq_bits_index == 9'h0
+    & _regmapIOs_0_2_wofireMux_T_1 & _regmapIOs_0_2_back_q_io_deq_bits_index == 10'h0
     & (&{{8{_regmapIOs_0_2_back_q_io_deq_bits_mask[3]}},
          {8{_regmapIOs_0_2_back_q_io_deq_bits_mask[2]}},
          {8{_regmapIOs_0_2_back_q_io_deq_bits_mask[1]}},
@@ -83,48 +78,48 @@ module RegGen(
   wire [7:0]  seteipnum_bits =
     seteipnum_valid ? _regmapIOs_0_2_back_q_io_deq_bits_data[7:0] : 8'h0;
   assign _regmapIOs_0_2_wofireMux_T_1 = ~_regmapIOs_0_2_back_q_io_deq_bits_read;
-  wire        _regmapIOs_1_2_T_9 = _regmapIOs_1_2_back_q_io_deq_bits_index[8:0] == 9'h0;
-  wire [31:0] _regmapIOs_1_2_womask_T_4 =
+  wire        _regmapIOs_1_2_T_9 = _regmapIOs_1_2_back_q_io_deq_bits_index[9:0] == 10'h0;
+  wire [31:0] regmapIOs_1_2_backMask =
     {{8{_regmapIOs_1_2_back_q_io_deq_bits_mask[3]}},
      {8{_regmapIOs_1_2_back_q_io_deq_bits_mask[2]}},
      {8{_regmapIOs_1_2_back_q_io_deq_bits_mask[1]}},
      {8{_regmapIOs_1_2_back_q_io_deq_bits_mask[0]}}};
-  wire        seteipnum_2_valid =
-    _regmapIOs_1_2_wofireMux_T_2 & regmapIOs_1_2_backSel_1 & _regmapIOs_1_2_T_9
-    & (&_regmapIOs_1_2_womask_T_4);
-  wire [7:0]  seteipnum_2_bits =
-    seteipnum_2_valid ? _regmapIOs_1_2_back_q_io_deq_bits_data[7:0] : 8'h0;
-  wire        seteipnum_5_valid =
-    _regmapIOs_1_2_wofireMux_T_2 & regmapIOs_1_2_backSel_4 & _regmapIOs_1_2_T_9
-    & (&_regmapIOs_1_2_womask_T_4);
-  wire [7:0]  seteipnum_5_bits =
-    seteipnum_5_valid ? _regmapIOs_1_2_back_q_io_deq_bits_data[7:0] : 8'h0;
   wire        seteipnum_4_valid =
     _regmapIOs_1_2_wofireMux_T_2 & regmapIOs_1_2_backSel_3 & _regmapIOs_1_2_T_9
-    & (&_regmapIOs_1_2_womask_T_4);
+    & (&regmapIOs_1_2_backMask);
   wire [7:0]  seteipnum_4_bits =
     seteipnum_4_valid ? _regmapIOs_1_2_back_q_io_deq_bits_data[7:0] : 8'h0;
   wire        seteipnum_3_valid =
     _regmapIOs_1_2_wofireMux_T_2 & regmapIOs_1_2_backSel_2 & _regmapIOs_1_2_T_9
-    & (&_regmapIOs_1_2_womask_T_4);
+    & (&regmapIOs_1_2_backMask);
   wire [7:0]  seteipnum_3_bits =
     seteipnum_3_valid ? _regmapIOs_1_2_back_q_io_deq_bits_data[7:0] : 8'h0;
+  wire        seteipnum_5_valid =
+    _regmapIOs_1_2_wofireMux_T_2 & regmapIOs_1_2_backSel_4 & _regmapIOs_1_2_T_9
+    & (&regmapIOs_1_2_backMask);
+  wire [7:0]  seteipnum_5_bits =
+    seteipnum_5_valid ? _regmapIOs_1_2_back_q_io_deq_bits_data[7:0] : 8'h0;
+  wire        seteipnum_2_valid =
+    _regmapIOs_1_2_wofireMux_T_2 & regmapIOs_1_2_backSel_1 & _regmapIOs_1_2_T_9
+    & (&regmapIOs_1_2_backMask);
+  wire [7:0]  seteipnum_2_bits =
+    seteipnum_2_valid ? _regmapIOs_1_2_back_q_io_deq_bits_data[7:0] : 8'h0;
   wire        seteipnum_1_valid =
     _regmapIOs_1_2_wofireMux_T_2 & regmapIOs_1_2_backSel_0 & _regmapIOs_1_2_T_9
-    & (&_regmapIOs_1_2_womask_T_4);
+    & (&regmapIOs_1_2_backMask);
   wire [7:0]  seteipnum_1_bits =
     seteipnum_1_valid ? _regmapIOs_1_2_back_q_io_deq_bits_data[7:0] : 8'h0;
-  assign regmapIOs_1_2_backSel_0 = _regmapIOs_1_2_back_q_io_deq_bits_index[11:9] == 3'h0;
-  assign regmapIOs_1_2_backSel_1 = _regmapIOs_1_2_back_q_io_deq_bits_index[11:9] == 3'h1;
-  assign regmapIOs_1_2_backSel_2 = _regmapIOs_1_2_back_q_io_deq_bits_index[11:9] == 3'h2;
-  assign regmapIOs_1_2_backSel_3 = _regmapIOs_1_2_back_q_io_deq_bits_index[11:9] == 3'h3;
-  assign regmapIOs_1_2_backSel_4 = _regmapIOs_1_2_back_q_io_deq_bits_index[11:9] == 3'h4;
+  assign regmapIOs_1_2_backSel_0 = _regmapIOs_1_2_back_q_io_deq_bits_index[12:10] == 3'h0;
+  assign regmapIOs_1_2_backSel_1 = _regmapIOs_1_2_back_q_io_deq_bits_index[12:10] == 3'h1;
+  assign regmapIOs_1_2_backSel_2 = _regmapIOs_1_2_back_q_io_deq_bits_index[12:10] == 3'h2;
+  assign regmapIOs_1_2_backSel_3 = _regmapIOs_1_2_back_q_io_deq_bits_index[12:10] == 3'h3;
+  assign regmapIOs_1_2_backSel_4 = _regmapIOs_1_2_back_q_io_deq_bits_index[12:10] == 3'h4;
   assign _regmapIOs_1_2_wofireMux_T_2 =
     _regmapIOs_1_2_back_q_io_deq_valid & regmapIOs_1_2_ready
     & ~_regmapIOs_1_2_back_q_io_deq_bits_read;
   always @(posedge clock) begin
     if (reset) begin
-      outseteipnum <= 8'h0;
+      outseteipnum <= 11'h0;
       outvalids_0 <= 1'h0;
       outvalids_1 <= 1'h0;
       outvalids_2 <= 1'h0;
@@ -133,9 +128,18 @@ module RegGen(
       outvalids_5 <= 1'h0;
     end
     else begin
-      outseteipnum <=
-        seteipnum_bits | seteipnum_1_bits | seteipnum_2_bits | seteipnum_3_bits
-        | seteipnum_4_bits | seteipnum_5_bits;
+      if (seteipnum_5_valid)
+        outseteipnum <= {3'h5, seteipnum_5_bits};
+      else if (seteipnum_4_valid)
+        outseteipnum <= {3'h4, seteipnum_4_bits};
+      else if (seteipnum_3_valid)
+        outseteipnum <= {3'h3, seteipnum_3_bits};
+      else if (seteipnum_2_valid)
+        outseteipnum <= {3'h2, seteipnum_2_bits};
+      else if (seteipnum_1_valid)
+        outseteipnum <= {3'h1, seteipnum_1_bits};
+      else if (seteipnum_valid)
+        outseteipnum <= {3'h0, seteipnum_bits};
       outvalids_0 <= seteipnum_valid;
       outvalids_1 <= seteipnum_1_valid;
       outvalids_2 <= seteipnum_2_valid;
@@ -181,11 +185,7 @@ module RegGen(
   assign regmapIOs_1_2_valid = _regmapIOs_1_2_back_q_io_deq_valid;
   assign regmapIOs_1_2_bits_read = _regmapIOs_1_2_back_q_io_deq_bits_read;
   assign io_seteipnum = outseteipnum;
-  assign io_valid_0 = outvalids_0;
-  assign io_valid_1 = outvalids_1;
-  assign io_valid_2 = outvalids_2;
-  assign io_valid_3 = outvalids_3;
-  assign io_valid_4 = outvalids_4;
-  assign io_valid_5 = outvalids_5;
+  assign io_valid =
+    outvalids_0 | outvalids_1 | outvalids_2 | outvalids_3 | outvalids_4 | outvalids_5;
 endmodule
 

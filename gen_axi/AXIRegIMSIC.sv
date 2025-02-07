@@ -22,337 +22,550 @@
 module AXIRegIMSIC(
   input         clock,
   input         reset,
-  output        auto_axi4xbar_in_aw_ready,
   input         auto_axi4xbar_in_aw_valid,
   input  [5:0]  auto_axi4xbar_in_aw_bits_id,
   input  [16:0] auto_axi4xbar_in_aw_bits_addr,
-  output        auto_axi4xbar_in_w_ready,
+  input  [7:0]  auto_axi4xbar_in_aw_bits_len,
+  input  [2:0]  auto_axi4xbar_in_aw_bits_size,
+  input  [1:0]  auto_axi4xbar_in_aw_bits_burst,
+  input         auto_axi4xbar_in_aw_bits_lock,
+  input  [3:0]  auto_axi4xbar_in_aw_bits_cache,
+  input  [2:0]  auto_axi4xbar_in_aw_bits_prot,
+  input  [3:0]  auto_axi4xbar_in_aw_bits_qos,
   input         auto_axi4xbar_in_w_valid,
-  input  [63:0] auto_axi4xbar_in_w_bits_data,
-  input  [7:0]  auto_axi4xbar_in_w_bits_strb,
+  input  [31:0] auto_axi4xbar_in_w_bits_data,
+  input  [3:0]  auto_axi4xbar_in_w_bits_strb,
   input         auto_axi4xbar_in_w_bits_last,
   input         auto_axi4xbar_in_b_ready,
   output        auto_axi4xbar_in_b_valid,
   output [5:0]  auto_axi4xbar_in_b_bits_id,
+  output [1:0]  auto_axi4xbar_in_b_bits_resp,
   output        auto_axi4xbar_in_ar_ready,
   input         auto_axi4xbar_in_ar_valid,
   input  [5:0]  auto_axi4xbar_in_ar_bits_id,
   input  [16:0] auto_axi4xbar_in_ar_bits_addr,
+  input  [7:0]  auto_axi4xbar_in_ar_bits_len,
   input  [2:0]  auto_axi4xbar_in_ar_bits_size,
+  input  [1:0]  auto_axi4xbar_in_ar_bits_burst,
+  input         auto_axi4xbar_in_ar_bits_lock,
+  input  [3:0]  auto_axi4xbar_in_ar_bits_cache,
+  input  [2:0]  auto_axi4xbar_in_ar_bits_prot,
+  input  [3:0]  auto_axi4xbar_in_ar_bits_qos,
   input         auto_axi4xbar_in_r_ready,
   output        auto_axi4xbar_in_r_valid,
   output [5:0]  auto_axi4xbar_in_r_bits_id,
+  output [31:0] auto_axi4xbar_in_r_bits_data,
+  output [1:0]  auto_axi4xbar_in_r_bits_resp,
   output        auto_axi4xbar_in_r_bits_last,
-  output [7:0]  io_seteipnum,
-  output        io_valid_0,
-  output        io_valid_1,
-  output        io_valid_2,
-  output        io_valid_3,
-  output        io_valid_4,
-  output        io_valid_5,
+  output [10:0] io_seteipnum,
   output        msiio_msi_vld_req,
   input         msiio_msi_vld_ack
 );
 
+  wire [3:0]  intfileFromMemIn_1_ar_bits_qos;
+  wire [2:0]  intfileFromMemIn_1_ar_bits_prot;
+  wire [3:0]  intfileFromMemIn_1_ar_bits_cache;
+  wire        intfileFromMemIn_1_ar_bits_lock;
+  wire [1:0]  intfileFromMemIn_1_ar_bits_burst;
+  wire [7:0]  intfileFromMemIn_1_ar_bits_len;
+  wire        intfileFromMemIn_1_w_bits_last;
+  wire [31:0] intfileFromMemIn_1_w_bits_data;
+  wire [3:0]  intfileFromMemIn_1_aw_bits_qos;
+  wire [2:0]  intfileFromMemIn_1_aw_bits_prot;
+  wire [3:0]  intfileFromMemIn_1_aw_bits_cache;
+  wire        intfileFromMemIn_1_aw_bits_lock;
+  wire [1:0]  intfileFromMemIn_1_aw_bits_burst;
+  wire [2:0]  intfileFromMemIn_1_aw_bits_size;
+  wire [7:0]  intfileFromMemIn_1_aw_bits_len;
+  wire [5:0]  intfileFromMemIn_1_aw_bits_id;
+  wire [3:0]  intfileFromMemIn_ar_bits_qos;
+  wire [2:0]  intfileFromMemIn_ar_bits_prot;
+  wire [3:0]  intfileFromMemIn_ar_bits_cache;
+  wire        intfileFromMemIn_ar_bits_lock;
+  wire [1:0]  intfileFromMemIn_ar_bits_burst;
+  wire [7:0]  intfileFromMemIn_ar_bits_len;
+  wire        intfileFromMemIn_w_bits_last;
+  wire [31:0] intfileFromMemIn_w_bits_data;
+  wire [3:0]  intfileFromMemIn_aw_bits_qos;
+  wire [2:0]  intfileFromMemIn_aw_bits_prot;
+  wire [3:0]  intfileFromMemIn_aw_bits_cache;
+  wire        intfileFromMemIn_aw_bits_lock;
+  wire [1:0]  intfileFromMemIn_aw_bits_burst;
+  wire [2:0]  intfileFromMemIn_aw_bits_size;
+  wire [7:0]  intfileFromMemIn_aw_bits_len;
+  wire [5:0]  intfileFromMemIn_aw_bits_id;
   reg         msi_vld_req;
   wire        _fifo_sync_io_enq_ready;
   wire        _fifo_sync_io_deq_valid;
-  wire [13:0] _fifo_sync_io_deq_bits;
+  wire [10:0] _fifo_sync_io_deq_bits;
   wire        _reggen_regmapIOs_0_1_ready;
   wire        _reggen_regmapIOs_0_2_valid;
   wire        _reggen_regmapIOs_0_2_bits_read;
   wire        _reggen_regmapIOs_1_1_ready;
   wire        _reggen_regmapIOs_1_2_valid;
   wire        _reggen_regmapIOs_1_2_bits_read;
-  wire [7:0]  _reggen_io_seteipnum;
-  wire        _reggen_io_valid_0;
-  wire        _reggen_io_valid_1;
-  wire        _reggen_io_valid_2;
-  wire        _reggen_io_valid_3;
-  wire        _reggen_io_valid_4;
-  wire        _reggen_io_valid_5;
+  wire [10:0] _reggen_io_seteipnum;
+  wire        _reggen_io_valid;
+  wire        _axi4tolite_1_auto_in_b_valid;
+  wire [5:0]  _axi4tolite_1_auto_in_b_bits_id;
+  wire [1:0]  _axi4tolite_1_auto_in_b_bits_resp;
+  wire        _axi4tolite_1_auto_in_ar_ready;
+  wire        _axi4tolite_1_auto_in_r_valid;
+  wire [5:0]  _axi4tolite_1_auto_in_r_bits_id;
+  wire [31:0] _axi4tolite_1_auto_in_r_bits_data;
+  wire [1:0]  _axi4tolite_1_auto_in_r_bits_resp;
+  wire        _axi4tolite_1_auto_in_r_bits_last;
+  wire        _axi4tolite_1_auto_out_b_ready;
+  wire        _axi4tolite_1_auto_out_ar_valid;
+  wire        _axi4tolite_1_auto_out_r_ready;
+  wire        _axi4tolite_auto_in_b_valid;
+  wire [5:0]  _axi4tolite_auto_in_b_bits_id;
+  wire [1:0]  _axi4tolite_auto_in_b_bits_resp;
+  wire        _axi4tolite_auto_in_ar_ready;
+  wire        _axi4tolite_auto_in_r_valid;
+  wire [5:0]  _axi4tolite_auto_in_r_bits_id;
+  wire [31:0] _axi4tolite_auto_in_r_bits_data;
+  wire [1:0]  _axi4tolite_auto_in_r_bits_resp;
+  wire        _axi4tolite_auto_in_r_bits_last;
+  wire        _axi4tolite_auto_out_b_ready;
+  wire        _axi4tolite_auto_out_ar_valid;
+  wire        _axi4tolite_auto_out_r_ready;
   wire        _axi4xbar_auto_out_1_aw_valid;
   wire [5:0]  _axi4xbar_auto_out_1_aw_bits_id;
   wire [16:0] _axi4xbar_auto_out_1_aw_bits_addr;
+  wire [7:0]  _axi4xbar_auto_out_1_aw_bits_len;
+  wire [2:0]  _axi4xbar_auto_out_1_aw_bits_size;
+  wire [1:0]  _axi4xbar_auto_out_1_aw_bits_burst;
+  wire        _axi4xbar_auto_out_1_aw_bits_lock;
+  wire [3:0]  _axi4xbar_auto_out_1_aw_bits_cache;
+  wire [2:0]  _axi4xbar_auto_out_1_aw_bits_prot;
+  wire [3:0]  _axi4xbar_auto_out_1_aw_bits_qos;
   wire        _axi4xbar_auto_out_1_w_valid;
-  wire [63:0] _axi4xbar_auto_out_1_w_bits_data;
-  wire [7:0]  _axi4xbar_auto_out_1_w_bits_strb;
+  wire [31:0] _axi4xbar_auto_out_1_w_bits_data;
+  wire [3:0]  _axi4xbar_auto_out_1_w_bits_strb;
+  wire        _axi4xbar_auto_out_1_w_bits_last;
   wire        _axi4xbar_auto_out_1_b_ready;
   wire        _axi4xbar_auto_out_1_ar_valid;
   wire [5:0]  _axi4xbar_auto_out_1_ar_bits_id;
   wire [16:0] _axi4xbar_auto_out_1_ar_bits_addr;
+  wire [7:0]  _axi4xbar_auto_out_1_ar_bits_len;
   wire [2:0]  _axi4xbar_auto_out_1_ar_bits_size;
+  wire [1:0]  _axi4xbar_auto_out_1_ar_bits_burst;
+  wire        _axi4xbar_auto_out_1_ar_bits_lock;
+  wire [3:0]  _axi4xbar_auto_out_1_ar_bits_cache;
+  wire [2:0]  _axi4xbar_auto_out_1_ar_bits_prot;
+  wire [3:0]  _axi4xbar_auto_out_1_ar_bits_qos;
   wire        _axi4xbar_auto_out_1_r_ready;
   wire        _axi4xbar_auto_out_0_aw_valid;
   wire [5:0]  _axi4xbar_auto_out_0_aw_bits_id;
   wire [11:0] _axi4xbar_auto_out_0_aw_bits_addr;
+  wire [7:0]  _axi4xbar_auto_out_0_aw_bits_len;
+  wire [2:0]  _axi4xbar_auto_out_0_aw_bits_size;
+  wire [1:0]  _axi4xbar_auto_out_0_aw_bits_burst;
+  wire        _axi4xbar_auto_out_0_aw_bits_lock;
+  wire [3:0]  _axi4xbar_auto_out_0_aw_bits_cache;
+  wire [2:0]  _axi4xbar_auto_out_0_aw_bits_prot;
+  wire [3:0]  _axi4xbar_auto_out_0_aw_bits_qos;
   wire        _axi4xbar_auto_out_0_w_valid;
-  wire [63:0] _axi4xbar_auto_out_0_w_bits_data;
-  wire [7:0]  _axi4xbar_auto_out_0_w_bits_strb;
+  wire [31:0] _axi4xbar_auto_out_0_w_bits_data;
+  wire [3:0]  _axi4xbar_auto_out_0_w_bits_strb;
+  wire        _axi4xbar_auto_out_0_w_bits_last;
   wire        _axi4xbar_auto_out_0_b_ready;
   wire        _axi4xbar_auto_out_0_ar_valid;
   wire [5:0]  _axi4xbar_auto_out_0_ar_bits_id;
   wire [11:0] _axi4xbar_auto_out_0_ar_bits_addr;
+  wire [7:0]  _axi4xbar_auto_out_0_ar_bits_len;
   wire [2:0]  _axi4xbar_auto_out_0_ar_bits_size;
+  wire [1:0]  _axi4xbar_auto_out_0_ar_bits_burst;
+  wire        _axi4xbar_auto_out_0_ar_bits_lock;
+  wire [3:0]  _axi4xbar_auto_out_0_ar_bits_cache;
+  wire [2:0]  _axi4xbar_auto_out_0_ar_bits_prot;
+  wire [3:0]  _axi4xbar_auto_out_0_ar_bits_qos;
   wire        _axi4xbar_auto_out_0_r_ready;
+  wire [1:0]  intfileFromMemIn_b_bits_resp = 2'h0;
+  wire [1:0]  intfileFromMemIn_r_bits_resp = 2'h0;
+  wire [1:0]  intfileFromMemIn_1_b_bits_resp = 2'h0;
+  wire [1:0]  intfileFromMemIn_1_r_bits_resp = 2'h0;
+  wire        intfileFromMemIn_r_bits_last = 1'h1;
+  wire        intfileFromMemIn_1_r_bits_last = 1'h1;
+  wire [5:0]  intfileFromMemIn_b_bits_id = 6'h0;
+  wire [5:0]  intfileFromMemIn_1_b_bits_id = 6'h0;
+  wire [31:0] intfileFromMemIn_r_bits_data = 32'h0;
+  wire [31:0] intfileFromMemIn_1_r_bits_data = 32'h0;
   reg         msi_vld_ack_soc_1f;
-  reg         rvalids_tovec_0;
-  reg         rvalids_tovec_1;
-  reg         rvalids_tovec_2;
-  reg         rvalids_tovec_3;
-  reg         rvalids_tovec_4;
-  reg         rvalids_tovec_5;
-  reg  [7:0]  msi_id_data;
-  wire        _intfileFromMemIn_w_ready_T =
-    _fifo_sync_io_enq_ready & _reggen_regmapIOs_0_1_ready;
+  reg  [10:0] msi_id_data;
   reg  [5:0]  arIdReg;
-  reg  [5:0]  awIdReg;
-  wire        mask_sub_sub_sub_0_1 = _axi4xbar_auto_out_0_ar_bits_size > 3'h2;
-  wire        mask_sub_sub_size = _axi4xbar_auto_out_0_ar_bits_size[1:0] == 2'h2;
-  wire        mask_sub_sub_0_1 =
-    mask_sub_sub_sub_0_1 | mask_sub_sub_size & ~(_axi4xbar_auto_out_0_ar_bits_addr[2]);
-  wire        mask_sub_sub_1_1 =
-    mask_sub_sub_sub_0_1 | mask_sub_sub_size & _axi4xbar_auto_out_0_ar_bits_addr[2];
-  wire        mask_sub_size = _axi4xbar_auto_out_0_ar_bits_size[1:0] == 2'h1;
-  wire        mask_sub_0_2 =
-    ~(_axi4xbar_auto_out_0_ar_bits_addr[2]) & ~(_axi4xbar_auto_out_0_ar_bits_addr[1]);
-  wire        mask_sub_0_1 = mask_sub_sub_0_1 | mask_sub_size & mask_sub_0_2;
-  wire        mask_sub_1_2 =
-    ~(_axi4xbar_auto_out_0_ar_bits_addr[2]) & _axi4xbar_auto_out_0_ar_bits_addr[1];
-  wire        mask_sub_1_1 = mask_sub_sub_0_1 | mask_sub_size & mask_sub_1_2;
-  wire        mask_sub_2_2 =
-    _axi4xbar_auto_out_0_ar_bits_addr[2] & ~(_axi4xbar_auto_out_0_ar_bits_addr[1]);
-  wire        mask_sub_2_1 = mask_sub_sub_1_1 | mask_sub_size & mask_sub_2_2;
-  wire        mask_sub_3_2 =
-    _axi4xbar_auto_out_0_ar_bits_addr[2] & _axi4xbar_auto_out_0_ar_bits_addr[1];
-  wire        mask_sub_3_1 = mask_sub_sub_1_1 | mask_sub_size & mask_sub_3_2;
-  wire        _intfileFromMemIn_w_ready_T_3 =
-    _fifo_sync_io_enq_ready & _reggen_regmapIOs_1_1_ready;
+  wire [11:0] intfileFromMemIn_ar_bits_addr;
+  wire [5:0]  intfileFromMemIn_r_bits_id = arIdReg;
+  wire [11:0] intfileFromMemIn_aw_bits_addr;
+  wire [2:0]  intfileFromMemIn_ar_bits_size;
+  wire        mask_sub_0_1 =
+    (|(intfileFromMemIn_ar_bits_size[2:1])) | intfileFromMemIn_ar_bits_size[0]
+    & ~(intfileFromMemIn_ar_bits_addr[1]);
+  wire        mask_sub_1_1 =
+    (|(intfileFromMemIn_ar_bits_size[2:1])) | intfileFromMemIn_ar_bits_size[0]
+    & intfileFromMemIn_ar_bits_addr[1];
+  wire [3:0]  intfileFromMemIn_w_bits_strb;
   reg  [5:0]  arIdReg_1;
-  reg  [5:0]  awIdReg_1;
-  wire        mask_sub_sub_sub_0_1_1 = _axi4xbar_auto_out_1_ar_bits_size > 3'h2;
-  wire        mask_sub_sub_size_1 = _axi4xbar_auto_out_1_ar_bits_size[1:0] == 2'h2;
-  wire        mask_sub_sub_0_1_1 =
-    mask_sub_sub_sub_0_1_1 | mask_sub_sub_size_1
-    & ~(_axi4xbar_auto_out_1_ar_bits_addr[2]);
-  wire        mask_sub_sub_1_1_1 =
-    mask_sub_sub_sub_0_1_1 | mask_sub_sub_size_1 & _axi4xbar_auto_out_1_ar_bits_addr[2];
-  wire        mask_sub_size_1 = _axi4xbar_auto_out_1_ar_bits_size[1:0] == 2'h1;
-  wire        mask_sub_0_2_1 =
-    ~(_axi4xbar_auto_out_1_ar_bits_addr[2]) & ~(_axi4xbar_auto_out_1_ar_bits_addr[1]);
-  wire        mask_sub_0_1_1 = mask_sub_sub_0_1_1 | mask_sub_size_1 & mask_sub_0_2_1;
-  wire        mask_sub_1_2_1 =
-    ~(_axi4xbar_auto_out_1_ar_bits_addr[2]) & _axi4xbar_auto_out_1_ar_bits_addr[1];
-  wire        mask_sub_1_1_1 = mask_sub_sub_0_1_1 | mask_sub_size_1 & mask_sub_1_2_1;
-  wire        mask_sub_2_2_1 =
-    _axi4xbar_auto_out_1_ar_bits_addr[2] & ~(_axi4xbar_auto_out_1_ar_bits_addr[1]);
-  wire        mask_sub_2_1_1 = mask_sub_sub_1_1_1 | mask_sub_size_1 & mask_sub_2_2_1;
-  wire        mask_sub_3_2_1 =
-    _axi4xbar_auto_out_1_ar_bits_addr[2] & _axi4xbar_auto_out_1_ar_bits_addr[1];
-  wire        mask_sub_3_1_1 = mask_sub_sub_1_1_1 | mask_sub_size_1 & mask_sub_3_2_1;
-  wire        rdata_vld = ~msi_vld_req & _fifo_sync_io_deq_valid;
+  wire [16:0] intfileFromMemIn_1_ar_bits_addr;
+  wire [5:0]  intfileFromMemIn_1_r_bits_id = arIdReg_1;
+  wire [16:0] intfileFromMemIn_1_aw_bits_addr;
+  wire [2:0]  intfileFromMemIn_1_ar_bits_size;
+  wire        mask_sub_0_1_1 =
+    (|(intfileFromMemIn_1_ar_bits_size[2:1])) | intfileFromMemIn_1_ar_bits_size[0]
+    & ~(intfileFromMemIn_1_ar_bits_addr[1]);
+  wire        mask_sub_1_1_1 =
+    (|(intfileFromMemIn_1_ar_bits_size[2:1])) | intfileFromMemIn_1_ar_bits_size[0]
+    & intfileFromMemIn_1_ar_bits_addr[1];
+  wire [3:0]  intfileFromMemIn_1_w_bits_strb;
+  wire [5:0]  intfileFromMemIn_ar_bits_id;
+  wire [5:0]  intfileFromMemIn_1_ar_bits_id;
   always @(posedge clock) begin
     if (reset) begin
       msi_vld_req <= 1'h0;
-      rvalids_tovec_0 <= 1'h0;
-      rvalids_tovec_1 <= 1'h0;
-      rvalids_tovec_2 <= 1'h0;
-      rvalids_tovec_3 <= 1'h0;
-      rvalids_tovec_4 <= 1'h0;
-      rvalids_tovec_5 <= 1'h0;
-      msi_id_data <= 8'h0;
+      msi_id_data <= 11'h0;
       arIdReg <= 6'h0;
-      awIdReg <= 6'h0;
       arIdReg_1 <= 6'h0;
-      awIdReg_1 <= 6'h0;
     end
     else begin
       msi_vld_req <=
         _fifo_sync_io_deq_valid | ~(msiio_msi_vld_ack & ~msi_vld_ack_soc_1f)
         & msi_vld_req;
-      rvalids_tovec_0 <= rdata_vld & _fifo_sync_io_deq_bits[8];
-      rvalids_tovec_1 <= rdata_vld & _fifo_sync_io_deq_bits[9];
-      rvalids_tovec_2 <= rdata_vld & _fifo_sync_io_deq_bits[10];
-      rvalids_tovec_3 <= rdata_vld & _fifo_sync_io_deq_bits[11];
-      rvalids_tovec_4 <= rdata_vld & _fifo_sync_io_deq_bits[12];
-      rvalids_tovec_5 <= rdata_vld & _fifo_sync_io_deq_bits[13];
-      if (rdata_vld)
-        msi_id_data <= _fifo_sync_io_deq_bits[7:0];
-      if (_axi4xbar_auto_out_0_ar_valid)
-        arIdReg <= _axi4xbar_auto_out_0_ar_bits_id;
-      if (_axi4xbar_auto_out_0_aw_valid)
-        awIdReg <= _axi4xbar_auto_out_0_aw_bits_id;
-      if (_axi4xbar_auto_out_1_ar_valid)
-        arIdReg_1 <= _axi4xbar_auto_out_1_ar_bits_id;
-      if (_axi4xbar_auto_out_1_aw_valid)
-        awIdReg_1 <= _axi4xbar_auto_out_1_aw_bits_id;
+      if (~msi_vld_req & _fifo_sync_io_deq_valid)
+        msi_id_data <= _fifo_sync_io_deq_bits;
+      if (_axi4tolite_auto_out_ar_valid)
+        arIdReg <= intfileFromMemIn_ar_bits_id;
+      if (_axi4tolite_1_auto_out_ar_valid)
+        arIdReg_1 <= intfileFromMemIn_1_ar_bits_id;
     end
     msi_vld_ack_soc_1f <= msiio_msi_vld_ack;
   end // always @(posedge)
   AXI4Xbar_2 axi4xbar (
-    .clock                   (clock),
-    .reset                   (reset),
-    .auto_in_aw_ready        (auto_axi4xbar_in_aw_ready),
-    .auto_in_aw_valid        (auto_axi4xbar_in_aw_valid),
-    .auto_in_aw_bits_id      (auto_axi4xbar_in_aw_bits_id),
-    .auto_in_aw_bits_addr    (auto_axi4xbar_in_aw_bits_addr),
-    .auto_in_w_ready         (auto_axi4xbar_in_w_ready),
-    .auto_in_w_valid         (auto_axi4xbar_in_w_valid),
-    .auto_in_w_bits_data     (auto_axi4xbar_in_w_bits_data),
-    .auto_in_w_bits_strb     (auto_axi4xbar_in_w_bits_strb),
-    .auto_in_w_bits_last     (auto_axi4xbar_in_w_bits_last),
-    .auto_in_b_ready         (auto_axi4xbar_in_b_ready),
-    .auto_in_b_valid         (auto_axi4xbar_in_b_valid),
-    .auto_in_b_bits_id       (auto_axi4xbar_in_b_bits_id),
-    .auto_in_ar_ready        (auto_axi4xbar_in_ar_ready),
-    .auto_in_ar_valid        (auto_axi4xbar_in_ar_valid),
-    .auto_in_ar_bits_id      (auto_axi4xbar_in_ar_bits_id),
-    .auto_in_ar_bits_addr    (auto_axi4xbar_in_ar_bits_addr),
-    .auto_in_ar_bits_size    (auto_axi4xbar_in_ar_bits_size),
-    .auto_in_r_ready         (auto_axi4xbar_in_r_ready),
-    .auto_in_r_valid         (auto_axi4xbar_in_r_valid),
-    .auto_in_r_bits_id       (auto_axi4xbar_in_r_bits_id),
-    .auto_in_r_bits_last     (auto_axi4xbar_in_r_bits_last),
-    .auto_out_1_aw_ready
-      (_intfileFromMemIn_w_ready_T_3 & ~_axi4xbar_auto_out_1_ar_valid),
-    .auto_out_1_aw_valid     (_axi4xbar_auto_out_1_aw_valid),
-    .auto_out_1_aw_bits_id   (_axi4xbar_auto_out_1_aw_bits_id),
-    .auto_out_1_aw_bits_addr (_axi4xbar_auto_out_1_aw_bits_addr),
-    .auto_out_1_w_ready
-      (_intfileFromMemIn_w_ready_T_3 & ~_axi4xbar_auto_out_1_ar_valid),
-    .auto_out_1_w_valid      (_axi4xbar_auto_out_1_w_valid),
-    .auto_out_1_w_bits_data  (_axi4xbar_auto_out_1_w_bits_data),
-    .auto_out_1_w_bits_strb  (_axi4xbar_auto_out_1_w_bits_strb),
-    .auto_out_1_b_ready      (_axi4xbar_auto_out_1_b_ready),
-    .auto_out_1_b_valid
-      (_fifo_sync_io_enq_ready & _reggen_regmapIOs_1_2_valid
-       & ~_reggen_regmapIOs_1_2_bits_read),
-    .auto_out_1_b_bits_id    (awIdReg_1),
-    .auto_out_1_ar_ready     (_reggen_regmapIOs_1_1_ready),
-    .auto_out_1_ar_valid     (_axi4xbar_auto_out_1_ar_valid),
-    .auto_out_1_ar_bits_id   (_axi4xbar_auto_out_1_ar_bits_id),
-    .auto_out_1_ar_bits_addr (_axi4xbar_auto_out_1_ar_bits_addr),
-    .auto_out_1_ar_bits_size (_axi4xbar_auto_out_1_ar_bits_size),
-    .auto_out_1_r_ready      (_axi4xbar_auto_out_1_r_ready),
-    .auto_out_1_r_valid
-      (_reggen_regmapIOs_1_2_valid & _reggen_regmapIOs_1_2_bits_read),
-    .auto_out_1_r_bits_id    (arIdReg_1),
-    .auto_out_0_aw_ready
-      (_intfileFromMemIn_w_ready_T & ~_axi4xbar_auto_out_0_ar_valid),
-    .auto_out_0_aw_valid     (_axi4xbar_auto_out_0_aw_valid),
-    .auto_out_0_aw_bits_id   (_axi4xbar_auto_out_0_aw_bits_id),
-    .auto_out_0_aw_bits_addr (_axi4xbar_auto_out_0_aw_bits_addr),
-    .auto_out_0_w_ready
-      (_intfileFromMemIn_w_ready_T & ~_axi4xbar_auto_out_0_ar_valid),
-    .auto_out_0_w_valid      (_axi4xbar_auto_out_0_w_valid),
-    .auto_out_0_w_bits_data  (_axi4xbar_auto_out_0_w_bits_data),
-    .auto_out_0_w_bits_strb  (_axi4xbar_auto_out_0_w_bits_strb),
-    .auto_out_0_b_ready      (_axi4xbar_auto_out_0_b_ready),
-    .auto_out_0_b_valid
-      (_fifo_sync_io_enq_ready & _reggen_regmapIOs_0_2_valid
-       & ~_reggen_regmapIOs_0_2_bits_read),
-    .auto_out_0_b_bits_id    (awIdReg),
-    .auto_out_0_ar_ready     (_reggen_regmapIOs_0_1_ready),
-    .auto_out_0_ar_valid     (_axi4xbar_auto_out_0_ar_valid),
-    .auto_out_0_ar_bits_id   (_axi4xbar_auto_out_0_ar_bits_id),
-    .auto_out_0_ar_bits_addr (_axi4xbar_auto_out_0_ar_bits_addr),
-    .auto_out_0_ar_bits_size (_axi4xbar_auto_out_0_ar_bits_size),
-    .auto_out_0_r_ready      (_axi4xbar_auto_out_0_r_ready),
-    .auto_out_0_r_valid
+    .clock                    (clock),
+    .reset                    (reset),
+    .auto_in_aw_valid         (auto_axi4xbar_in_aw_valid),
+    .auto_in_aw_bits_id       (auto_axi4xbar_in_aw_bits_id),
+    .auto_in_aw_bits_addr     (auto_axi4xbar_in_aw_bits_addr),
+    .auto_in_aw_bits_len      (auto_axi4xbar_in_aw_bits_len),
+    .auto_in_aw_bits_size     (auto_axi4xbar_in_aw_bits_size),
+    .auto_in_aw_bits_burst    (auto_axi4xbar_in_aw_bits_burst),
+    .auto_in_aw_bits_lock     (auto_axi4xbar_in_aw_bits_lock),
+    .auto_in_aw_bits_cache    (auto_axi4xbar_in_aw_bits_cache),
+    .auto_in_aw_bits_prot     (auto_axi4xbar_in_aw_bits_prot),
+    .auto_in_aw_bits_qos      (auto_axi4xbar_in_aw_bits_qos),
+    .auto_in_w_valid          (auto_axi4xbar_in_w_valid),
+    .auto_in_w_bits_data      (auto_axi4xbar_in_w_bits_data),
+    .auto_in_w_bits_strb      (auto_axi4xbar_in_w_bits_strb),
+    .auto_in_w_bits_last      (auto_axi4xbar_in_w_bits_last),
+    .auto_in_b_ready          (auto_axi4xbar_in_b_ready),
+    .auto_in_b_valid          (auto_axi4xbar_in_b_valid),
+    .auto_in_b_bits_id        (auto_axi4xbar_in_b_bits_id),
+    .auto_in_b_bits_resp      (auto_axi4xbar_in_b_bits_resp),
+    .auto_in_ar_ready         (auto_axi4xbar_in_ar_ready),
+    .auto_in_ar_valid         (auto_axi4xbar_in_ar_valid),
+    .auto_in_ar_bits_id       (auto_axi4xbar_in_ar_bits_id),
+    .auto_in_ar_bits_addr     (auto_axi4xbar_in_ar_bits_addr),
+    .auto_in_ar_bits_len      (auto_axi4xbar_in_ar_bits_len),
+    .auto_in_ar_bits_size     (auto_axi4xbar_in_ar_bits_size),
+    .auto_in_ar_bits_burst    (auto_axi4xbar_in_ar_bits_burst),
+    .auto_in_ar_bits_lock     (auto_axi4xbar_in_ar_bits_lock),
+    .auto_in_ar_bits_cache    (auto_axi4xbar_in_ar_bits_cache),
+    .auto_in_ar_bits_prot     (auto_axi4xbar_in_ar_bits_prot),
+    .auto_in_ar_bits_qos      (auto_axi4xbar_in_ar_bits_qos),
+    .auto_in_r_ready          (auto_axi4xbar_in_r_ready),
+    .auto_in_r_valid          (auto_axi4xbar_in_r_valid),
+    .auto_in_r_bits_id        (auto_axi4xbar_in_r_bits_id),
+    .auto_in_r_bits_data      (auto_axi4xbar_in_r_bits_data),
+    .auto_in_r_bits_resp      (auto_axi4xbar_in_r_bits_resp),
+    .auto_in_r_bits_last      (auto_axi4xbar_in_r_bits_last),
+    .auto_out_1_aw_valid      (_axi4xbar_auto_out_1_aw_valid),
+    .auto_out_1_aw_bits_id    (_axi4xbar_auto_out_1_aw_bits_id),
+    .auto_out_1_aw_bits_addr  (_axi4xbar_auto_out_1_aw_bits_addr),
+    .auto_out_1_aw_bits_len   (_axi4xbar_auto_out_1_aw_bits_len),
+    .auto_out_1_aw_bits_size  (_axi4xbar_auto_out_1_aw_bits_size),
+    .auto_out_1_aw_bits_burst (_axi4xbar_auto_out_1_aw_bits_burst),
+    .auto_out_1_aw_bits_lock  (_axi4xbar_auto_out_1_aw_bits_lock),
+    .auto_out_1_aw_bits_cache (_axi4xbar_auto_out_1_aw_bits_cache),
+    .auto_out_1_aw_bits_prot  (_axi4xbar_auto_out_1_aw_bits_prot),
+    .auto_out_1_aw_bits_qos   (_axi4xbar_auto_out_1_aw_bits_qos),
+    .auto_out_1_w_valid       (_axi4xbar_auto_out_1_w_valid),
+    .auto_out_1_w_bits_data   (_axi4xbar_auto_out_1_w_bits_data),
+    .auto_out_1_w_bits_strb   (_axi4xbar_auto_out_1_w_bits_strb),
+    .auto_out_1_w_bits_last   (_axi4xbar_auto_out_1_w_bits_last),
+    .auto_out_1_b_ready       (_axi4xbar_auto_out_1_b_ready),
+    .auto_out_1_b_valid       (_axi4tolite_1_auto_in_b_valid),
+    .auto_out_1_b_bits_id     (_axi4tolite_1_auto_in_b_bits_id),
+    .auto_out_1_b_bits_resp   (_axi4tolite_1_auto_in_b_bits_resp),
+    .auto_out_1_ar_ready      (_axi4tolite_1_auto_in_ar_ready),
+    .auto_out_1_ar_valid      (_axi4xbar_auto_out_1_ar_valid),
+    .auto_out_1_ar_bits_id    (_axi4xbar_auto_out_1_ar_bits_id),
+    .auto_out_1_ar_bits_addr  (_axi4xbar_auto_out_1_ar_bits_addr),
+    .auto_out_1_ar_bits_len   (_axi4xbar_auto_out_1_ar_bits_len),
+    .auto_out_1_ar_bits_size  (_axi4xbar_auto_out_1_ar_bits_size),
+    .auto_out_1_ar_bits_burst (_axi4xbar_auto_out_1_ar_bits_burst),
+    .auto_out_1_ar_bits_lock  (_axi4xbar_auto_out_1_ar_bits_lock),
+    .auto_out_1_ar_bits_cache (_axi4xbar_auto_out_1_ar_bits_cache),
+    .auto_out_1_ar_bits_prot  (_axi4xbar_auto_out_1_ar_bits_prot),
+    .auto_out_1_ar_bits_qos   (_axi4xbar_auto_out_1_ar_bits_qos),
+    .auto_out_1_r_ready       (_axi4xbar_auto_out_1_r_ready),
+    .auto_out_1_r_valid       (_axi4tolite_1_auto_in_r_valid),
+    .auto_out_1_r_bits_id     (_axi4tolite_1_auto_in_r_bits_id),
+    .auto_out_1_r_bits_data   (_axi4tolite_1_auto_in_r_bits_data),
+    .auto_out_1_r_bits_resp   (_axi4tolite_1_auto_in_r_bits_resp),
+    .auto_out_1_r_bits_last   (_axi4tolite_1_auto_in_r_bits_last),
+    .auto_out_0_aw_valid      (_axi4xbar_auto_out_0_aw_valid),
+    .auto_out_0_aw_bits_id    (_axi4xbar_auto_out_0_aw_bits_id),
+    .auto_out_0_aw_bits_addr  (_axi4xbar_auto_out_0_aw_bits_addr),
+    .auto_out_0_aw_bits_len   (_axi4xbar_auto_out_0_aw_bits_len),
+    .auto_out_0_aw_bits_size  (_axi4xbar_auto_out_0_aw_bits_size),
+    .auto_out_0_aw_bits_burst (_axi4xbar_auto_out_0_aw_bits_burst),
+    .auto_out_0_aw_bits_lock  (_axi4xbar_auto_out_0_aw_bits_lock),
+    .auto_out_0_aw_bits_cache (_axi4xbar_auto_out_0_aw_bits_cache),
+    .auto_out_0_aw_bits_prot  (_axi4xbar_auto_out_0_aw_bits_prot),
+    .auto_out_0_aw_bits_qos   (_axi4xbar_auto_out_0_aw_bits_qos),
+    .auto_out_0_w_valid       (_axi4xbar_auto_out_0_w_valid),
+    .auto_out_0_w_bits_data   (_axi4xbar_auto_out_0_w_bits_data),
+    .auto_out_0_w_bits_strb   (_axi4xbar_auto_out_0_w_bits_strb),
+    .auto_out_0_w_bits_last   (_axi4xbar_auto_out_0_w_bits_last),
+    .auto_out_0_b_ready       (_axi4xbar_auto_out_0_b_ready),
+    .auto_out_0_b_valid       (_axi4tolite_auto_in_b_valid),
+    .auto_out_0_b_bits_id     (_axi4tolite_auto_in_b_bits_id),
+    .auto_out_0_b_bits_resp   (_axi4tolite_auto_in_b_bits_resp),
+    .auto_out_0_ar_ready      (_axi4tolite_auto_in_ar_ready),
+    .auto_out_0_ar_valid      (_axi4xbar_auto_out_0_ar_valid),
+    .auto_out_0_ar_bits_id    (_axi4xbar_auto_out_0_ar_bits_id),
+    .auto_out_0_ar_bits_addr  (_axi4xbar_auto_out_0_ar_bits_addr),
+    .auto_out_0_ar_bits_len   (_axi4xbar_auto_out_0_ar_bits_len),
+    .auto_out_0_ar_bits_size  (_axi4xbar_auto_out_0_ar_bits_size),
+    .auto_out_0_ar_bits_burst (_axi4xbar_auto_out_0_ar_bits_burst),
+    .auto_out_0_ar_bits_lock  (_axi4xbar_auto_out_0_ar_bits_lock),
+    .auto_out_0_ar_bits_cache (_axi4xbar_auto_out_0_ar_bits_cache),
+    .auto_out_0_ar_bits_prot  (_axi4xbar_auto_out_0_ar_bits_prot),
+    .auto_out_0_ar_bits_qos   (_axi4xbar_auto_out_0_ar_bits_qos),
+    .auto_out_0_r_ready       (_axi4xbar_auto_out_0_r_ready),
+    .auto_out_0_r_valid       (_axi4tolite_auto_in_r_valid),
+    .auto_out_0_r_bits_id     (_axi4tolite_auto_in_r_bits_id),
+    .auto_out_0_r_bits_data   (_axi4tolite_auto_in_r_bits_data),
+    .auto_out_0_r_bits_resp   (_axi4tolite_auto_in_r_bits_resp),
+    .auto_out_0_r_bits_last   (_axi4tolite_auto_in_r_bits_last)
+  );
+  AXI4ToLite axi4tolite (
+    .clock                  (clock),
+    .reset                  (reset),
+    .auto_in_aw_valid       (_axi4xbar_auto_out_0_aw_valid),
+    .auto_in_aw_bits_id     (_axi4xbar_auto_out_0_aw_bits_id),
+    .auto_in_aw_bits_addr   (_axi4xbar_auto_out_0_aw_bits_addr),
+    .auto_in_aw_bits_len    (_axi4xbar_auto_out_0_aw_bits_len),
+    .auto_in_aw_bits_size   (_axi4xbar_auto_out_0_aw_bits_size),
+    .auto_in_aw_bits_burst  (_axi4xbar_auto_out_0_aw_bits_burst),
+    .auto_in_aw_bits_lock   (_axi4xbar_auto_out_0_aw_bits_lock),
+    .auto_in_aw_bits_cache  (_axi4xbar_auto_out_0_aw_bits_cache),
+    .auto_in_aw_bits_prot   (_axi4xbar_auto_out_0_aw_bits_prot),
+    .auto_in_aw_bits_qos    (_axi4xbar_auto_out_0_aw_bits_qos),
+    .auto_in_w_valid        (_axi4xbar_auto_out_0_w_valid),
+    .auto_in_w_bits_data    (_axi4xbar_auto_out_0_w_bits_data),
+    .auto_in_w_bits_strb    (_axi4xbar_auto_out_0_w_bits_strb),
+    .auto_in_w_bits_last    (_axi4xbar_auto_out_0_w_bits_last),
+    .auto_in_b_ready        (_axi4xbar_auto_out_0_b_ready),
+    .auto_in_b_valid        (_axi4tolite_auto_in_b_valid),
+    .auto_in_b_bits_id      (_axi4tolite_auto_in_b_bits_id),
+    .auto_in_b_bits_resp    (_axi4tolite_auto_in_b_bits_resp),
+    .auto_in_ar_ready       (_axi4tolite_auto_in_ar_ready),
+    .auto_in_ar_valid       (_axi4xbar_auto_out_0_ar_valid),
+    .auto_in_ar_bits_id     (_axi4xbar_auto_out_0_ar_bits_id),
+    .auto_in_ar_bits_addr   (_axi4xbar_auto_out_0_ar_bits_addr),
+    .auto_in_ar_bits_len    (_axi4xbar_auto_out_0_ar_bits_len),
+    .auto_in_ar_bits_size   (_axi4xbar_auto_out_0_ar_bits_size),
+    .auto_in_ar_bits_burst  (_axi4xbar_auto_out_0_ar_bits_burst),
+    .auto_in_ar_bits_lock   (_axi4xbar_auto_out_0_ar_bits_lock),
+    .auto_in_ar_bits_cache  (_axi4xbar_auto_out_0_ar_bits_cache),
+    .auto_in_ar_bits_prot   (_axi4xbar_auto_out_0_ar_bits_prot),
+    .auto_in_ar_bits_qos    (_axi4xbar_auto_out_0_ar_bits_qos),
+    .auto_in_r_ready        (_axi4xbar_auto_out_0_r_ready),
+    .auto_in_r_valid        (_axi4tolite_auto_in_r_valid),
+    .auto_in_r_bits_id      (_axi4tolite_auto_in_r_bits_id),
+    .auto_in_r_bits_data    (_axi4tolite_auto_in_r_bits_data),
+    .auto_in_r_bits_resp    (_axi4tolite_auto_in_r_bits_resp),
+    .auto_in_r_bits_last    (_axi4tolite_auto_in_r_bits_last),
+    .auto_out_aw_ready
+      (_fifo_sync_io_enq_ready & _reggen_regmapIOs_0_1_ready
+       & ~_axi4tolite_auto_out_ar_valid),
+    .auto_out_aw_bits_id    (intfileFromMemIn_aw_bits_id),
+    .auto_out_aw_bits_addr  (intfileFromMemIn_aw_bits_addr),
+    .auto_out_aw_bits_len   (intfileFromMemIn_aw_bits_len),
+    .auto_out_aw_bits_size  (intfileFromMemIn_aw_bits_size),
+    .auto_out_aw_bits_burst (intfileFromMemIn_aw_bits_burst),
+    .auto_out_aw_bits_lock  (intfileFromMemIn_aw_bits_lock),
+    .auto_out_aw_bits_cache (intfileFromMemIn_aw_bits_cache),
+    .auto_out_aw_bits_prot  (intfileFromMemIn_aw_bits_prot),
+    .auto_out_aw_bits_qos   (intfileFromMemIn_aw_bits_qos),
+    .auto_out_w_bits_data   (intfileFromMemIn_w_bits_data),
+    .auto_out_w_bits_strb   (intfileFromMemIn_w_bits_strb),
+    .auto_out_w_bits_last   (intfileFromMemIn_w_bits_last),
+    .auto_out_b_ready       (_axi4tolite_auto_out_b_ready),
+    .auto_out_b_bits_id     (intfileFromMemIn_b_bits_id),
+    .auto_out_b_bits_resp   (intfileFromMemIn_b_bits_resp),
+    .auto_out_ar_ready      (_reggen_regmapIOs_0_1_ready),
+    .auto_out_ar_valid      (_axi4tolite_auto_out_ar_valid),
+    .auto_out_ar_bits_id    (intfileFromMemIn_ar_bits_id),
+    .auto_out_ar_bits_addr  (intfileFromMemIn_ar_bits_addr),
+    .auto_out_ar_bits_len   (intfileFromMemIn_ar_bits_len),
+    .auto_out_ar_bits_size  (intfileFromMemIn_ar_bits_size),
+    .auto_out_ar_bits_burst (intfileFromMemIn_ar_bits_burst),
+    .auto_out_ar_bits_lock  (intfileFromMemIn_ar_bits_lock),
+    .auto_out_ar_bits_cache (intfileFromMemIn_ar_bits_cache),
+    .auto_out_ar_bits_prot  (intfileFromMemIn_ar_bits_prot),
+    .auto_out_ar_bits_qos   (intfileFromMemIn_ar_bits_qos),
+    .auto_out_r_ready       (_axi4tolite_auto_out_r_ready),
+    .auto_out_r_valid
       (_reggen_regmapIOs_0_2_valid & _reggen_regmapIOs_0_2_bits_read),
-    .auto_out_0_r_bits_id    (arIdReg)
+    .auto_out_r_bits_id     (intfileFromMemIn_r_bits_id),
+    .auto_out_r_bits_data   (intfileFromMemIn_r_bits_data),
+    .auto_out_r_bits_resp   (intfileFromMemIn_r_bits_resp),
+    .auto_out_r_bits_last   (intfileFromMemIn_r_bits_last)
+  );
+  AXI4ToLite_1 axi4tolite_1 (
+    .clock                  (clock),
+    .reset                  (reset),
+    .auto_in_aw_valid       (_axi4xbar_auto_out_1_aw_valid),
+    .auto_in_aw_bits_id     (_axi4xbar_auto_out_1_aw_bits_id),
+    .auto_in_aw_bits_addr   (_axi4xbar_auto_out_1_aw_bits_addr),
+    .auto_in_aw_bits_len    (_axi4xbar_auto_out_1_aw_bits_len),
+    .auto_in_aw_bits_size   (_axi4xbar_auto_out_1_aw_bits_size),
+    .auto_in_aw_bits_burst  (_axi4xbar_auto_out_1_aw_bits_burst),
+    .auto_in_aw_bits_lock   (_axi4xbar_auto_out_1_aw_bits_lock),
+    .auto_in_aw_bits_cache  (_axi4xbar_auto_out_1_aw_bits_cache),
+    .auto_in_aw_bits_prot   (_axi4xbar_auto_out_1_aw_bits_prot),
+    .auto_in_aw_bits_qos    (_axi4xbar_auto_out_1_aw_bits_qos),
+    .auto_in_w_valid        (_axi4xbar_auto_out_1_w_valid),
+    .auto_in_w_bits_data    (_axi4xbar_auto_out_1_w_bits_data),
+    .auto_in_w_bits_strb    (_axi4xbar_auto_out_1_w_bits_strb),
+    .auto_in_w_bits_last    (_axi4xbar_auto_out_1_w_bits_last),
+    .auto_in_b_ready        (_axi4xbar_auto_out_1_b_ready),
+    .auto_in_b_valid        (_axi4tolite_1_auto_in_b_valid),
+    .auto_in_b_bits_id      (_axi4tolite_1_auto_in_b_bits_id),
+    .auto_in_b_bits_resp    (_axi4tolite_1_auto_in_b_bits_resp),
+    .auto_in_ar_ready       (_axi4tolite_1_auto_in_ar_ready),
+    .auto_in_ar_valid       (_axi4xbar_auto_out_1_ar_valid),
+    .auto_in_ar_bits_id     (_axi4xbar_auto_out_1_ar_bits_id),
+    .auto_in_ar_bits_addr   (_axi4xbar_auto_out_1_ar_bits_addr),
+    .auto_in_ar_bits_len    (_axi4xbar_auto_out_1_ar_bits_len),
+    .auto_in_ar_bits_size   (_axi4xbar_auto_out_1_ar_bits_size),
+    .auto_in_ar_bits_burst  (_axi4xbar_auto_out_1_ar_bits_burst),
+    .auto_in_ar_bits_lock   (_axi4xbar_auto_out_1_ar_bits_lock),
+    .auto_in_ar_bits_cache  (_axi4xbar_auto_out_1_ar_bits_cache),
+    .auto_in_ar_bits_prot   (_axi4xbar_auto_out_1_ar_bits_prot),
+    .auto_in_ar_bits_qos    (_axi4xbar_auto_out_1_ar_bits_qos),
+    .auto_in_r_ready        (_axi4xbar_auto_out_1_r_ready),
+    .auto_in_r_valid        (_axi4tolite_1_auto_in_r_valid),
+    .auto_in_r_bits_id      (_axi4tolite_1_auto_in_r_bits_id),
+    .auto_in_r_bits_data    (_axi4tolite_1_auto_in_r_bits_data),
+    .auto_in_r_bits_resp    (_axi4tolite_1_auto_in_r_bits_resp),
+    .auto_in_r_bits_last    (_axi4tolite_1_auto_in_r_bits_last),
+    .auto_out_aw_ready
+      (_fifo_sync_io_enq_ready & _reggen_regmapIOs_1_1_ready
+       & ~_axi4tolite_1_auto_out_ar_valid),
+    .auto_out_aw_bits_id    (intfileFromMemIn_1_aw_bits_id),
+    .auto_out_aw_bits_addr  (intfileFromMemIn_1_aw_bits_addr),
+    .auto_out_aw_bits_len   (intfileFromMemIn_1_aw_bits_len),
+    .auto_out_aw_bits_size  (intfileFromMemIn_1_aw_bits_size),
+    .auto_out_aw_bits_burst (intfileFromMemIn_1_aw_bits_burst),
+    .auto_out_aw_bits_lock  (intfileFromMemIn_1_aw_bits_lock),
+    .auto_out_aw_bits_cache (intfileFromMemIn_1_aw_bits_cache),
+    .auto_out_aw_bits_prot  (intfileFromMemIn_1_aw_bits_prot),
+    .auto_out_aw_bits_qos   (intfileFromMemIn_1_aw_bits_qos),
+    .auto_out_w_bits_data   (intfileFromMemIn_1_w_bits_data),
+    .auto_out_w_bits_strb   (intfileFromMemIn_1_w_bits_strb),
+    .auto_out_w_bits_last   (intfileFromMemIn_1_w_bits_last),
+    .auto_out_b_ready       (_axi4tolite_1_auto_out_b_ready),
+    .auto_out_b_bits_id     (intfileFromMemIn_1_b_bits_id),
+    .auto_out_b_bits_resp   (intfileFromMemIn_1_b_bits_resp),
+    .auto_out_ar_ready      (_reggen_regmapIOs_1_1_ready),
+    .auto_out_ar_valid      (_axi4tolite_1_auto_out_ar_valid),
+    .auto_out_ar_bits_id    (intfileFromMemIn_1_ar_bits_id),
+    .auto_out_ar_bits_addr  (intfileFromMemIn_1_ar_bits_addr),
+    .auto_out_ar_bits_len   (intfileFromMemIn_1_ar_bits_len),
+    .auto_out_ar_bits_size  (intfileFromMemIn_1_ar_bits_size),
+    .auto_out_ar_bits_burst (intfileFromMemIn_1_ar_bits_burst),
+    .auto_out_ar_bits_lock  (intfileFromMemIn_1_ar_bits_lock),
+    .auto_out_ar_bits_cache (intfileFromMemIn_1_ar_bits_cache),
+    .auto_out_ar_bits_prot  (intfileFromMemIn_1_ar_bits_prot),
+    .auto_out_ar_bits_qos   (intfileFromMemIn_1_ar_bits_qos),
+    .auto_out_r_ready       (_axi4tolite_1_auto_out_r_ready),
+    .auto_out_r_valid
+      (_reggen_regmapIOs_1_2_valid & _reggen_regmapIOs_1_2_bits_read),
+    .auto_out_r_bits_id     (intfileFromMemIn_1_r_bits_id),
+    .auto_out_r_bits_data   (intfileFromMemIn_1_r_bits_data),
+    .auto_out_r_bits_resp   (intfileFromMemIn_1_r_bits_resp),
+    .auto_out_r_bits_last   (intfileFromMemIn_1_r_bits_last)
   );
   RegGen reggen (
     .clock                    (clock),
     .reset                    (reset),
     .regmapIOs_0_1_ready      (_reggen_regmapIOs_0_1_ready),
-    .regmapIOs_0_1_valid
-      (_axi4xbar_auto_out_0_ar_valid | _axi4xbar_auto_out_0_aw_valid
-       & _axi4xbar_auto_out_0_w_valid),
-    .regmapIOs_0_1_bits_read  (_axi4xbar_auto_out_0_ar_valid),
+    .regmapIOs_0_1_valid      (_axi4tolite_auto_out_ar_valid),
+    .regmapIOs_0_1_bits_read  (_axi4tolite_auto_out_ar_valid),
     .regmapIOs_0_1_bits_index
-      (_axi4xbar_auto_out_0_ar_valid
-         ? _axi4xbar_auto_out_0_ar_bits_addr[11:3]
-         : _axi4xbar_auto_out_0_aw_bits_addr[11:3]),
-    .regmapIOs_0_1_bits_data  (_axi4xbar_auto_out_0_w_bits_data),
+      (_axi4tolite_auto_out_ar_valid
+         ? intfileFromMemIn_ar_bits_addr[11:2]
+         : intfileFromMemIn_aw_bits_addr[11:2]),
+    .regmapIOs_0_1_bits_data  (intfileFromMemIn_w_bits_data),
     .regmapIOs_0_1_bits_mask
-      (_axi4xbar_auto_out_0_ar_valid
-         ? {mask_sub_3_1 | mask_sub_3_2 & _axi4xbar_auto_out_0_ar_bits_addr[0],
-            mask_sub_3_1 | mask_sub_3_2 & ~(_axi4xbar_auto_out_0_ar_bits_addr[0]),
-            mask_sub_2_1 | mask_sub_2_2 & _axi4xbar_auto_out_0_ar_bits_addr[0],
-            mask_sub_2_1 | mask_sub_2_2 & ~(_axi4xbar_auto_out_0_ar_bits_addr[0]),
-            mask_sub_1_1 | mask_sub_1_2 & _axi4xbar_auto_out_0_ar_bits_addr[0],
-            mask_sub_1_1 | mask_sub_1_2 & ~(_axi4xbar_auto_out_0_ar_bits_addr[0]),
-            mask_sub_0_1 | mask_sub_0_2 & _axi4xbar_auto_out_0_ar_bits_addr[0],
-            mask_sub_0_1 | mask_sub_0_2 & ~(_axi4xbar_auto_out_0_ar_bits_addr[0])}
-         : _axi4xbar_auto_out_0_w_bits_strb),
+      (_axi4tolite_auto_out_ar_valid
+         ? {mask_sub_1_1 | intfileFromMemIn_ar_bits_addr[1]
+              & intfileFromMemIn_ar_bits_addr[0],
+            mask_sub_1_1 | intfileFromMemIn_ar_bits_addr[1]
+              & ~(intfileFromMemIn_ar_bits_addr[0]),
+            mask_sub_0_1 | ~(intfileFromMemIn_ar_bits_addr[1])
+              & intfileFromMemIn_ar_bits_addr[0],
+            mask_sub_0_1 | ~(intfileFromMemIn_ar_bits_addr[1])
+              & ~(intfileFromMemIn_ar_bits_addr[0])}
+         : intfileFromMemIn_w_bits_strb),
     .regmapIOs_0_2_ready
       (_reggen_regmapIOs_0_2_bits_read
-         ? _axi4xbar_auto_out_0_r_ready
-         : _axi4xbar_auto_out_0_b_ready),
+         ? _axi4tolite_auto_out_r_ready
+         : _axi4tolite_auto_out_b_ready),
     .regmapIOs_0_2_valid      (_reggen_regmapIOs_0_2_valid),
     .regmapIOs_0_2_bits_read  (_reggen_regmapIOs_0_2_bits_read),
     .regmapIOs_1_1_ready      (_reggen_regmapIOs_1_1_ready),
-    .regmapIOs_1_1_valid
-      (_axi4xbar_auto_out_1_ar_valid | _axi4xbar_auto_out_1_aw_valid
-       & _axi4xbar_auto_out_1_w_valid),
-    .regmapIOs_1_1_bits_read  (_axi4xbar_auto_out_1_ar_valid),
+    .regmapIOs_1_1_valid      (_axi4tolite_1_auto_out_ar_valid),
+    .regmapIOs_1_1_bits_read  (_axi4tolite_1_auto_out_ar_valid),
     .regmapIOs_1_1_bits_index
-      (_axi4xbar_auto_out_1_ar_valid
-         ? _axi4xbar_auto_out_1_ar_bits_addr[14:3]
-         : _axi4xbar_auto_out_1_aw_bits_addr[14:3]),
-    .regmapIOs_1_1_bits_data  (_axi4xbar_auto_out_1_w_bits_data),
+      (_axi4tolite_1_auto_out_ar_valid
+         ? intfileFromMemIn_1_ar_bits_addr[14:2]
+         : intfileFromMemIn_1_aw_bits_addr[14:2]),
+    .regmapIOs_1_1_bits_data  (intfileFromMemIn_1_w_bits_data),
     .regmapIOs_1_1_bits_mask
-      (_axi4xbar_auto_out_1_ar_valid
-         ? {mask_sub_3_1_1 | mask_sub_3_2_1 & _axi4xbar_auto_out_1_ar_bits_addr[0],
-            mask_sub_3_1_1 | mask_sub_3_2_1 & ~(_axi4xbar_auto_out_1_ar_bits_addr[0]),
-            mask_sub_2_1_1 | mask_sub_2_2_1 & _axi4xbar_auto_out_1_ar_bits_addr[0],
-            mask_sub_2_1_1 | mask_sub_2_2_1 & ~(_axi4xbar_auto_out_1_ar_bits_addr[0]),
-            mask_sub_1_1_1 | mask_sub_1_2_1 & _axi4xbar_auto_out_1_ar_bits_addr[0],
-            mask_sub_1_1_1 | mask_sub_1_2_1 & ~(_axi4xbar_auto_out_1_ar_bits_addr[0]),
-            mask_sub_0_1_1 | mask_sub_0_2_1 & _axi4xbar_auto_out_1_ar_bits_addr[0],
-            mask_sub_0_1_1 | mask_sub_0_2_1 & ~(_axi4xbar_auto_out_1_ar_bits_addr[0])}
-         : _axi4xbar_auto_out_1_w_bits_strb),
+      (_axi4tolite_1_auto_out_ar_valid
+         ? {mask_sub_1_1_1 | intfileFromMemIn_1_ar_bits_addr[1]
+              & intfileFromMemIn_1_ar_bits_addr[0],
+            mask_sub_1_1_1 | intfileFromMemIn_1_ar_bits_addr[1]
+              & ~(intfileFromMemIn_1_ar_bits_addr[0]),
+            mask_sub_0_1_1 | ~(intfileFromMemIn_1_ar_bits_addr[1])
+              & intfileFromMemIn_1_ar_bits_addr[0],
+            mask_sub_0_1_1 | ~(intfileFromMemIn_1_ar_bits_addr[1])
+              & ~(intfileFromMemIn_1_ar_bits_addr[0])}
+         : intfileFromMemIn_1_w_bits_strb),
     .regmapIOs_1_2_ready
       (_reggen_regmapIOs_1_2_bits_read
-         ? _axi4xbar_auto_out_1_r_ready
-         : _axi4xbar_auto_out_1_b_ready),
+         ? _axi4tolite_1_auto_out_r_ready
+         : _axi4tolite_1_auto_out_b_ready),
     .regmapIOs_1_2_valid      (_reggen_regmapIOs_1_2_valid),
     .regmapIOs_1_2_bits_read  (_reggen_regmapIOs_1_2_bits_read),
     .io_seteipnum             (_reggen_io_seteipnum),
-    .io_valid_0               (_reggen_io_valid_0),
-    .io_valid_1               (_reggen_io_valid_1),
-    .io_valid_2               (_reggen_io_valid_2),
-    .io_valid_3               (_reggen_io_valid_3),
-    .io_valid_4               (_reggen_io_valid_4),
-    .io_valid_5               (_reggen_io_valid_5)
+    .io_valid                 (_reggen_io_valid)
   );
-  Queue8_UInt14 fifo_sync (
+  Queue8_UInt11 fifo_sync (
     .clock        (clock),
     .reset        (reset),
     .io_enq_ready (_fifo_sync_io_enq_ready),
-    .io_enq_valid
-      (_reggen_io_valid_0 | _reggen_io_valid_1 | _reggen_io_valid_2 | _reggen_io_valid_3
-       | _reggen_io_valid_4 | _reggen_io_valid_5),
-    .io_enq_bits
-      ({_reggen_io_valid_5,
-        _reggen_io_valid_4,
-        _reggen_io_valid_3,
-        _reggen_io_valid_2,
-        _reggen_io_valid_1,
-        _reggen_io_valid_0,
-        _reggen_io_seteipnum}),
+    .io_enq_valid (_reggen_io_valid),
+    .io_enq_bits  (_reggen_io_seteipnum),
     .io_deq_ready (~msi_vld_req),
     .io_deq_valid (_fifo_sync_io_deq_valid),
     .io_deq_bits  (_fifo_sync_io_deq_bits)
   );
   assign io_seteipnum = msi_id_data;
-  assign io_valid_0 = rvalids_tovec_0;
-  assign io_valid_1 = rvalids_tovec_1;
-  assign io_valid_2 = rvalids_tovec_2;
-  assign io_valid_3 = rvalids_tovec_3;
-  assign io_valid_4 = rvalids_tovec_4;
-  assign io_valid_5 = rvalids_tovec_5;
   assign msiio_msi_vld_req = msi_vld_req;
 endmodule
 

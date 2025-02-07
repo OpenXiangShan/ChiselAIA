@@ -13,8 +13,8 @@ TLMonitor_6.sv
 Queue1_RegMapperInput.sv
 Queue1_RegMapperInput_1.sv
 RegGen.sv
-ram_8x12.sv
-Queue8_UInt12.sv
+ram_8x11.sv
+Queue8_UInt11.sv
 TLRegIMSIC.sv
 TLRegIMSIC_WRAP.sv
 IMSICGateWay.sv
