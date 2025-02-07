@@ -50,29 +50,48 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       dontTouch(out.w.bits)
       dontTouch(out.b.bits)
       dontTouch(out.r.bits)
-//      val addrAW = in.aw.bits.addr
-//      val addrAR = in.ar.bits.addr
-//latch awxx and arxx
-///can use AXI4Bundle----
-      val awpulse_l   = (state === sIDLE) && (next_state === sWCH)
-      val awaddr_l = RegEnable(awpulse_l,in.aw.bits.addr)
-      val wdata_l = RegEnable(awpulse_l,in.w.bits.data)
-      val awsize_l   = RegEnable(awpulse_l,in.aw.bits.size)
-      val awburst_l   = RegEnable(awpulse_l,in.aw.bits.burst)
-      val awlen_l   = RegEnable(awpulse_l,in.aw.bits.len)
-      val awid_l   = RegEnable(awpulse_l,in.aw.bits.id)
-      //logic about generate of cnt
-      // latch the arxx
-      val arlen_l   = RegEnable(isARValid,in.ar.bits.len)
-      val araddr_l  = RegEnable(isARValid,in.ar.bits.addr)
+      //      val addrAW = in.aw.bits.addr
+      //      val addrAR = in.ar.bits.addr
+      //latch awxx and arxx
+      ///can use AXI4Bundle----
+
+      // in.r.bits.data := in.r.bits.data(31, 0).asUInt
+      // in.w.bits.data := in.w.bits.data(31, 0).asUInt
+      // out.r.bits.data := out.r.bits.data(31, 0).asUInt
+      // out.w.bits.data := out.w.bits.data(31, 0).asUInt
+      val isAWValid = in.aw.valid
+      val isARValid = in.ar.valid
+      val sIDLE :: sWCH :: sBCH :: sRCH :: Nil =Enum(4)
+      val state = RegInit(sIDLE)
+      val next_state = WireInit(sIDLE)
+      state := next_state
+      
+      val awpulse_l = (state === sIDLE) && (next_state === sWCH)
+      val awchvld = isAWValid & in.w.valid
+      val aw_l = RegEnable(in.aw.bits, awpulse_l)
+      val w_l = RegEnable(in.w.bits, awpulse_l)
+//      val b_l = RegEnable(in.b.bits, awpulse_l)
+      val ar_l = RegEnable(in.ar.bits, awpulse_l)
+//      val r_l = RegEnable(in.r.bits, awpulse_l)
+
+      // val awaddr_l = RegEnable(in.aw.bits.addr, awchvld)
+      // val wdata_l  = RegEnable(in.w.bits.data, awchvld)
+      // val awsize_l = RegEnable(in.aw.bits.size, awchvld)
+      // val awburst_l= RegEnable(in.aw.bits.burst, awchvld)
+      // val awlen_l  = RegEnable(in.aw.bits.len, awchvld)
+      // val awid_l   = RegEnable(in.aw.bits.id, awchvld)
+      // //logic about generate of cnt
+      // // latch the arxx
+      // val arlen_l   = RegEnable(in.ar.bits.len, isARValid)
+      // val araddr_l  = RegEnable(in.ar.bits.addr, isARValid)
       //======TODO======//
       val awcnt = RegInit(0.U(8.W)) // width of awcnt is same with awlen
       val wcnt = RegInit(0.U(8.W))
       //      in.ar.ready := true.B
       //      in.r.valid := true.B
-      in.r.bits.last := (state === sRCH) && (awcnt === arlen_l)
-      val addrAW = awaddr_l
-      val addrAR = araddr_l
+      
+      val addrAW = aw_l.addr
+      val addrAR = ar_l.addr
       val convert = edgeIn.slave.slaves.flatMap(_.address) zip edgeOut.slave.slaves.flatMap(_.address)
 
       // def forward(x: UInt) =
@@ -81,8 +100,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       //   convert.map { case (i, o) => Mux(o.contains(x), i.base.U | (x & i.mask.U), 0.U) }.reduce(_ | _)
 
       // Address validation checks based on the valid signals (AWVALID and ARVALID)
-      val isAWValid = in.aw.valid
-      val isARValid = in.ar.valid
+
 
       val isValidAddressAW = (addrAW(11, 0) === 0.U)  // Example address check for AW
       val isValidAddressAR = (addrAR(11, 0) === 0.U)  // Example address check for AR
@@ -92,24 +110,18 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
       val isAccessingValidRegisterAW = (addrAW(11, 2) === 0.U)  // Example valid register check for AW
       val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
-
       val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
       val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
 
       val isillegalAW = (!isValidAddressAW) || (!isValidAlignmentAW) || isReservedAreaAccessAW
       val isillegalAR = (!isValidAddressAR) || (!isValidAlignmentAR) || isReservedAreaAccessAR
 
-      val sIDLE :: sWCH :: sBCH :: sRCH :: Nil =Enum(4)
-      val awchvld = isAWValid & in.w.valid
-      val next_state = WireInit(sIDLE)
-      val state = RegInit(sIDLE)
-      state := next_state
+      in.r.bits.last := Mux((state === sRCH) && (awcnt === ar_l.len), 1.U, 0.U)
       val awready = WireInit(true.B)  // temp signal ,out.awready for the first data, true.B for other data transaction.
       val wready = WireInit(true.B)  // temp signal
-      val aw_last = (awcnt === awlen_l) & awready
-      val w_last = (wcnt === awlen_l) & wready
-      val isFinalBurst = (state == sWCH) & (aw_last===true) & (w_last===true) // the final data for a transaction
-      //state machine. sWCH: write wdata. sBCH : write response. sRCH:read data process
+      val aw_last = (awcnt === aw_l.len) & awready
+      val w_last = (wcnt === aw_l.len) & wready
+      val isFinalBurst = (state === sWCH) & (aw_last === true.B) & (w_last === true.B) // the final data for a transaction
       switch(state){
         is(sIDLE) {
           when(awchvld){
@@ -119,7 +131,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           }
         }
         is(sWCH) {
-          when(isFinalBurst.B){
+          when(isFinalBurst.asBool){
             next_state := sBCH
           }
         }
@@ -134,8 +146,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           }
         }
       }
-      //awcnt : muli used for aw and ar
-
+      
       when(state === sWCH) {
         when((!isillegalAW) & (awcnt === 0.U)) { //only the first illegal data to downstream
           awready := out.aw.ready
@@ -157,7 +168,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }
 
       when(state === sWCH) {
-        when(awcnt >= awlen_l) { // arrive the max length of burst
+        when(awcnt >= aw_l.len) { // arrive the max length of burst
           awcnt := awcnt
         }.elsewhen(awready) {
           awcnt := awcnt + 1.U
@@ -171,7 +182,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }
       //wcnt
       when(state === sWCH) {
-        when(wcnt >= awlen_l) { // arrive the max length of burst
+        when(wcnt >= aw_l.len) { // arrive the max length of burst
           wcnt := wcnt
         }.elsewhen(wready) {
           wcnt := wcnt + 1.U
@@ -179,19 +190,20 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }.otherwise {
         wcnt := 0.U
       }
-     // response for in
-     val in.aw.ready = isFinalBurst
-      val in.w.ready = isFinalBurst
-      val in.b.valid = (state === sBCH)
-      val in.b.id    = awid_l
-
+      // response for in
+      in.aw.ready    := isFinalBurst.asBool
+      in.w.ready     := isFinalBurst.asBool
+      in.b.valid     := (state === sBCH).asBool
+      in.b.bits.id   := aw_l.id
+      in.b.bits.resp := 0.U
+      
       // When either AW or AR is valid, perform address checks
-      val out.aw.valid = (state === sWCH) & (!isillegalAW) & (awcnt == 0.U)
-      val out.w.valid = (state === sWCH) & (!isillegalAW) & (wcnt == 0.U)
-      val out.aw.bits.addr = awaddr_l
-      val out.w.bits.data = wdata_l
+      out.aw.valid := (state === sWCH) & (!isillegalAW) & (awcnt === 0.U).asBool
+      out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U).asBool
+      out.aw.bits.addr := aw_l.addr
+      out.w.bits.data := w_l.data
       //else out signal is from the signals latched,for timing.
-    }
+      }
   }
 }
 
