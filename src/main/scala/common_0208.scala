@@ -110,7 +110,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
       val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
       val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
-      val isillegalAC = !((aw_l.cache(3,1) === 0.U) && (aw_l.lock === 1.U))
+      val isillegalAC = !((aw_l.cache(3,1) === 0.U) && (aw_l.lock === 0.U))
       val isillegalAW = (!isValidAddressAW) || (!isValidAlignmentAW) || isReservedAreaAccessAW || (!isValidSize) || isillegalAC
       val isillegalAR = (!isValidAddressAR) || (!isValidAlignmentAR) || isReservedAreaAccessAR
 
