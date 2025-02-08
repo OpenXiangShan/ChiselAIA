@@ -117,10 +117,24 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.r.bits.last := (state === sRCH) && (awcnt === ar_l.len) && in.r.ready
       val awready = WireInit(true.B)  // temp signal ,out.awready for the first data, true.B for other data transaction.
       val wready = WireInit(true.B)  // temp signal
-      val aw_last = (awcnt === aw_l.len) & awready
-      val w_last = (wcnt === aw_l.len) & wready
-      val isFinalBurst = (state === sWCH) & (aw_last === true.B) & (w_last === true.B) // the final data for a transaction
-      val rready = out.ar.ready //ready from downstream
+      val aw_last = RegInit(false.B)
+      val w_last = RegInit(false.B)
+      when (state === sWCH){
+        when((awcnt === aw_l.len) & awready){  //may be pulse signal
+          aw_last := true.B
+        }
+      }.otherwise{
+        aw_last := false.B
+      }
+      when (state === sWCH){
+        when((wcnt === aw_l.len) & wready){
+          w_last := true.B
+        }
+      }.otherwise{
+        w_last := false.B
+      }
+      val isFinalBurst = aw_last & w_last // may be level signal ,the final data for a transaction
+//      val rready = out.ar.ready //ready from downstream
       next_state := state
       switch(state){
         is(sIDLE) {
