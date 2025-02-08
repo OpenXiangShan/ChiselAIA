@@ -145,7 +145,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           }
         }
         is(sWCH) {
-          when(out.b.valid & isFinalBurst){ // in.b.valid can be high,only when the last burst data done and the bvalid for data to downstream is high.
+          when((isillegalAW | out.b.valid) & isFinalBurst){ // in.b.valid can be high,only when the last burst data done and the bvalid for data to downstream is high.
             next_state := sBCH
           }
         }
@@ -224,7 +224,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U).asBool
       out.aw.bits.addr := aw_l.addr
       out.w.bits.data := w_l.data
-      out.b.ready := (state === sBCH) && (next_state === sIDLE)
+      out.b.ready := (state === sBCH) && (next_state === sIDLE) & (!isillegalAW)
       //else out signal is from the signals latched,for timing.
       }
   }
