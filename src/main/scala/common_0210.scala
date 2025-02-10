@@ -99,26 +99,36 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
       // Address validation checks based on the valid signals (AWVALID and ARVALID)
 
-      val isValidSize      = (aw_l.size === 2.U) && (w_l.strb === 15.U)
-      val isValidAddressAW = (addrAW(11, 0) === 0.U)  // Example address check for AW
-      val isValidAddressAR = (addrAR(11, 0) === 0.U)  // Example address check for AR
+      // only support little-endian (0x0 is active) msi write address check for AW,refer to riscv aia spec.
+      val isValidAddressAW = (addrAW(11, 0) === 0.U)
+      val isValidAddressAR = (addrAR(11, 0) === 0.U)  //
 
       val isValidAlignmentAW = (addrAW(1, 0) === 0.U)  // Example alignment check for AW
       val isValidAlignmentAR = (addrAR(1, 0) === 0.U)  // Example alignment check for AR
+//      val isAccessingValidRegisterAW = (addrAW(11, 2) === 0.U)  // Example valid register check for AW
+//      val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
 
-      val isAccessingValidRegisterAW = (addrAW(11, 2) === 0.U)  // Example valid register check for AW
-      val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
-      val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
-      val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
-      val isillegalAC = !((aw_l.cache(3,1) === 0.U) && (aw_l.lock === 0.U))
-      val isillegalAW = (!isValidAddressAW) || (!isValidAlignmentAW) || isReservedAreaAccessAW || (!isValidSize) || isillegalAC
-      val isillegalAR = (!isValidAddressAR) || (!isValidAlignmentAR) || isReservedAreaAccessAR
+      val isWAligErr  = !((aw_l.size === 2.U) & (w_l.strb === 15.U) & isValidAlignmentAW)  // alignment with 4B.
+      val isWCacheErr = (aw_l.cache(3,1)).orR  //non device
+      val isWLockErr = aw_l.lock      // AMO access
+      val isWCErr = isWAligErr | isWCacheErr
+
+      val isRAligErr  = !((ar_l.size === 2.U) & isValidAlignmentAR)
+      val isRCacheErr = (ar_l.cache(3,1)).orR  //non device
+      val isRLockErr = ar_l.lock      // AMO access
+      val isRCErr = isRAligErr | isRCacheErr
+//      val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
+//      val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
+
+      val isillegalAW = (!isValidAddressAW) | isWCErr | isWLockErr
+      val isillegalAR = (!isValidAlignmentAR) | isRCErr | isRLockErr
 
       in.r.bits.last := (state === sRCH) && (awcnt === ar_l.len) && in.r.ready
       val awready = WireInit(true.B)  // temp signal ,out.awready for the first data, true.B for other data transaction.
       val wready = WireInit(true.B)  // temp signal
       val aw_last = RegInit(false.B)
       val w_last = RegInit(false.B)
+      // aw_last: the last addr for burst,
       when (state === sWCH){
         when((awcnt === aw_l.len) & awready){  //may be pulse signal
           aw_last := true.B
@@ -134,6 +144,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         w_last := false.B
       }
       val isFinalBurst = aw_last & w_last // may be level signal ,the final data for a transaction
+      val w2b_vld = (state === sWCH) & (isillegalAW | out.b.valid) & isFinalBurst
 //      val rready = out.ar.ready //ready from downstream
       next_state := state
       switch(state){
@@ -145,7 +156,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           }
         }
         is(sWCH) {
-          when((isillegalAW | out.b.valid) & isFinalBurst){ // in.b.valid can be high,only when the last burst data done and the bvalid for data to downstream is high.
+          when(w2b_vld.asBool){ // in.b.valid can be high,only when the last burst data done and the bvalid for data to downstream is high.
             next_state := sBCH
           }
         }
@@ -212,9 +223,9 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.w.ready     := isFinalris
       in.b.valid     := state === sBCH
       in.b.bits.id   := aw_l.id
-      in.b.bits.resp := 0.U
+      in.b.bits.resp := Cat(isWCErr,0.U)
       in.r.valid     := state === sRCH
-      in.r.bits.resp := 0.U
+      in.r.bits.resp := Cat(isRCErr,0.U)
       in.r.bits.id   := ar_l.id
       in.r.bits.data := 0.U
       in.ar.ready    := true.B
