@@ -409,8 +409,9 @@ class IMSIC_WRAP(
     teemsiio.foreach(teemsiio => teeimsic.msiio <> teemsiio)
     toCSR.rdata   := Mux(cmode, teeimsic.toCSR.rdata, imsic.toCSR.rdata) // toCSR needs to the selected depending cmode.
     toCSR.illegal := Mux(cmode, teeimsic.toCSR.illegal, imsic.toCSR.illegal)
-    toCSR.pendings    := Mux(cmode, teeimsic.toCSR.pendings, imsic.toCSR.pendings)
-    toCSR.pendings(0) := imsic.toCSR.pendings(0) // machine mode only from imsic.
+    val s_pendings = Mux(cmode, teeimsic.toCSR.pendings(params.intFilesNum-1,1), imsic.toCSR.pendings(params.intFilesNum-1,1))
+    val m_pendings = imsic.toCSR.pendings(0) // machine mode only from imsic.
+    toCSR.pendings := Cat(s_pendings,m_pendings)
     //  toCSR.pendings := VecInit((0 until params.intFilesNum).map(i => pendings(i))) // uint->vector
 
     toCSR.topeis    := Mux(cmode, teeimsic.toCSR.topeis, imsic.toCSR.topeis)
