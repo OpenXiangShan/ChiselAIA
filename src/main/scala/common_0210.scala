@@ -221,10 +221,13 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
       // When either AW or AR is valid, perform address checks
       out.aw.valid := (state === sWCH) & (!isillegalAW) & (awcnt === 0.U) & out.aw.ready
-      out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U) & out.w.ready
       out.aw.bits.addr := aw_l.addr
+      out.aw.bits.id := aw_l.id
+      out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U) & out.w.ready
+      out.w.bits.strb := 15.U
       out.w.bits.data := w_l.data
       out.b.ready := (state === sBCH) && (next_state === sIDLE) & (!isillegalAW)
+
       //else out signal is from the signals latched,for timing.
       }
   }
