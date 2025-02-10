@@ -111,12 +111,15 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val isWAligErr  = !((aw_l.size === 2.U) & (w_l.strb === 15.U) & isValidAlignmentAW)  // alignment with 4B.
       val isWCacheErr = (aw_l.cache(3,1)).orR  //non device
       val isWLockErr = aw_l.lock      // AMO access
-      val isWCErr = isWAligErr | isWCacheErr
+      val isWburstErr = aw_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
+      val isWCErr = isWAligErr | isWCacheErr | isWburstErr
+
 
       val isRAligErr  = !((ar_l.size === 2.U) & isValidAlignmentAR)
       val isRCacheErr = (ar_l.cache(3,1)).orR  //non device
       val isRLockErr = ar_l.lock      // AMO access
-      val isRCErr = isRAligErr | isRCacheErr
+      val isRburstErr = ar_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
+      val isRCErr = isRAligErr | isRCacheErr | isRburstErr
 //      val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
 //      val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
 
