@@ -65,10 +65,11 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
       val awcnt = RegInit(0.U(8.W)) // width of awcnt is same with awlen
       val wcnt = RegInit(0.U(8.W))
-
+      //      in.ar.ready := true.B
+      //      in.r.valid := true.B
+      
       val addrAW = aw_l.addr
       val addrAR = ar_l.addr
-
       val isValidSize      = (aw_l.size === 2.U) && (w_l.strb === 15.U)
       val isValidAddressAW = (addrAW(11, 0) === 0.U)  // Example address check for AW
       val isValidAddressAR = (addrAR(11, 0) === 0.U)  // Example address check for AR
@@ -80,7 +81,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
       val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
       val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
-      val isillegalAC = !((aw_l.cache(3,1) === 0.U) && (aw_l.lock === 1.U))
+      val isillegalAC = !((aw_l.cache(3,1) === 0.U) && (aw_l.lock === 0.U))
       val isillegalAW = (!isValidAddressAW) || (!isValidAlignmentAW) || isReservedAreaAccessAW || (!isValidSize) || isillegalAC
       val isillegalAR = (!isValidAddressAR) || (!isValidAlignmentAR) || isReservedAreaAccessAR
 
@@ -105,6 +106,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }
       val isFinalBurst = aw_last & w_last // may be level signal ,the final data for a transaction
 //      val rready = out.ar.ready //ready from downstream
+      next_state := state
       switch(state){
         is(sIDLE) {
           when(awchvld){
@@ -114,7 +116,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           }
         }
         is(sWCH) {
-          when(out.b.valid & isFinalBurst){ // in.b.valid can be high,only when the last burst data done and the bvalid for data to downstream is high.
+          when((isillegalAW | out.b.valid) & isFinalBurst){ // in.b.valid can be high,only when the last burst data done and the bvalid for data to downstream is high.
             next_state := sBCH
           }
         }
@@ -189,11 +191,11 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.ar.ready    := true.B
 
       // When either AW or AR is valid, perform address checks
-      out.aw.valid := (state === sWCH) & (!isillegalAW) & (awcnt === 0.U).asBool
-      out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U).asBool
+      out.aw.valid := (state === sWCH) & (!isillegalAW) & (awcnt === 0.U) & out.aw.ready
+      out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U) & out.w.ready
       out.aw.bits.addr := aw_l.addr
       out.w.bits.data := w_l.data
-      out.b.ready := (state === sBCH) && (next_state === sIDLE)
+      out.b.ready := (state === sBCH) && (next_state === sIDLE) & (!isillegalAW)
       //else out signal is from the signals latched,for timing.
       }
   }
