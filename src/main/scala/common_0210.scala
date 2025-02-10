@@ -223,9 +223,11 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       out.aw.valid := (state === sWCH) & (!isillegalAW) & (awcnt === 0.U) & out.aw.ready
       out.aw.bits.addr := aw_l.addr
       out.aw.bits.id := aw_l.id
+      out.aw.bits.size := 2.U
       out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U) & out.w.ready
       out.w.bits.strb := 15.U
       out.w.bits.data := w_l.data
+      out.w.bits.last := 1.U
       out.b.ready := (state === sBCH) && (next_state === sIDLE) & (!isillegalAW)
 
       //else out signal is from the signals latched,for timing.
