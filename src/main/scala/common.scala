@@ -206,8 +206,8 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       // When either AW or AR is valid, perform address checks
       out.aw.valid := (state === sWCH) & (!isillegalAW) & (awcnt === 0.U) & out.aw.ready
       out.aw.bits.addr := aw_l.addr
-      out.aw.bits.id := aw_l.id
-      out.ar.bits.id := ar_l.id
+      out.aw.bits.id := 0.U
+      out.ar.bits.id := 0.U
       out.aw.bits.echo := aw_l.echo
       out.ar.bits.echo := ar_l.echo
       out.aw.bits.size := 2.U

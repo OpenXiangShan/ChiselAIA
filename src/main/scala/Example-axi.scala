@@ -56,7 +56,7 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
     })(Parameters.empty)).node
 
     val imsic = LazyModule(new AXI4IMSIC(imsic_params)(new Config((site, here, up) => {
-      case IMSICParameKey => IMSICParameters(HasTEEIMSIC = true)
+      case IMSICParameKey => IMSICParameters(HasTEEIMSIC = false)
     })))
 
     imsic.axireg.axireg.axi4tolite.node := map := imsics_fromMem_xbar
@@ -107,7 +107,7 @@ object AXI4AIA extends App {
 
   val axi4top = LazyModule(new AXI4AIA()(
     Parameters.empty.alterPartial({
-      case IMSICParameKey => IMSICParameters(HasTEEIMSIC=true)
+      case IMSICParameKey => IMSICParameters(HasTEEIMSIC=false)
     })
   ))
 
