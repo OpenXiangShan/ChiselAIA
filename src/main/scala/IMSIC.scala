@@ -413,7 +413,7 @@ class IMSIC_WRAP(
     val m_pendings = imsic.toCSR.pendings(0) // machine mode only from imsic.
     toCSR.pendings := Cat(s_pendings,m_pendings)
     //  toCSR.pendings := VecInit((0 until params.intFilesNum).map(i => pendings(i))) // uint->vector
-
+    val de_addrvalid = RegNext(fromCSR.addr.valid)
     toCSR.topeis    := Mux(cmode, teeimsic.toCSR.topeis, imsic.toCSR.topeis)
     toCSR.topeis(0) := imsic.toCSR.topeis(0) // machine mode only from imsic.
     // to get the o_notice_pending, excluding the machine interrupt
@@ -424,14 +424,14 @@ class IMSIC_WRAP(
     val s_orpend_tee = teeimsic.toCSR.pendings(params.intFilesNum-1,1) //bit(params.intFilesNum-1:1)
     notice_pending   := Mux(cmode, s_orpend_ree.orR, s_orpend_tee.orR)
     teeimsic.fromCSR := fromCSR
-    teeimsic.fromCSR.addr.valid := cmode & fromCSR.addr.valid // cmode=1,controls tee csr access to interrupt file indirectly
+    teeimsic.fromCSR.addr.valid := cmode & de_addrvalid // cmode=1,controls tee csr access to interrupt file indirectly
     teeimsic.fromCSR.wdata.valid := cmode & fromCSR.wdata.valid
     teeimsic.fromCSR.claims(0)   := false.B // machine interrupts are inactive for tee imsic.
     for (i <- 1 until params.privNum) {
       teeimsic.fromCSR.claims(i) := cmode & fromCSR.claims(i)
     }
 
-    imsic.fromCSR.addr.valid := (cmode === false.B) & fromCSR.addr.valid // cmode=1,controls tee csr access to interrupt file indirectly
+    imsic.fromCSR.addr.valid := (cmode === false.B) & de_addrvalid // cmode=1,controls tee csr access to interrupt file indirectly
     imsic.fromCSR.wdata.valid := (cmode === false.B) & fromCSR.wdata.valid
     imsic.fromCSR.claims(0)   := fromCSR.claims(0) // machine interrupts are inactive for tee imsic.
     for (i <- 1 until params.privNum) {
