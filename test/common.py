@@ -88,6 +88,7 @@ async def interrupt(dut, i):
   else :
     for _ in range(10):
       await FallingEdge(dut.clock)
+      await FallingEdge(dut.clock)
       if dut.toCSR0_topeis_0 == wrap_topei(i):
         break
     else:
