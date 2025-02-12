@@ -172,7 +172,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           awcnt := awcnt + 1.U
         }
       }.elsewhen(state === sRCH) {
-        when(in.r.ready) {
+        when(in.r.ready | (~isillegalAR.asBool)) {
           awcnt := awcnt + 1.U
         }
       }.otherwise {
@@ -204,7 +204,13 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.ar.ready    := true.B
 
       // When either AW or AR is valid, perform address checks
-      out.aw.valid := (state === sWCH) & (!isillegalAW) & (awcnt === 0.U) & out.aw.ready
+      val m_awvalid = RegInit(false.B)
+      when ((state === sIDLE) & (next_state === sWCH)){
+        m_awvalid := true.B
+      }.elsewhen(out.aw.ready){
+        m_awvalid := false.B
+      }
+      out.aw.valid := m_awvalid & (!isillegalAW)
       out.aw.bits.addr := aw_l.addr
       out.aw.bits.id := 0.U
       out.ar.bits.id := 0.U
