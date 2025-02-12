@@ -6,6 +6,7 @@ out
 
 # for chisel generated files
 *.fir
+gen*
 
 # for cocotb
 __pycache__
