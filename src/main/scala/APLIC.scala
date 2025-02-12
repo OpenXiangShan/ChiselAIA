@@ -39,7 +39,7 @@ case class APLICParams(
   //MC which are a subset of IMSIC's interrupt sources）：
   //MC{visible}
   aplicIntSrcWidth: Int = 7,
-  imsicIntSrcWidth: Int = 8,
+  imsicIntSrcWidth: Int = 9,
   //MC 👉 APLIC域的基地址（Base address of APLIC domains）:
   baseAddr: Long = 0x19960000L,
   //MC **注意**：下述中括号内的变量与AIA规范中的一致（第3.6节：用于多个中断文件的内存区域排列）。

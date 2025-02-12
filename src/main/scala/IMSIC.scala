@@ -94,11 +94,11 @@ class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
 }
 
 case class IMSICParams(
-    // MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多256（2^8）个中断源
+    // MC IMSIC中断源数量的对数，默认值9表示IMSIC支持最多512（2^9）个中断源
     // MC （Logarithm of number of interrupt sources to IMSIC.
-    // MC The default 8 means IMSIC support at most 256 (2^8) interrupt sources）:
+    // MC The default 9 means IMSIC support at most 512 (2^9) interrupt sources）:
     // MC{visible}
-    imsicIntSrcWidth: Int = 8,
+    imsicIntSrcWidth: Int = 9,
     // MC 👉 本IMSIC的机器态中断文件的地址（Address of machine-level interrupt files for this IMSIC）：
     mAddr: Long = 0x00000L,
     // MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
