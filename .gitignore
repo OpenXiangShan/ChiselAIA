@@ -5,8 +5,8 @@ out
 .bloop
 
 # for chisel generated files
-gen*
 *.fir
+gen*
 
 # for cocotb
 __pycache__
@@ -16,6 +16,7 @@ sim_build*
 # for gtkwave
 *.fst
 *.gtkw
+*.vcd
 
 # for docs
 *_py.dot

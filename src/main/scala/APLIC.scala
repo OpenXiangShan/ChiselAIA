@@ -90,7 +90,7 @@ case class APLICParams(
 
 class APLIC(
   params: APLICParams,
-  beatBytes: Int = 8,
+  beatBytes: Int = 4,
 )(implicit p: Parameters) extends Module {
   println(f"APLICParams.membersWidth:      ${params.membersWidth    }%d")
   println(f"APLICParams.groupsWidth:       ${params.groupsWidth     }%d")
@@ -329,7 +329,7 @@ class APLIC(
 
 class TLAPLIC(
   params: APLICParams,
-  beatBytes: Int = 8,
+  beatBytes: Int = 4,
 )(implicit p: Parameters) extends LazyModule {
   val fromCPU = LazyModule(new TLXbar).node
   val toIMSIC = LazyModule(new TLXbar).node
@@ -371,7 +371,7 @@ class TLAPLIC(
 
 class AXI4APLIC(
   params: APLICParams,
-  beatBytes: Int = 8,
+  beatBytes: Int = 4,
 )(implicit p: Parameters) extends LazyModule {
   val fromCPU = LazyModule(new AXI4Xbar).node
   val toIMSIC = LazyModule(new AXI4Xbar).node

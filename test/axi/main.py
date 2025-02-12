@@ -20,30 +20,34 @@ from common import *
 
 async def axi4_aw_send(dut, addr, prot, size):
   await FallingEdge(dut.clock)
-  while not dut.toaia_0_aw_ready.value:
-    await FallingEdge(dut.clock)
   dut.toaia_0_aw_valid.value = 1
   dut.toaia_0_aw_bits_addr.value = addr
   dut.toaia_0_aw_bits_prot.value = prot
+  dut.toaia_0_b_valid.value = 1
   # TODO: why need this? how to use axi4lite?
   dut.toaia_0_aw_bits_size.value = size
+  while not dut.toaia_0_aw_ready.value:
+    await FallingEdge(dut.clock)
   await FallingEdge(dut.clock)
   dut.toaia_0_aw_valid.value = 0
+  
 async def axi4_w_send(dut, data, strb):
   await FallingEdge(dut.clock)
   # As AXI4RegMapperNode only receives a & w within same cycle
   # make sure a & w send within same cycle
-  while not dut.toaia_0_aw_ready.value:
-    await FallingEdge(dut.clock)
   dut.toaia_0_w_valid.value = 1
   dut.toaia_0_w_bits_last.value = 1
   dut.toaia_0_w_bits_data.value = data
   dut.toaia_0_w_bits_strb.value = strb
+  while not dut.toaia_0_aw_ready.value:
+    await FallingEdge(dut.clock)
   await FallingEdge(dut.clock)
   dut.toaia_0_w_valid.value = 0
   dut.toaia_0_w_bits_last.value = 0
+
+  
 async def axi4_b_receive(dut):
-  await with_timeout(RisingEdge(dut.toaia_0_b_valid), 10, "ns")
+  await with_timeout(RisingEdge(dut.toaia_0_b_valid), 5, "ns")
 async def axi4_ar_send(dut, addr, prot, size):
   await FallingEdge(dut.clock)
   while not dut.toaia_0_ar_ready:
@@ -56,7 +60,7 @@ async def axi4_ar_send(dut, addr, prot, size):
   await FallingEdge(dut.clock)
   dut.toaia_0_ar_valid.value = 0
 async def axi4_r_receive(dut):
-  await with_timeout(RisingEdge(dut.toaia_0_r_valid), 10, "ns")
+  await with_timeout(RisingEdge(dut.toaia_0_r_valid), 5, "ns")
   return dut.toaia_0_r_bits_data.value
 
 async def axi4_write(dut, addr, data, strb, size):
@@ -65,8 +69,8 @@ async def axi4_write(dut, addr, data, strb, size):
   await axi4_b_receive(dut)
 async def axi4_write32(dut, addr, data):
   await axi4_write(dut, addr,
-    data if addr%8==0 else data<<32,
-    0x0f if addr%8==0 else 0xf0,
+    data if addr%4==0 else data<<32,
+    0xf if addr%4==0 else 0xf,
     2,
   )
 

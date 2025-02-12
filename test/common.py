@@ -19,10 +19,10 @@ from cocotb.triggers import RisingEdge, FallingEdge
 EnableImsicAsyncBridge = 0
 async def delay_fifo(dut):
     if EnableImsicAsyncBridge ==1 :
-        for _ in range(10):
+        for _ in range(5):
             await FallingEdge(dut.clock) ## delay caused by async fifo: source and sink, when EnableImsicAsyncBridge is true
     else:
-        for _ in range(6):
+        for _ in range(10):
             await FallingEdge(dut.clock) ## delay caused by async fifo: source and sink, when EnableImsicAsyncBridge is true
         """EnableImsicAsyncbridge is 0."""
   
@@ -47,9 +47,9 @@ async def a_op(dut, addr, data, op, mask, size) -> None:
 async def a_op32(dut, addr, data, op) -> None:
   await a_op(
     dut, addr,
-    data if addr%8==0 else data<<32,
+    data if addr%4==0 else data<<32,
     op,
-    0x0f if addr%8==0 else 0xf0,
+    0x0f if addr%4==0 else 0xf,
     2,
   )
 async def a_put_full32(dut, addr, data) -> None:
@@ -69,7 +69,7 @@ async def a_get32(dut, addr) -> int:
   else:
     assert False, f"Timeout waiting for op_access_ack_data"
   odata = int(dut.toaia_0_d_bits_data)
-  res = odata if addr%8==0 else odata>>32
+  res = odata if addr%4==0 else odata>>32
   return res & 0xffffffff
 
 async def interrupt(dut, i):
@@ -87,6 +87,7 @@ async def interrupt(dut, i):
       assert False, f"Timeout waiting for toCSR0_topeis_0 == wrap_topei({i})"
   else :
     for _ in range(10):
+      await FallingEdge(dut.clock)
       await FallingEdge(dut.clock)
       if dut.toCSR0_topeis_0 == wrap_topei(i):
         break

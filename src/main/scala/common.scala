@@ -27,6 +27,208 @@ import freechips.rocketchip.regmapper._
 
 object pow2 { def apply(n: Int): Long = 1L << n }
 
+class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
+
+  val node = AXI4AdapterNode( // identity
+    masterFn = { mp => mp },
+    slaveFn = { sp =>
+      sp.copy(slaves = sp.slaves.map(s =>
+        s.copy(address = s.address.map(a =>
+          AddressSet(a.base, a.mask)))))})
+  lazy val module = new Impl
+  class Impl extends LazyModuleImp(this) {
+    (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
+//      out <> in
+      dontTouch(in.aw.bits)
+      dontTouch(in.ar.bits)
+      dontTouch(in.w.bits)
+      dontTouch(in.b.bits)
+      dontTouch(in.r.bits)
+      dontTouch(in.b.ready)
+      dontTouch(in.ar.ready)
+
+      val isAWValid = in.aw.valid
+      val isARValid = in.ar.valid
+      val sIDLE :: sWCH :: sBCH :: sRCH :: Nil =Enum(4)
+      val state = RegInit(sIDLE)
+      val next_state = WireInit(sIDLE)
+      state := next_state
+      
+      val awpulse_l = (state === sIDLE) && (next_state === sWCH)
+      val arpulse_l = (state === sIDLE) && (next_state === sRCH)
+      val awchvld = isAWValid & in.w.valid
+      val aw_l = RegEnable(in.aw.bits, awpulse_l)
+      val w_l = RegEnable(in.w.bits, awpulse_l)
+//      val b_l = RegEnable(in.b.bits, awpulse_l)
+      val ar_l = RegEnable(in.ar.bits, arpulse_l)
+//      val r_l = RegEnable(in.r.bits, awpulse_l)
+
+      //======TODO======//
+      val awcnt = RegInit(0.U(8.W)) // width of awcnt is same with awlen
+      val wcnt = RegInit(0.U(8.W))
+      
+      val addrAW = aw_l.addr
+      val addrAR = ar_l.addr
+      // only support little-endian (0x0 is active) msi write address check for AW,refer to riscv aia spec.
+      val isValidAddressAW = (addrAW(11, 0) === 0.U)
+      val isValidAddressAR = (addrAR(11, 0) === 0.U)  //
+
+      val isValidAlignmentAW = (addrAW(1, 0) === 0.U)  // Example alignment check for AW
+      val isValidAlignmentAR = (addrAR(1, 0) === 0.U)  // Example alignment check for AR
+//      val isAccessingValidRegisterAW = (addrAW(11, 2) === 0.U)  // Example valid register check for AW
+//      val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
+
+      val isWAligErr  = !((aw_l.size === 2.U) & (w_l.strb === 15.U) & isValidAlignmentAW)  // alignment with 4B.
+      val isWCacheErr = (aw_l.cache(3,1)).orR  //non device
+      val isWLockErr = aw_l.lock      // AMO access
+      val isWburstErr = aw_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
+      val isWCErr = isWAligErr | isWCacheErr | isWburstErr
+
+
+      val isRAligErr  = !((ar_l.size === 2.U) & isValidAlignmentAR)
+      val isRCacheErr = (ar_l.cache(3,1)).orR  //non device
+      val isRLockErr = ar_l.lock      // AMO access
+      val isRburstErr = ar_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
+      val isRCErr = isRAligErr | isRCacheErr | isRburstErr
+//      val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
+//      val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
+
+      val isillegalAW = (!isValidAddressAW) | isWCErr | isWLockErr
+      val isillegalAR = (!isValidAlignmentAR) | isRCErr | isRLockErr
+
+      in.r.bits.last := (state === sRCH) && (awcnt === ar_l.len) && in.r.ready
+      val awready = WireInit(true.B)  // temp signal ,out.awready for the first data, true.B for other data transaction.
+      val wready = WireInit(true.B)  // temp signal
+      val aw_last = RegInit(false.B)
+      val w_last = RegInit(false.B)
+      // aw_last: the last addr for burst,
+      when (state === sWCH){
+        when((awcnt === aw_l.len) & awready){  //may be pulse signal
+          aw_last := true.B
+        }
+      }.otherwise{
+        aw_last := false.B
+      }
+      when (state === sWCH){
+        when((wcnt === aw_l.len) & wready){
+          w_last := true.B
+        }
+      }.otherwise{
+        w_last := false.B
+      }
+      val isFinalBurst = aw_last & w_last // may be level signal ,the final data for a transaction
+      val w2b_vld = (state === sWCH) & (isillegalAW | out.b.valid) & isFinalBurst
+//      val rready = out.ar.ready //ready from downstream
+      next_state := state
+      switch(state){
+        is(sIDLE) {
+          when(awchvld){
+            next_state := sWCH
+          }.elsewhen(isARValid){
+            next_state := sRCH
+          }
+        }
+        is(sWCH) {
+          when(w2b_vld.asBool){ // in.b.valid can be high,only when the last burst data done and the bvalid for data to downstream is high.
+            next_state := sBCH
+          }
+        }
+        is(sBCH) {
+          when(in.b.ready){
+            next_state := sIDLE
+          }
+        }
+        is(sRCH) {
+          when(in.r.bits.last){
+            next_state := sIDLE
+          }
+        }
+      }
+      
+      when(state === sWCH) {
+        when((!isillegalAW) & (awcnt === 0.U)) { //only the first illegal data to downstream
+          awready := out.aw.ready
+        }.otherwise {
+          awready := true.B  // legal or non first data
+        }
+      }.otherwise {
+        awready := true.B
+      }
+
+      when(state === sWCH) {
+        when((!isillegalAW) & (wcnt === 0.U)) {
+          wready := out.w.ready
+        }.otherwise {
+          wready := true.B  // legal or non first data
+        }
+      }.otherwise {
+        wready := true.B
+      }
+
+      when(state === sWCH) {
+        when(awcnt >= aw_l.len) { // arrive the max length of burst
+          awcnt := awcnt
+        }.elsewhen(awready) {
+          awcnt := awcnt + 1.U
+        }
+      }.elsewhen(state === sRCH) {
+        when(in.r.ready | (~isillegalAR.asBool)) {
+          awcnt := awcnt + 1.U
+        }
+      }.otherwise {
+        awcnt := 0.U
+      }
+      //wcnt
+      when(state === sWCH) {
+        when(wcnt >= aw_l.len) { // arrive the max length of burst
+          wcnt := wcnt
+        }.elsewhen(wready) {
+          wcnt := wcnt + 1.U
+        }
+      }.otherwise {
+        wcnt := 0.U
+      }
+      // response for in
+      val isFinaldly = RegInit(false.B)
+      isFinaldly := isFinalBurst
+      val isFinalris = isFinalBurst & (!isFinaldly)
+      in.aw.ready    := isFinalris
+      in.w.ready     := isFinalris
+      in.b.valid     := state === sBCH
+      in.b.bits.id   := aw_l.id
+      in.b.bits.resp := Cat(isWCErr,0.U)
+      in.r.valid     := state === sRCH
+      in.r.bits.resp := Cat(isRCErr,0.U)
+      in.r.bits.id   := ar_l.id
+      in.r.bits.data := 0.U
+      in.ar.ready    := true.B
+
+      // When either AW or AR is valid, perform address checks
+      val m_awvalid = RegInit(false.B)
+      when ((state === sIDLE) & (next_state === sWCH)){
+        m_awvalid := true.B
+      }.elsewhen(out.aw.ready){
+        m_awvalid := false.B
+      }
+      out.aw.valid := m_awvalid & (!isillegalAW)
+      out.aw.bits.addr := aw_l.addr
+      out.aw.bits.id := 0.U
+      out.ar.bits.id := 0.U
+      out.aw.bits.echo := aw_l.echo
+      out.ar.bits.echo := ar_l.echo
+      out.aw.bits.size := 2.U
+      out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U) & out.w.ready
+      out.w.bits.strb := 15.U
+      out.w.bits.data := w_l.data
+      out.w.bits.last := 1.U
+      out.b.ready := (state === sBCH) && (next_state === sIDLE) & (!isillegalAW)
+
+      //else out signal is from the signals latched,for timing.
+      }
+  }
+}
+
+
 class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModule
 {
   val node = AXI4AdapterNode(
@@ -52,6 +254,7 @@ class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModu
   }
 }
 
+
 object AXI4Map
 {
   def apply(fn: AddressSet => BigInt)(implicit p: Parameters): AXI4Node =
@@ -59,6 +262,7 @@ object AXI4Map
     val map = LazyModule(new AXI4Map(fn))
     map.node
   }
+  
 }
 
 /**
@@ -332,6 +536,12 @@ case class AXI4RegMapperNode(
     val r  = io.r
     val b  = io.b
 
+    dontTouch(aw.bits)
+    dontTouch(ar.bits)
+    dontTouch(w.bits)
+    dontTouch(b.bits)
+    dontTouch(r.bits)
+    
     // Prefer to execute reads first
     in.valid := ar.valid || (aw.valid && w.valid)
     ar.ready := in.ready
