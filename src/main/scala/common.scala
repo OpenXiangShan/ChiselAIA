@@ -46,7 +46,8 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       dontTouch(in.r.bits)
       dontTouch(in.b.ready)
       dontTouch(in.ar.ready)
-
+      // in.ar.bits.addr = in.ar.bits.addr.pad(32)
+      // in.aw.bits.addr = in.aw.bits.addr.pad(32)
       val isAWValid = in.aw.valid
       val isARValid = in.ar.valid
       val sIDLE :: sWCH :: sBCH :: sRCH :: Nil =Enum(4)
@@ -200,7 +201,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.r.valid     := state === sRCH
       in.r.bits.resp := Cat(isRCErr,0.U)
       in.r.bits.id   := ar_l.id
-      in.r.bits.data := 0.U
+      // in.r.bits.data := 
       in.ar.ready    := true.B
 
       // When either AW or AR is valid, perform address checks
@@ -220,6 +221,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U) & out.w.ready
       out.w.bits.strb := 15.U
       out.w.bits.data := w_l.data
+      in.r.bits.data := out.w.bits.data
       out.w.bits.last := 1.U
       out.b.ready := (state === sBCH) && (next_state === sIDLE) & (!isillegalAW)
 

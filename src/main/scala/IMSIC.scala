@@ -94,7 +94,7 @@ class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
 }
 
 case class IMSICParams(
-    // MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多256（2^9）个中断源
+    // MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多512（2^9）个中断源
     // MC （Logarithm of number of interrupt sources to IMSIC.
     // MC The default 9 means IMSIC support at most 512 (2^9) interrupt sources）:
     // MC{visible}
@@ -328,13 +328,14 @@ class IMSIC(
           new_
         }
         val intFile = Module(new IntFile)
-        val de_toCSR_rdata = RegNext(intFile.toCSR.rdata)
+        val toCSR_rdata_vld = RegNext(intFile.toCSR.rdata.valid)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr            := sel(fromCSR.addr)
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
-        toCSR.rdata                     := de_toCSR_rdata
+        toCSR.rdata.valid               := toCSR_rdata_vld
+        toCSR.rdata.bits                := intFile.toCSR.rdata.bits
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
         illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
@@ -393,7 +394,7 @@ class IMSIC_WRAP(
   toCSR         := imsic.toCSR
   imsic.io      := io
   imsic.msiio <> msiio
-
+  // printf(p"toCSR.rdata.bits:${toCSR.rdata.bits}")
   // define additional logic for sec extention
   // .foreach logic only happens when sec is not none.
   sec.foreach { secIO =>
