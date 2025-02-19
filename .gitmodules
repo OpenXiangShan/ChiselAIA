@@ -1,6 +1,6 @@
 [submodule "rocket-chip"]
 	path = rocket-chip
 	url = https://github.com/OpenXiangShan/rocket-chip.git
-[submodule "xs-utils"]
-	path = xs-utils
-	url = https://github.com/Siudya/xs-utils
+[submodule "Utility"]
+	path = Utility
+	url = git@github.com:OpenXiangShan/Utility.git
