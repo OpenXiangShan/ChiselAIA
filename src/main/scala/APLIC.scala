@@ -24,7 +24,7 @@ import freechips.rocketchip.tilelink._
 import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.regmapper._
-import xs.utils._
+import utility._
 
 case class APLICParams(
   //MC APLIC接收的中断源数量的对数。

@@ -12,8 +12,8 @@ import freechips.rocketchip.regmapper._
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 import org.chipsalliance.cde.config.Parameters
-import xs.utils._
-
+// import xs.utils._
+import utility._
 // RegMap that supports Default and Valid
 object RegMapDV {
   def Unwritable = null
@@ -246,7 +246,7 @@ class IMSIC(
         /*wdata*/ wdata,
         /*wmask*/ wmask
       )
-      toCSR.illegal := RegNext(fromCSR.addr.valid) & Seq(
+      toCSR.illegal := ~RegNext(fromCSR.addr.valid) & Seq(
         ~toCSR.rdata.valid,
         illegal_wdata_op
       ).reduce(_ | _)
@@ -368,7 +368,7 @@ class IMSIC(
       topeis_forEachIntFiles.drop(2)
     )) // vs
   }
-  toCSR.illegal := RegNext(fromCSR.addr.valid) & Seq(
+  toCSR.illegal := ~RegNext(fromCSR.addr.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
     fromCSR.vgein >= params.geilen.asUInt,
     illegal_priv
@@ -459,10 +459,14 @@ class TLIMSIC(
   lazy val module = new Imp
 
   class Imp extends LazyModuleImp(this) {
-    val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
+    val toCSR         = IO(Output(new IMSICToCSRBundleUp(params)))
     val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
     private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
-    toCSR         := imsic.toCSR
+    toCSR.rdata.valid   := imsic.toCSR.rdata.map(_.valid).reduce(_|_)
+    toCSR.rdata.bits   := imsic.toCSR.rdata.map(_.bits).reduce(_|_)
+    toCSR.illegal := imsic.toCSR.illegal
+    toCSR.pendings:= imsic.toCSR.pendings
+    toCSR.topeis  := imsic.toCSR.topeis
     imsic.fromCSR := fromCSR
     axireg.module.msiio <> imsic.msiio // msi_req/msi_ack interconnect
     // define additional ports for cvm extention

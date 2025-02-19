@@ -28,7 +28,6 @@ import freechips.rocketchip.regmapper._
 object pow2 { def apply(n: Int): Long = 1L << n }
 
 class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
-
   val node = AXI4AdapterNode( // identity
     masterFn = { mp => mp },
     slaveFn = { sp =>
@@ -221,7 +220,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U) & out.w.ready
       out.w.bits.strb := 15.U
       out.w.bits.data := w_l.data
-      in.r.bits.data := out.w.bits.data
+      in.r.bits.data := 0.U
       out.w.bits.last := 1.U
       out.b.ready := (state === sBCH) && (next_state === sIDLE) & (!isillegalAW)
 
