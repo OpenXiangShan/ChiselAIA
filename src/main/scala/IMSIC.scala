@@ -87,12 +87,19 @@ class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
   val claims = Vec(params.privNum, Bool())
 }
 class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
+  // val rdata    = ValidIO(UInt(params.xlen.W))
+  val rdata    = Vec(params.intFilesNum, ValidIO(UInt(params.xlen.W)))
+  val illegal  = Bool()
+  val pendings = UInt(params.intFilesNum.W)
+  val topeis   = Vec(params.privNum, UInt(32.W))
+}
+class IMSICToCSRBundleUp(params: IMSICParams) extends Bundle {
+  // val rdata    = ValidIO(UInt(params.xlen.W))
   val rdata    = ValidIO(UInt(params.xlen.W))
   val illegal  = Bool()
   val pendings = UInt(params.intFilesNum.W)
   val topeis   = Vec(params.privNum, UInt(32.W))
 }
-
 case class IMSICParams(
     // MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多512（2^9）个中断源
     // MC （Logarithm of number of interrupt sources to IMSIC.
@@ -334,8 +341,8 @@ class IMSIC(
         intFile.fromCSR.addr            := sel(fromCSR.addr)
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
-        toCSR.rdata.valid               := toCSR_rdata_vld
-        toCSR.rdata.bits                := intFile.toCSR.rdata.bits
+        toCSR.rdata(flati).valid        := toCSR_rdata_vld
+        toCSR.rdata(flati).bits         := intFile.toCSR.rdata.bits
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
         illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
@@ -486,10 +493,15 @@ class AXI4IMSIC(
   val axireg      = LazyModule(new AXIRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
-    val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
+    val toCSR         = IO(Output(new IMSICToCSRBundleUp(params)))
     val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
     private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
-    toCSR         := imsic.toCSR
+    toCSR.rdata.valid   := imsic.toCSR.rdata.map(_.valid).reduce(_|_)
+    toCSR.rdata.bits   := imsic.toCSR.rdata.map(_.bits).reduce(_|_)
+    toCSR.illegal := imsic.toCSR.illegal
+    toCSR.pendings:= imsic.toCSR.pendings
+    toCSR.topeis  := imsic.toCSR.topeis
+
     imsic.fromCSR := fromCSR
     axireg.module.msiio <> imsic.msiio // msi_req/msi_ack interconnect
     // define additional ports for cvm extention
