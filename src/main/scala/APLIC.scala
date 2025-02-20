@@ -55,7 +55,7 @@ case class APLICParams(
   //MC 👉 组的数量（Number of groups ）[\\(g_{max}\\)]:
   groupsNum       : Int  = 1           ,
   //MC 👉 客户中断文件的数量（Number of guest interrupt files）:
-  geilen          : Int  = 4           ,
+  geilen          : Int  = 5           ,
   //MC{hide}
   //MC{hide}
 ) {

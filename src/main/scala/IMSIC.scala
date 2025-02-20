@@ -87,7 +87,6 @@ class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
   val claims = Vec(params.privNum, Bool())
 }
 class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
-  // val rdata    = ValidIO(UInt(params.xlen.W))
   val rdata    = ValidIO(UInt(params.xlen.W))
   val illegal  = Bool()
   val pendings = UInt(params.intFilesNum.W)
@@ -104,7 +103,7 @@ case class IMSICParams(
     // MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
     sgAddr: Long = 0x10000L,
     // MC 👉 客户中断文件的数量（Number of guest interrupt files）:
-    geilen: Int = 4,
+    geilen: Int = 5,
     // MC vgein信号的位宽（The width of the vgein signal）:
     vgeinWidth: Int = 6,
     // MC iselect信号的位宽(The width of iselect signal):
@@ -121,6 +120,7 @@ case class IMSICParams(
   )
   lazy val privNum:     Int = 3          // number of privilege modes: machine, supervisor, virtualized supervisor
   lazy val intFilesNum: Int = 2 + geilen // number of interrupt files, m, s, vs0, vs1, ...
+  lazy val MaxintFilesNum: Int = 64
   lazy val eixNum: Int = pow2(imsicIntSrcWidth).toInt / xlen // number of eip/eie registers
   lazy val intFileMemWidth: Int = 12 // interrupt file memory region width: 12-bit width => 4KB size
   require(vgeinWidth >= log2Ceil(geilen))
@@ -128,7 +128,7 @@ case class IMSICParams(
     iselectWidth >= 8,
     f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63"
   )
-  lazy val INTP_FILE_WIDTH = log2Ceil(intFilesNum)
+  lazy val INTP_FILE_WIDTH = log2Ceil(intFilesNum) 
   lazy val MSI_INFO_WIDTH  = imsicIntSrcWidth + INTP_FILE_WIDTH
 }
 
@@ -239,7 +239,7 @@ class IMSIC(
         /*wdata*/ wdata,
         /*wmask*/ wmask
       )
-      toCSR.illegal := ~RegNext(fromCSR.addr.valid) & Seq(
+      toCSR.illegal := ~fromCSR.addr.valid & Seq(
         ~toCSR.rdata.valid,
         illegal_wdata_op
       ).reduce(_ | _)
@@ -364,7 +364,7 @@ class IMSIC(
       topeis_forEachIntFiles.drop(2)
     )) // vs
   }
-  toCSR.illegal := ~RegNext(fromCSR.addr.valid) & Seq(
+  toCSR.illegal := ~fromCSR.addr.valid & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
     fromCSR.vgein >= params.geilen.asUInt,
     illegal_priv
