@@ -3,4 +3,4 @@
 	url = https://github.com/OpenXiangShan/rocket-chip.git
 [submodule "Utility"]
 	path = Utility
-	url = https://github.com:OpenXiangShan/Utility.git
+	url = https://github.com/OpenXiangShan/Utility.git
