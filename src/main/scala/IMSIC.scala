@@ -88,13 +88,6 @@ class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
 }
 class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
   // val rdata    = ValidIO(UInt(params.xlen.W))
-  val rdata    = Vec(params.intFilesNum, ValidIO(UInt(params.xlen.W)))
-  val illegal  = Bool()
-  val pendings = UInt(params.intFilesNum.W)
-  val topeis   = Vec(params.privNum, UInt(32.W))
-}
-class IMSICToCSRBundleUp(params: IMSICParams) extends Bundle {
-  // val rdata    = ValidIO(UInt(params.xlen.W))
   val rdata    = ValidIO(UInt(params.xlen.W))
   val illegal  = Bool()
   val pendings = UInt(params.intFilesNum.W)
@@ -321,6 +314,7 @@ class IMSIC(
   imsicGateWay.msiio.msi_vld_req := msiio.msi_vld_req
   msiio.msi_vld_ack              := imsicGateWay.msiio.msi_vld_ack
   val pendings = Wire(Vec(params.intFilesNum,Bool()))
+  val vec_rdata = Wire(Vec(params.intFilesNum, ValidIO(UInt(params.xlen.W))))
   Seq(1, 1 + params.geilen).zipWithIndex.map {
     case (intFilesNum: Int, i: Int) => {
       // j: index for S intFile: S, G1, G2, ...
@@ -341,15 +335,17 @@ class IMSIC(
         intFile.fromCSR.addr            := sel(fromCSR.addr)
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
-        toCSR.rdata(flati).valid        := toCSR_rdata_vld
-        toCSR.rdata(flati).bits         := intFile.toCSR.rdata.bits
+        vec_rdata(flati).valid          := toCSR_rdata_vld
+        vec_rdata(flati).bits           := intFile.toCSR.rdata.bits
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
         illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
       }
     }
   }
-    toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
+  toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
+  toCSR.rdata.bits    := vec_rdata.map(_.bits).reduce(_|_)
+  toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
   locally {
     // Format of *topei:
     // * bits 26:16 Interrupt identity
@@ -459,14 +455,10 @@ class TLIMSIC(
   lazy val module = new Imp
 
   class Imp extends LazyModuleImp(this) {
-    val toCSR         = IO(Output(new IMSICToCSRBundleUp(params)))
+    val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
     private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
-    toCSR.rdata.valid   := imsic.toCSR.rdata.map(_.valid).reduce(_|_)
-    toCSR.rdata.bits   := imsic.toCSR.rdata.map(_.bits).reduce(_|_)
-    toCSR.illegal := imsic.toCSR.illegal
-    toCSR.pendings:= imsic.toCSR.pendings
-    toCSR.topeis  := imsic.toCSR.topeis
+    toCSR := imsic.toCSR
     imsic.fromCSR := fromCSR
     axireg.module.msiio <> imsic.msiio // msi_req/msi_ack interconnect
     // define additional ports for cvm extention
@@ -497,15 +489,10 @@ class AXI4IMSIC(
   val axireg      = LazyModule(new AXIRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
   lazy val module = new Imp
   class Imp extends LazyModuleImp(this) {
-    val toCSR         = IO(Output(new IMSICToCSRBundleUp(params)))
+    val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
     private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
-    toCSR.rdata.valid   := imsic.toCSR.rdata.map(_.valid).reduce(_|_)
-    toCSR.rdata.bits   := imsic.toCSR.rdata.map(_.bits).reduce(_|_)
-    toCSR.illegal := imsic.toCSR.illegal
-    toCSR.pendings:= imsic.toCSR.pendings
-    toCSR.topeis  := imsic.toCSR.topeis
-
+    toCSR := imsic.toCSR
     imsic.fromCSR := fromCSR
     axireg.module.msiio <> imsic.msiio // msi_req/msi_ack interconnect
     // define additional ports for cvm extention
