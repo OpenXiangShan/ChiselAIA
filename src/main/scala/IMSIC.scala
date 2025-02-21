@@ -239,10 +239,13 @@ class IMSIC(
         /*wdata*/ wdata,
         /*wmask*/ wmask
       )
-      toCSR.illegal := ~fromCSR.addr.valid & Seq(
-        ~toCSR.rdata.valid,
-        illegal_wdata_op
-      ).reduce(_ | _)
+      // toCSR.illegal := ~fromCSR.addr.valid & Seq(
+      //   ~toCSR.rdata.valid,
+      //   illegal_wdata_op
+      // ).reduce(_ | _)
+      toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
+      ~toCSR.rdata.valid | illegal_wdata_op
+      )
     } // end of scope for xiselect CSR reg map
 
     locally {
@@ -329,14 +332,13 @@ class IMSIC(
           new_
         }
         val intFile = Module(new IntFile)
-        val toCSR_rdata_vld = RegNext(intFile.toCSR.rdata.valid)
+        val toCSR_rdata = RegNext(intFile.toCSR.rdata)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr            := sel(fromCSR.addr)
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
-        vec_rdata(flati).valid          := toCSR_rdata_vld
-        vec_rdata(flati).bits           := intFile.toCSR.rdata.bits
+        vec_rdata(flati)                := toCSR_rdata
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
         illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
@@ -364,7 +366,7 @@ class IMSIC(
       topeis_forEachIntFiles.drop(2)
     )) // vs
   }
-  toCSR.illegal := ~fromCSR.addr.valid & Seq(
+  toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
     fromCSR.vgein >= params.geilen.asUInt,
     illegal_priv
