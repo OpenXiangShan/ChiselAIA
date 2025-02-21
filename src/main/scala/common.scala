@@ -65,7 +65,6 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
       //======TODO======//
       val awcnt = RegInit(0.U(8.W)) // width of awcnt is same with awlen
-      val wcnt = RegInit(0.U(8.W))
       
       val addrAW = aw_l.addr
       val addrAR = ar_l.addr
@@ -96,9 +95,9 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val isillegalAW = (!isValidAddressAW) | isWCErr | isWLockErr
       val isillegalAR = (!isValidAlignmentAR) | isRCErr | isRLockErr
 
-      in.r.bits.last := (state === sRCH) && (awcnt === ar_l.len) && in.r.ready
-      val awready = WireInit(true.B)  // temp signal ,out.awready for the first data, true.B for other data transaction.
-      val wready = WireInit(true.B)  // temp signal
+      in.r.bits.last := (state === sRCH) && (awcnt === ar_l.len) && in.r.ready && in.r.valid
+      val awready = RegInit(true.B) // temp signal ,out.awready for the first data, true.B for other data transaction.
+      val wready = RegInit(true.B) // temp signal
       val aw_last = RegInit(false.B)
       val w_last = RegInit(false.B)
       // aw_last: the last addr for burst,
@@ -110,7 +109,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         aw_last := false.B
       }
       when (state === sWCH){
-        when((wcnt === aw_l.len) & wready){
+        when(in.w.bits.last){
           w_last := true.B
         }
       }.otherwise{
@@ -144,27 +143,29 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           }
         }
       }
-      
       when(state === sWCH) {
-        when((!isillegalAW) & (awcnt === 0.U)) { //only the first illegal data to downstream
-          awready := out.aw.ready
-        }.otherwise {
-          awready := true.B  // legal or non first data
+        when((!isillegalAW) & (!awready) & out.aw.ready & in.aw.valid) { // only the first illegal data to downstream
+          awready := true.B
+        }.elsewhen(aw_last | (awready & (awcnt === aw_l.len))) {
+          awready := false.B
+        }.elsewhen(isillegalAW === true.B) {
+          awready := true.B
         }
       }.otherwise {
-        awready := true.B
+        awready := false.B
       }
 
       when(state === sWCH) {
-        when((!isillegalAW) & (wcnt === 0.U)) {
-          wready := out.w.ready
-        }.otherwise {
-          wready := true.B  // legal or non first data
+        when((!isillegalAW) & (!wready) & out.w.ready & in.w.valid) { //first data
+          wready := true.B
+        }.elsewhen(in.w.bits.last | w_last) {
+          wready := false.B // legal or non first data
+        }.elsewhen(isillegalAW === true.B) {
+          wready := true.B
         }
       }.otherwise {
-        wready := true.B
+        wready := false.B
       }
-
       when(state === sWCH) {
         when(awcnt >= aw_l.len) { // arrive the max length of burst
           awcnt := awcnt
@@ -172,42 +173,45 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           awcnt := awcnt + 1.U
         }
       }.elsewhen(state === sRCH) {
-        when(in.r.ready | (~isillegalAR.asBool)) {
+        when(in.r.valid & in.r.ready) {
           awcnt := awcnt + 1.U
         }
       }.otherwise {
         awcnt := 0.U
       }
-      //wcnt
-      when(state === sWCH) {
-        when(wcnt >= aw_l.len) { // arrive the max length of burst
-          wcnt := wcnt
-        }.elsewhen(wready) {
-          wcnt := wcnt + 1.U
-        }
-      }.otherwise {
-        wcnt := 0.U
-      }
       // response for in
       val isFinaldly = RegInit(false.B)
       isFinaldly := isFinalBurst
       val isFinalris = isFinalBurst & (!isFinaldly)
-      in.aw.ready    := isFinalris
-      in.w.ready     := isFinalris
-      in.b.valid     := state === sBCH
-      in.b.bits.id   := aw_l.id
-      in.b.bits.resp := Cat(isWCErr,0.U)
-      in.r.valid     := state === sRCH
-      in.r.bits.resp := Cat(isRCErr,0.U)
-      in.r.bits.id   := ar_l.id
-      // in.r.bits.data := 
-      in.ar.ready    := true.B
+
+      in.aw.ready := isFinalris
+      in.w.ready := wready
+      in.b.valid := state === sBCH
+      in.b.bits.id := aw_l.id
+      in.b.bits.resp := Cat(isWCErr, 0.U)
+      val rvalid = RegInit(false.B)
+      when(state === sRCH) {
+        when(in.ar.valid) {
+          rvalid := true.B
+        }.elsewhen(in.r.bits.last) {
+          rvalid := false.B
+        }
+      }.otherwise {
+        rvalid := false.B
+      }
+      in.r.valid := rvalid
+      in.r.bits.resp := Cat(isRCErr, 0.U)
+      in.r.bits.id := ar_l.id
+      in.r.bits.data := 0.U
+      in.ar.ready := true.B
 
       // When either AW or AR is valid, perform address checks
       val m_awvalid = RegInit(false.B)
-      when ((state === sIDLE) & (next_state === sWCH)){
+      when(awpulse_l) {
         m_awvalid := true.B
-      }.elsewhen(out.aw.ready){
+      }.elsewhen(out.aw.ready) {
+        m_awvalid := false.B
+      }.elsewhen(state === sIDLE) {
         m_awvalid := false.B
       }
       out.aw.valid := m_awvalid & (!isillegalAW)
@@ -217,12 +221,25 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       out.aw.bits.echo := aw_l.echo
       out.ar.bits.echo := ar_l.echo
       out.aw.bits.size := 2.U
-      out.w.valid := (state === sWCH) & (!isillegalAW) & (wcnt === 0.U) & out.w.ready
+      val m_wvalid = RegInit(false.B)
+      when(awpulse_l) {
+        m_wvalid := true.B
+      }.elsewhen(out.w.ready) {
+        m_wvalid := false.B
+      }.elsewhen(state === sIDLE) {
+        m_wvalid := false.B
+      }
+      out.w.valid := m_wvalid & (!isillegalAW)
       out.w.bits.strb := 15.U
       out.w.bits.data := w_l.data
-      in.r.bits.data := 0.U
       out.w.bits.last := 1.U
-      out.b.ready := (state === sBCH) && (next_state === sIDLE) & (!isillegalAW)
+      val m_bready = RegInit(false.B)
+      when((state === sBCH) && (next_state === sIDLE)) {
+        m_bready := true.B
+      }.otherwise {
+        m_bready := false.B
+      }
+      out.b.ready := m_bready & (!isillegalAW)
 
       //else out signal is from the signals latched,for timing.
       }
