@@ -143,7 +143,6 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           }
         }
       }
-
       when(state === sWCH) {
         when((!isillegalAW) & (!awready) & out.aw.ready & in.aw.valid) { // only the first illegal data to downstream
           awready := true.B
@@ -167,7 +166,6 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }.otherwise {
         wready := false.B
       }
-
       when(state === sWCH) {
         when(awcnt >= aw_l.len) { // arrive the max length of burst
           awcnt := awcnt
@@ -185,6 +183,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val isFinaldly = RegInit(false.B)
       isFinaldly := isFinalBurst
       val isFinalris = isFinalBurst & (!isFinaldly)
+
       in.aw.ready := isFinalris
       in.w.ready := wready
       in.b.valid := state === sBCH
@@ -200,7 +199,6 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }.otherwise {
         rvalid := false.B
       }
-
       in.r.valid := rvalid
       in.r.bits.resp := Cat(isRCErr, 0.U)
       in.r.bits.id := ar_l.id

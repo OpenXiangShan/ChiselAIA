@@ -161,7 +161,7 @@ async def imsic_1_test(dut):
   await FallingEdge(dut.clock)
   await FallingEdge(dut.clock)
   dut.toCSR1_illegal.value = 0
-  await select_vs_intfile(dut, 4)
+  await select_vs_intfile(dut, 5)
   await write_csr(dut, csr_addr_eidelivery, 1)
   assert dut.toCSR1_illegal.value == 1
   await select_m_intfile(dut)

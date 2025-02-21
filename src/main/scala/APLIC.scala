@@ -24,7 +24,7 @@ import freechips.rocketchip.tilelink._
 import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.amba.axi4._
 import freechips.rocketchip.regmapper._
-import xs.utils._
+import utility._
 
 case class APLICParams(
   //MC APLIC接收的中断源数量的对数。
@@ -55,7 +55,7 @@ case class APLICParams(
   //MC 👉 组的数量（Number of groups ）[\\(g_{max}\\)]:
   groupsNum       : Int  = 1           ,
   //MC 👉 客户中断文件的数量（Number of guest interrupt files）:
-  geilen          : Int  = 4           ,
+  geilen          : Int  = 5           ,
   //MC{hide}
   //MC{hide}
 ) {

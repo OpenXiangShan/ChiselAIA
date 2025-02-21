@@ -12,8 +12,7 @@ import freechips.rocketchip.regmapper._
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 import org.chipsalliance.cde.config.Parameters
-import xs.utils._
-
+import utility._
 // RegMap that supports Default and Valid
 object RegMapDV {
   def Unwritable = null
@@ -92,9 +91,9 @@ class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
   val pendings = UInt(params.intFilesNum.W)
   val topeis   = Vec(params.privNum, UInt(32.W))
 }
-
 case class IMSICParams(
     // MC IMSIC中断源数量的对数，默认值9表示IMSIC支持最多512（2^9）个中断源
+
     // MC （Logarithm of number of interrupt sources to IMSIC.
     // MC The default 9 means IMSIC support at most 512 (2^9) interrupt sources）:
     // MC{visible}
@@ -104,7 +103,7 @@ case class IMSICParams(
     // MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
     sgAddr: Long = 0x10000L,
     // MC 👉 客户中断文件的数量（Number of guest interrupt files）:
-    geilen: Int = 4,
+    geilen: Int = 5,
     // MC vgein信号的位宽（The width of the vgein signal）:
     vgeinWidth: Int = 6,
     // MC iselect信号的位宽(The width of iselect signal):
@@ -121,6 +120,7 @@ case class IMSICParams(
   )
   lazy val privNum:     Int = 3          // number of privilege modes: machine, supervisor, virtualized supervisor
   lazy val intFilesNum: Int = 2 + geilen // number of interrupt files, m, s, vs0, vs1, ...
+
   lazy val eixNum: Int = pow2(imsicIntSrcWidth).toInt / xlen // number of eip/eie registers
   lazy val intFileMemWidth: Int = 12 // interrupt file memory region width: 12-bit width => 4KB size
   require(vgeinWidth >= log2Ceil(geilen))
@@ -128,7 +128,7 @@ case class IMSICParams(
     iselectWidth >= 8,
     f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63"
   )
-  lazy val INTP_FILE_WIDTH = log2Ceil(intFilesNum)
+  lazy val INTP_FILE_WIDTH = log2Ceil(intFilesNum) 
   lazy val MSI_INFO_WIDTH  = imsicIntSrcWidth + INTP_FILE_WIDTH
 }
 
@@ -239,10 +239,9 @@ class IMSIC(
         /*wdata*/ wdata,
         /*wmask*/ wmask
       )
-      toCSR.illegal := RegNext(fromCSR.addr.valid) & Seq(
-        ~toCSR.rdata.valid,
-        illegal_wdata_op
-      ).reduce(_ | _)
+      toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
+      ~toCSR.rdata.valid | illegal_wdata_op
+      )
     } // end of scope for xiselect CSR reg map
 
     locally {
@@ -314,6 +313,7 @@ class IMSIC(
   imsicGateWay.msiio.msi_vld_req := msiio.msi_vld_req
   msiio.msi_vld_ack              := imsicGateWay.msiio.msi_vld_ack
   val pendings = Wire(Vec(params.intFilesNum,Bool()))
+  val vec_rdata = Wire(Vec(params.intFilesNum, ValidIO(UInt(params.xlen.W))))
   Seq(1, 1 + params.geilen).zipWithIndex.map {
     case (intFilesNum: Int, i: Int) => {
       // j: index for S intFile: S, G1, G2, ...
@@ -328,20 +328,22 @@ class IMSIC(
           new_
         }
         val intFile = Module(new IntFile)
-        val de_toCSR_rdata = RegNext(intFile.toCSR.rdata)
+        val toCSR_rdata = RegNext(intFile.toCSR.rdata)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr            := sel(fromCSR.addr)
         intFile.fromCSR.wdata           := sel(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
-        toCSR.rdata                     := de_toCSR_rdata
+        vec_rdata(flati)                := toCSR_rdata
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
         illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
       }
     }
   }
-    toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
+  toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
+  toCSR.rdata.bits    := vec_rdata.map(_.bits).reduce(_|_)
+  toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
   locally {
     // Format of *topei:
     // * bits 26:16 Interrupt identity
@@ -360,7 +362,7 @@ class IMSIC(
       topeis_forEachIntFiles.drop(2)
     )) // vs
   }
-  toCSR.illegal := RegNext(fromCSR.addr.valid) & Seq(
+  toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
     fromCSR.vgein >= params.geilen.asUInt,
     illegal_priv
@@ -393,7 +395,6 @@ class IMSIC_WRAP(
   toCSR         := imsic.toCSR
   imsic.io      := io
   imsic.msiio <> msiio
-
   // define additional logic for sec extention
   // .foreach logic only happens when sec is not none.
   sec.foreach { secIO =>
@@ -454,7 +455,7 @@ class TLIMSIC(
     val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
     private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
-    toCSR         := imsic.toCSR
+    toCSR := imsic.toCSR
     imsic.fromCSR := fromCSR
     axireg.module.msiio <> imsic.msiio // msi_req/msi_ack interconnect
     // define additional ports for cvm extention
@@ -488,7 +489,7 @@ class AXI4IMSIC(
     val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
     val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
     private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
-    toCSR         := imsic.toCSR
+    toCSR := imsic.toCSR
     imsic.fromCSR := fromCSR
     axireg.module.msiio <> imsic.msiio // msi_req/msi_ack interconnect
     // define additional ports for cvm extention
