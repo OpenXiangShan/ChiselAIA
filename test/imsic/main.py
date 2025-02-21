@@ -156,16 +156,16 @@ async def imsic_1_test(dut):
   assert dut.toCSR1_illegal.value == 1
   cocotb.log.info("illegal:iselect passed")
 
-  # # Illegal vgein test
-  # cocotb.log.info("illegal:vgein began")
-  # await FallingEdge(dut.clock)
-  # await FallingEdge(dut.clock)
-  # dut.toCSR1_illegal.value = 0
-  # await select_vs_intfile(dut, 4)
-  # await write_csr(dut, csr_addr_eidelivery, 1)
-  # assert dut.toCSR1_illegal.value == 1
-  # await select_m_intfile(dut)
-  # cocotb.log.info("illegal:vgein end")
+  # Illegal vgein test
+  cocotb.log.info("illegal:vgein began")
+  await FallingEdge(dut.clock)
+  await FallingEdge(dut.clock)
+  dut.toCSR1_illegal.value = 0
+  await select_vs_intfile(dut, 5)
+  await write_csr(dut, csr_addr_eidelivery, 1)
+  assert dut.toCSR1_illegal.value == 1
+  await select_m_intfile(dut)
+  cocotb.log.info("illegal:vgein end")
 
   # Illegal wdata_op test
   cocotb.log.info("illegal:iselect:wdata_op began")
