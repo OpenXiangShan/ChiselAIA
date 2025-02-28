@@ -12,7 +12,6 @@ import freechips.rocketchip.regmapper._
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 import org.chipsalliance.cde.config.Parameters
-// import xs.utils._
 import utility._
 // RegMap that supports Default and Valid
 object RegMapDV {
@@ -93,7 +92,8 @@ class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
   val topeis   = Vec(params.privNum, UInt(32.W))
 }
 case class IMSICParams(
-    // MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多512（2^9）个中断源
+    // MC IMSIC中断源数量的对数，默认值9表示IMSIC支持最多512（2^9）个中断源
+
     // MC （Logarithm of number of interrupt sources to IMSIC.
     // MC The default 9 means IMSIC support at most 512 (2^9) interrupt sources）:
     // MC{visible}
@@ -120,7 +120,7 @@ case class IMSICParams(
   )
   lazy val privNum:     Int = 3          // number of privilege modes: machine, supervisor, virtualized supervisor
   lazy val intFilesNum: Int = 2 + geilen // number of interrupt files, m, s, vs0, vs1, ...
-  lazy val MaxintFilesNum: Int = 64
+
   lazy val eixNum: Int = pow2(imsicIntSrcWidth).toInt / xlen // number of eip/eie registers
   lazy val intFileMemWidth: Int = 12 // interrupt file memory region width: 12-bit width => 4KB size
   require(vgeinWidth >= log2Ceil(geilen))
@@ -239,10 +239,6 @@ class IMSIC(
         /*wdata*/ wdata,
         /*wmask*/ wmask
       )
-      // toCSR.illegal := ~fromCSR.addr.valid & Seq(
-      //   ~toCSR.rdata.valid,
-      //   illegal_wdata_op
-      // ).reduce(_ | _)
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
       ~toCSR.rdata.valid | illegal_wdata_op
       )
@@ -399,7 +395,6 @@ class IMSIC_WRAP(
   toCSR         := imsic.toCSR
   imsic.io      := io
   imsic.msiio <> msiio
-  // printf(p"toCSR.rdata.bits:${toCSR.rdata.bits}")
   // define additional logic for sec extention
   // .foreach logic only happens when sec is not none.
   sec.foreach { secIO =>
