@@ -297,7 +297,7 @@ class IMSIC(
     val pv = Cat(fromCSR.priv.asUInt, fromCSR.virt)
     when(pv === Cat(PrivType.M.asUInt, false.B))(intFilesSelOH := UIntToOH(0.U))
       .elsewhen(pv === Cat(PrivType.S.asUInt, false.B))(intFilesSelOH := UIntToOH(1.U))
-      .elsewhen(pv === Cat(PrivType.S.asUInt, true.B))(intFilesSelOH := UIntToOH(2.U + fromCSR.vgein))
+      .elsewhen(pv === Cat(PrivType.S.asUInt, true.B))(intFilesSelOH := UIntToOH(1.U + fromCSR.vgein))
       .otherwise(illegal_priv := true.B)
   }
   private val topeis_forEachIntFiles   = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
@@ -384,7 +384,6 @@ class IMSIC_WRAP(
   // .foreach logic only happens when sec is not none.
   sec.foreach { secIO =>
     // get the sec.mode, connect sec.o_notice_pending to top.
-
     val cmode          = Wire(Bool())
     val notice_pending = Wire(Bool())
     cmode                := secIO.cmode

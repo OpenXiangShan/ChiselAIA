@@ -27,17 +27,33 @@ import freechips.rocketchip.regmapper._
 
 object pow2 { def apply(n: Int): Long = 1L << n }
 
-class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
+class AXI4ToLite()(implicit p: Parameters) extends LazyModule { 
+  // val node = AXI4AdapterNode( // identity
+  //   masterFn = { mp => 
+  //     val masters = Array.tabulate(65536 / 16) { i => 
+  //       AXI4MasterParameters(
+  //         name = "",
+  //         id = IdRange(i * 16, i * 16 + 15)
+  //       )
+  //     }
+  //     mp.copy(masters = masters)
+  //   },
+  //   slaveFn = { sp =>
+  //     sp.copy(slaves = sp.slaves.map(s =>
+  //       s.copy(address = s.address.map(a =>
+  //         AddressSet(a.base, a.mask)))))}
+  // )
   val node = AXI4AdapterNode( // identity
-    masterFn = { mp => mp },
+    masterFn = { mp => mp},
     slaveFn = { sp =>
       sp.copy(slaves = sp.slaves.map(s =>
         s.copy(address = s.address.map(a =>
-          AddressSet(a.base, a.mask)))))})
+          AddressSet(a.base, a.mask)))))}
+  )
   lazy val module = new Impl
   class Impl extends LazyModuleImp(this) {
     (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
-//      out <> in
+      // out <> in
       dontTouch(in.aw.bits)
       dontTouch(in.ar.bits)
       dontTouch(in.w.bits)
@@ -59,9 +75,9 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val awchvld = isAWValid & in.w.valid
       val aw_l = RegEnable(in.aw.bits, awpulse_l)
       val w_l = RegEnable(in.w.bits, awpulse_l)
-//      val b_l = RegEnable(in.b.bits, awpulse_l)
+      // val b_l = RegEnable(in.b.bits, awpulse_l)
       val ar_l = RegEnable(in.ar.bits, arpulse_l)
-//      val r_l = RegEnable(in.r.bits, awpulse_l)
+      // al r_l = RegEnable(in.r.bits, awpulse_l)
 
       //======TODO======//
       val awcnt = RegInit(0.U(8.W)) // width of awcnt is same with awlen
@@ -74,8 +90,8 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
       val isValidAlignmentAW = (addrAW(1, 0) === 0.U)  // Example alignment check for AW
       val isValidAlignmentAR = (addrAR(1, 0) === 0.U)  // Example alignment check for AR
-//      val isAccessingValidRegisterAW = (addrAW(11, 2) === 0.U)  // Example valid register check for AW
-//      val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
+      // val isAccessingValidRegisterAW = (addrAW(11, 2) === 0.U)  // Example valid register check for AW
+      // val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
 
       val isWAligErr  = !((aw_l.size === 2.U) & (w_l.strb === 15.U) & isValidAlignmentAW)  // alignment with 4B.
       val isWCacheErr = (aw_l.cache(3,1)).orR  //non device
@@ -249,12 +265,29 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
 class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModule
 {
+  // val node = AXI4AdapterNode( // identity
+  //   masterFn = { mp => 
+  //     val masters = Array.tabulate(65536 / 16) { i => 
+  //       AXI4MasterParameters(
+  //         name = "",
+  //         id = IdRange(i * 16, i * 16 + 15)
+  //       )
+  //     }
+  //     mp.copy(masters = masters)
+  //   },
+  //   slaveFn = { sp =>
+  //     sp.copy(slaves = sp.slaves.map(s =>
+  //       s.copy(address = s.address.map(a =>
+  //         AddressSet(fn(a), a.mask)))))}
+  // )
+  
   val node = AXI4AdapterNode(
     masterFn = { mp => mp },
     slaveFn = { sp =>
       sp.copy(slaves = sp.slaves.map(s =>
         s.copy(address = s.address.map(a =>
-          AddressSet(fn(a), a.mask)))))})
+          AddressSet(fn(a), a.mask)))))}
+  )
 
   lazy val module = new Impl
   class Impl extends LazyModuleImp(this) {
