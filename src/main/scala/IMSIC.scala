@@ -358,13 +358,13 @@ class IMSIC(
     toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
     toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
     toCSR.topeis(2) := wrap(ParallelMux(
-      UIntToOH(fromCSR.vgein, params.geilen).asBools,
+      UIntToOH(fromCSR.vgein + 1, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
   }
   toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
-    fromCSR.vgein >= params.geilen.asUInt,
+    fromCSR.vgein >= params.geilen.asUInt + 1.U,
     illegal_priv
   ).reduce(_ | _)
 }
