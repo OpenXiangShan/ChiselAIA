@@ -358,7 +358,7 @@ class IMSIC(
     toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
     toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
     toCSR.topeis(2) := wrap(ParallelMux(
-      UIntToOH(fromCSR.vgein + 1, params.geilen).asBools,
+      UIntToOH(fromCSR.vgein + 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
   }
