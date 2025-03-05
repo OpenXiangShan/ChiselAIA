@@ -263,9 +263,9 @@ class IMSIC(
       val eipBools = Cat(eips.reverse).asBools :+ true.B
       val eieBools = Cat(eies.reverse).asBools :+ true.B
       def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
-        val tmp_xtopei = Mux(xeidelivery(0), xtopei, 0.U)
+        val tmp_xtopei = Mux(xeidelivery(params.xlen - 1, 1) === 0.U, Mux(xeidelivery(0), xtopei, 0.U) , 0.U)
         // {
-        //   all interrupts are enabled, when eithreshold == 0;
+        //   all interrupts are enabled, when eithreshold == 1;
         //   interrupts, when i < eithreshold, are enabled;
         // } <=> interrupts, when i <= (eithreshold -1), are enabled
         Mux(tmp_xtopei <= (xeithreshold - 1.U), tmp_xtopei, 0.U)

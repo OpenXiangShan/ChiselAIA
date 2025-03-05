@@ -33,7 +33,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val masters = (0 until 3).map { i =>
         AXI4MasterParameters(
           name = s"master_$i",
-          id =IdRange(i * 32, (i + 1) * 32 - 1)
+          id =IdRange(i * 16, (i + 1) * 16 - 1)
         )
       }.toList
       mp.copy(masters = masters)
@@ -269,7 +269,7 @@ class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModu
       val masters = (0 until 3).map { i =>
         AXI4MasterParameters(
           name = s"master_$i",
-          id =IdRange(i * 32, (i + 1) * 32 - 1)
+          id =IdRange(i * 16, (i + 1) * 16 - 1)
         )
       }.toList
       mp.copy(masters = masters)

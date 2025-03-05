@@ -1,5 +1,5 @@
 .NOTINTERMEDIATE:
-
+# export MILL_JVM_OPTS="-Xmx16G"
 testcases=$(shell ls test/*/main.py | awk -F '/' '{print $$2}')
 default: $(addprefix run-,$(testcases))
 
