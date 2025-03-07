@@ -75,10 +75,27 @@ class ForCVMBundle extends Bundle {
   val notice_pending =
     Output(Bool()) // add port: interrupt pending of ree when cmode is tee,else interrupt pending of tee.
 }
+// class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
+//   val addr  = ValidIO(UInt(params.iselectWidth.W))
+//   val virt  = Bool()
+//   val priv  = PrivType()
+//   val vgein = UInt(params.vgeinWidth.W)
+//   val wdata = ValidIO(new Bundle {
+//     val op   = OpType()
+//     val data = UInt(params.xlen.W)
+//   })
+//   val claims = Vec(params.privNum, Bool())
+// }
+class AddrBundle(params: IMSICParams) extends  Bundle {
+  val valid = Bool()                      // 表示 addr 是否有效
+  val bits  = new Bundle {
+    val addr = UInt(params.iselectWidth.W) // 存储实际地址值
+    val virt  = Bool()
+    val priv  = PrivType()
+  }
+}
 class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
-  val addr  = ValidIO(UInt(params.iselectWidth.W))
-  val virt  = Bool()
-  val priv  = PrivType()
+  val addr  = new AddrBundle(params)
   val vgein = UInt(params.vgeinWidth.W)
   val wdata = ValidIO(new Bundle {
     val op   = OpType()
@@ -296,11 +313,14 @@ class IMSIC(
   private val illegal_priv  = WireDefault(false.B)
   private val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
   locally {
-    val pv = Cat(fromCSR.priv.asUInt, fromCSR.virt)
-    when(pv === Cat(PrivType.M.asUInt, false.B))(intFilesSelOH := UIntToOH(0.U))
-      .elsewhen(pv === Cat(PrivType.S.asUInt, false.B))(intFilesSelOH := UIntToOH(1.U))
-      .elsewhen(pv === Cat(PrivType.S.asUInt, true.B))(intFilesSelOH := UIntToOH(1.U + fromCSR.vgein))
-      .otherwise(illegal_priv := true.B)
+    when (fromCSR.addr.valid)
+    {
+      val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
+      when(pv === Cat(PrivType.M.asUInt, false.B))(intFilesSelOH := UIntToOH(0.U))
+        .elsewhen(pv === Cat(PrivType.S.asUInt, false.B))(intFilesSelOH := UIntToOH(1.U))
+        .elsewhen(pv === Cat(PrivType.S.asUInt, true.B))(intFilesSelOH := UIntToOH(1.U + fromCSR.vgein))
+        .otherwise(illegal_priv := true.B)
+    }
   }
   private val topeis_forEachIntFiles   = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
   private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
@@ -316,7 +336,15 @@ class IMSIC(
         val flati = i + j
         val pi    = if (flati > 2) 2 else flati // index for privileges: M, S, VS.
 
-        def sel[T <: Data](old: Valid[T]): Valid[T] = {
+        def sel_addr(old: AddrBundle): AddrBundle = {
+          val new_ = Wire(new AddrBundle(params))
+          new_.valid := old.valid & intFilesSelOH(flati)
+          new_.bits.addr := old.bits.addr
+          new_.bits.virt := old.bits.virt
+          new_.bits.priv := old.bits.priv
+          new_
+        }
+        def sel_wdata[T <: Data](old: Valid[T]): Valid[T] = {
           val new_ = Wire(Valid(chiselTypeOf(old.bits)))
           new_.bits  := old.bits
           new_.valid := old.valid & intFilesSelOH(flati)
@@ -326,8 +354,9 @@ class IMSIC(
         val toCSR_rdata = RegNext(intFile.toCSR.rdata)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
-        intFile.fromCSR.addr            := sel(fromCSR.addr)
-        intFile.fromCSR.wdata           := sel(fromCSR.wdata)
+        intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
+        intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
+        intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
         vec_rdata(flati)                := toCSR_rdata
         pendings(flati)                 := intFile.toCSR.pending
