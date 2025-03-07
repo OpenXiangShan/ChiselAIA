@@ -536,20 +536,22 @@ class AXIRegIMSIC_WRAP(
 }
 
 class TLRegIMSIC(
-    params:    IMSICParams,
-    beatBytes: Int = 4
+    params:      IMSICParams,
+    beatBytes:   Int = 4,
+    seperateBus: Boolean = false
 )(implicit p: Parameters) extends LazyModule {
-  val fromMem = TLXbar()
+  val fromMem = Seq.fill(if (seperateBus) 2 else 1)(TLXbar())
   // val fromMem = LazyModule(new TLXbar).node
   private val intfileFromMems = Seq(
     AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
     AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)
-  ).map { addrset =>
+  ).zipWithIndex.map { case (addrset, i) =>
     val intfileFromMem = TLRegMapperNode(
       address = Seq(addrset),
       beatBytes = beatBytes
     )
-    intfileFromMem := fromMem; intfileFromMem
+    intfileFromMem := (if (seperateBus) fromMem(i) else fromMem.head)
+    intfileFromMem
   }
 
   lazy val module = new TLRegIMSICImp(this)
@@ -613,21 +615,22 @@ class TLRegIMSIC(
 
 //generate axi42reg for IMSIC
 class AXIRegIMSIC(
-    params:    IMSICParams,
-    beatBytes: Int = 4
+    params:      IMSICParams,
+    beatBytes:   Int = 4,
+    seperateBus: Boolean = false
 )(implicit p: Parameters) extends LazyModule {
-  val fromMem = AXI4Xbar()
-  val axi4tolite = LazyModule(new AXI4ToLite()(Parameters.empty))
-  fromMem := axi4tolite.node
+  val fromMem = Seq.fill(if (seperateBus) 2 else 1)(AXI4Xbar())
+  val axi4tolite = Seq.fill(if (seperateBus) 2 else 1)(LazyModule(new AXI4ToLite()(Parameters.empty)))
+  fromMem zip axi4tolite.map(_.node) foreach (x => x._1 := x._2)
   private val intfileFromMems = Seq(
     AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
     AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)
-  ).map { addrset =>
+  ).zipWithIndex.map { case (addrset, i) =>
     val intfileFromMem = AXI4RegMapperNode(
       address = addrset,
       beatBytes = beatBytes
     )
-    intfileFromMem := fromMem
+    intfileFromMem := (if (seperateBus) fromMem(i) else fromMem.head)
     intfileFromMem
   }
   

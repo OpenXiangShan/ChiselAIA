@@ -57,8 +57,8 @@ class TLAIA()(implicit p: Parameters) extends LazyModule {
       case IMSICParameKey => IMSICParameters(HasTEEIMSIC = false)
     })))
 
-    imsic.axireg.axireg.fromMem := map := imsics_fromMem_xbar
-    imsic.axireg.tee_axireg.foreach { tee_axireg => tee_axireg.fromMem := teemap := imsics_fromMem_xbar }
+    imsic.axireg.axireg.fromMem.head := map := imsics_fromMem_xbar
+    imsic.axireg.tee_axireg.foreach { tee_axireg => tee_axireg.fromMem.head := teemap := imsics_fromMem_xbar }
     imsic
   })
 
