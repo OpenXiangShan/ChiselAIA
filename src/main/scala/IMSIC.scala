@@ -357,7 +357,7 @@ class IMSIC(
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
         intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
         intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
-        intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
+        intFile.fromCSR.claim           := fromCSR.claims(pi)
         vec_rdata(flati)                := toCSR_rdata
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
