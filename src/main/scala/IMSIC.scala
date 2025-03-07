@@ -217,10 +217,11 @@ class IMSIC(
         }
       }
       def bit0ReadOnlyZero(x: UInt): UInt = x & ~1.U(x.getWidth.W)
+      def fixEIDelivery(x: UInt): UInt = Mux(x(params.xlen - 1, 1) =/= 0.U, x & ~1.U, x)
       RegMapDV.generate(
         0.U,
         Map(
-          RegMapDV(0x70, eidelivery),
+          RegMapDV(0x70, eidelivery, fixEIDelivery),
           RegMapDV(0x72, eithreshold),
           RegMapDV(0x80, eips(0), bit0ReadOnlyZero),
           RegMapDV(0xc0, eies(0), bit0ReadOnlyZero)
@@ -260,6 +261,7 @@ class IMSIC(
       //              [0,     2^intSrcWidth-1] :+ 2^intSrcWidth
       val eipBools = Cat(eips.reverse).asBools :+ true.B
       val eieBools = Cat(eies.reverse).asBools :+ true.B
+      
       def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
         val tmp_xtopei = Mux(xeidelivery(params.xlen - 1, 1) === 0.U, Mux(xeidelivery(0), xtopei, 0.U) , 0.U)
         // {
