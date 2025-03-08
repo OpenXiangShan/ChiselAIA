@@ -28,6 +28,7 @@ import freechips.rocketchip.regmapper._
 object pow2 { def apply(n: Int): Long = 1L << n }
 
 class AXI4ToLite()(implicit p: Parameters) extends LazyModule { 
+
   val node = AXI4AdapterNode( // identity
     masterFn = { mp => 
       val masters = (0 until 3).map { i =>
@@ -43,13 +44,6 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         s.copy(address = s.address.map(a =>
           AddressSet(a.base, a.mask)))))}
   )
-  // val node = AXI4AdapterNode( // identity
-  //   masterFn = { mp => mp},
-  //   slaveFn = { sp =>
-  //     sp.copy(slaves = sp.slaves.map(s =>
-  //       s.copy(address = s.address.map(a =>
-  //         AddressSet(a.base, a.mask)))))}
-  // )
   lazy val module = new Impl
   class Impl extends LazyModuleImp(this) {
     (node.in zip node.out) foreach { case ((in, edgeIn), (out, edgeOut)) =>
@@ -279,14 +273,6 @@ class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModu
         s.copy(address = s.address.map(a =>
           AddressSet(fn(a), a.mask)))))}
   )
-  
-  // val node = AXI4AdapterNode(
-  //   masterFn = { mp => mp },
-  //   slaveFn = { sp =>
-  //     sp.copy(slaves = sp.slaves.map(s =>
-  //       s.copy(address = s.address.map(a =>
-  //         AddressSet(fn(a), a.mask)))))}
-  // )
 
   lazy val module = new Impl
   class Impl extends LazyModuleImp(this) {

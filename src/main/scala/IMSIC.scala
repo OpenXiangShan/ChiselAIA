@@ -75,17 +75,6 @@ class ForCVMBundle extends Bundle {
   val notice_pending =
     Output(Bool()) // add port: interrupt pending of ree when cmode is tee,else interrupt pending of tee.
 }
-// class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
-//   val addr  = ValidIO(UInt(params.iselectWidth.W))
-//   val virt  = Bool()
-//   val priv  = PrivType()
-//   val vgein = UInt(params.vgeinWidth.W)
-//   val wdata = ValidIO(new Bundle {
-//     val op   = OpType()
-//     val data = UInt(params.xlen.W)
-//   })
-//   val claims = Vec(params.privNum, Bool())
-// }
 class AddrBundle(params: IMSICParams) extends  Bundle {
   val valid = Bool()                      // 表示 addr 是否有效
   val bits  = new Bundle {
@@ -557,7 +546,7 @@ class AXIRegIMSIC_WRAP(
   lazy val module = new AXIRegIMSICImp(this)
 
   class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
-    val msiio = IO(Flipped(new MSITransBundle(params)))
+    val msiio = IO(Flipped(new MSITransBundle(params))) // backpressure signal for axi4bus, from imsic working on cpu clock
     msiio <> axireg.module.msiio
     val teemsiio = if (params.HasTEEIMSIC) Some(IO(Flipped(new MSITransBundle(params))))
     else None // backpressure signal for axi4bus, from imsic working on cpu clock
@@ -567,25 +556,27 @@ class AXIRegIMSIC_WRAP(
 }
 
 class TLRegIMSIC(
-    params:    IMSICParams,
-    beatBytes: Int = 4
+    params:      IMSICParams,
+    beatBytes:   Int = 4,
+    seperateBus: Boolean = false
 )(implicit p: Parameters) extends LazyModule {
-  val fromMem = TLXbar()
+  val fromMem = Seq.fill(if (seperateBus) 2 else 1)(TLXbar())
   // val fromMem = LazyModule(new TLXbar).node
   private val intfileFromMems = Seq(
     AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
     AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)
-  ).map { addrset =>
+  ).zipWithIndex.map { case (addrset, i) =>
     val intfileFromMem = TLRegMapperNode(
       address = Seq(addrset),
       beatBytes = beatBytes
     )
-    intfileFromMem := fromMem; intfileFromMem
+    intfileFromMem := (if (seperateBus) fromMem(i) else fromMem.head)
+    intfileFromMem
   }
 
   lazy val module = new TLRegIMSICImp(this)
   class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
-    val msiio = IO(Flipped(new MSITransBundle(params)))
+    val msiio = IO(Flipped(new MSITransBundle(params)))  // backpressure signal for axi4bus, from imsic working on cpu clock
     private val reggen = Module(new RegGen(params, beatBytes))
     // ---- instance sync fifo ----//
     // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
@@ -644,21 +635,22 @@ class TLRegIMSIC(
 
 //generate axi42reg for IMSIC
 class AXIRegIMSIC(
-    params:    IMSICParams,
-    beatBytes: Int = 4
+    params:      IMSICParams,
+    beatBytes:   Int = 4,
+    seperateBus: Boolean = false
 )(implicit p: Parameters) extends LazyModule {
-  val fromMem = AXI4Xbar()
-  val axi4tolite = LazyModule(new AXI4ToLite()(Parameters.empty))
-  fromMem := axi4tolite.node
+  val fromMem = Seq.fill(if (seperateBus) 2 else 1)(AXI4Xbar())
+  val axi4tolite = Seq.fill(if (seperateBus) 2 else 1)(LazyModule(new AXI4ToLite()(Parameters.empty)))
+  fromMem zip axi4tolite.map(_.node) foreach (x => x._1 := x._2)
   private val intfileFromMems = Seq(
     AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
     AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)
-  ).map { addrset =>
+  ).zipWithIndex.map { case (addrset, i) =>
     val intfileFromMem = AXI4RegMapperNode(
       address = addrset,
       beatBytes = beatBytes
     )
-    intfileFromMem := fromMem
+    intfileFromMem := (if (seperateBus) fromMem(i) else fromMem.head)
     intfileFromMem
   }
   

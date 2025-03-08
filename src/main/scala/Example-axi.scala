@@ -59,8 +59,8 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
       case IMSICParameKey => IMSICParameters(HasTEEIMSIC = false)
     })))
 
-    imsic.axireg.axireg.axi4tolite.node := map := imsics_fromMem_xbar
-    imsic.axireg.tee_axireg.foreach { tee_axireg => tee_axireg.axi4tolite.node := teemap := imsics_fromMem_xbar }
+    imsic.axireg.axireg.axi4tolite.head.node := map := imsics_fromMem_xbar
+    imsic.axireg.tee_axireg.foreach { tee_axireg => tee_axireg.axi4tolite.head.node := teemap := imsics_fromMem_xbar }
     imsic
   })
 
