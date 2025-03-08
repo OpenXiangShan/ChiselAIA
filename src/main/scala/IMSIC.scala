@@ -75,10 +75,16 @@ class ForCVMBundle extends Bundle {
   val notice_pending =
     Output(Bool()) // add port: interrupt pending of ree when cmode is tee,else interrupt pending of tee.
 }
+class AddrBundle(params: IMSICParams) extends  Bundle {
+  val valid = Bool()                      // 表示 addr 是否有效
+  val bits  = new Bundle {
+    val addr = UInt(params.iselectWidth.W) // 存储实际地址值
+    val virt  = Bool()
+    val priv  = PrivType()
+  }
+}
 class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
-  val addr  = ValidIO(UInt(params.iselectWidth.W))
-  val virt  = Bool()
-  val priv  = PrivType()
+  val addr  = new AddrBundle(params)
   val vgein = UInt(params.vgeinWidth.W)
   val wdata = ValidIO(new Bundle {
     val op   = OpType()
@@ -217,10 +223,11 @@ class IMSIC(
         }
       }
       def bit0ReadOnlyZero(x: UInt): UInt = x & ~1.U(x.getWidth.W)
+      def fixEIDelivery(x: UInt): UInt = Mux(x(params.xlen - 1, 1) =/= 0.U, x & ~1.U, x)
       RegMapDV.generate(
         0.U,
         Map(
-          RegMapDV(0x70, eidelivery),
+          RegMapDV(0x70, eidelivery, fixEIDelivery),
           RegMapDV(0x72, eithreshold),
           RegMapDV(0x80, eips(0), bit0ReadOnlyZero),
           RegMapDV(0xc0, eies(0), bit0ReadOnlyZero)
@@ -260,10 +267,11 @@ class IMSIC(
       //              [0,     2^intSrcWidth-1] :+ 2^intSrcWidth
       val eipBools = Cat(eips.reverse).asBools :+ true.B
       val eieBools = Cat(eies.reverse).asBools :+ true.B
+      
       def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
-        val tmp_xtopei = Mux(xeidelivery(0), xtopei, 0.U)
+        val tmp_xtopei = Mux(xeidelivery(params.xlen - 1, 1) === 0.U, Mux(xeidelivery(0), xtopei, 0.U) , 0.U)
         // {
-        //   all interrupts are enabled, when eithreshold == 0;
+        //   all interrupts are enabled, when eithreshold == 1;
         //   interrupts, when i < eithreshold, are enabled;
         // } <=> interrupts, when i <= (eithreshold -1), are enabled
         Mux(tmp_xtopei <= (xeithreshold - 1.U), tmp_xtopei, 0.U)
@@ -290,15 +298,18 @@ class IMSIC(
 
   val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
   val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
-  val msiio                 = IO(new MSITransBundle(params))
+  val msiio   = IO(new MSITransBundle(params))
   private val illegal_priv  = WireDefault(false.B)
   private val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
   locally {
-    val pv = Cat(fromCSR.priv.asUInt, fromCSR.virt)
-    when(pv === Cat(PrivType.M.asUInt, false.B))(intFilesSelOH := UIntToOH(0.U))
-      .elsewhen(pv === Cat(PrivType.S.asUInt, false.B))(intFilesSelOH := UIntToOH(1.U))
-      .elsewhen(pv === Cat(PrivType.S.asUInt, true.B))(intFilesSelOH := UIntToOH(1.U + fromCSR.vgein))
-      .otherwise(illegal_priv := true.B)
+    when (fromCSR.addr.valid)
+    {
+      val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
+      when(pv === Cat(PrivType.M.asUInt, false.B))(intFilesSelOH := UIntToOH(0.U))
+        .elsewhen(pv === Cat(PrivType.S.asUInt, false.B))(intFilesSelOH := UIntToOH(1.U))
+        .elsewhen(pv === Cat(PrivType.S.asUInt, true.B))(intFilesSelOH := UIntToOH(1.U + fromCSR.vgein))
+        .otherwise(illegal_priv := true.B)
+    }
   }
   private val topeis_forEachIntFiles   = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
   private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
@@ -314,7 +325,15 @@ class IMSIC(
         val flati = i + j
         val pi    = if (flati > 2) 2 else flati // index for privileges: M, S, VS.
 
-        def sel[T <: Data](old: Valid[T]): Valid[T] = {
+        def sel_addr(old: AddrBundle): AddrBundle = {
+          val new_ = Wire(new AddrBundle(params))
+          new_.valid := old.valid & intFilesSelOH(flati)
+          new_.bits.addr := old.bits.addr
+          new_.bits.virt := old.bits.virt
+          new_.bits.priv := old.bits.priv
+          new_
+        }
+        def sel_wdata[T <: Data](old: Valid[T]): Valid[T] = {
           val new_ = Wire(Valid(chiselTypeOf(old.bits)))
           new_.bits  := old.bits
           new_.valid := old.valid & intFilesSelOH(flati)
@@ -324,9 +343,10 @@ class IMSIC(
         val toCSR_rdata = RegNext(intFile.toCSR.rdata)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
-        intFile.fromCSR.addr            := sel(fromCSR.addr)
-        intFile.fromCSR.wdata           := sel(fromCSR.wdata)
-        intFile.fromCSR.claim           := fromCSR.claims(pi) & intFilesSelOH(flati)
+        intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
+        intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
+        intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
+        intFile.fromCSR.claim           := fromCSR.claims(pi)
         vec_rdata(flati)                := toCSR_rdata
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
@@ -351,13 +371,13 @@ class IMSIC(
     toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
     toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
     toCSR.topeis(2) := wrap(ParallelMux(
-      UIntToOH(fromCSR.vgein, params.geilen).asBools,
+      UIntToOH(fromCSR.vgein + 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
   }
   toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
-    fromCSR.vgein >= params.geilen.asUInt,
+    fromCSR.vgein >= params.geilen.asUInt + 1.U,
     illegal_priv
   ).reduce(_ | _)
 }
@@ -504,10 +524,10 @@ class TLRegIMSIC_WRAP(
   lazy val module = new TLRegIMSICImp(this)
 
   class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
-    val msiio = IO(Flipped(new MSITransBundle(params))) // backpressure signal for axi4bus, from imsic working on cpu clock
+    val msiio = IO(Flipped(new MSITransBundle(params)))
     msiio <> axireg.module.msiio
     val teemsiio = if (params.HasTEEIMSIC) Some(IO(Flipped(new MSITransBundle(params))))
-    else None // backpressure signal for axi4bus, from imsic working on cpu clock
+      else None // backpressure signal for axi4bus, from imsic working on cpu clock
 
     // code below will be compiled only when teeio is not none.
     teemsiio.foreach(teemsiio => tee_axireg.foreach(tee_axireg => teemsiio <> tee_axireg.module.msiio))
@@ -556,7 +576,7 @@ class TLRegIMSIC(
 
   lazy val module = new TLRegIMSICImp(this)
   class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
-    val msiio          = IO(Flipped(new MSITransBundle(params))) // backpressure signal for axi4bus, from imsic working on cpu clock
+    val msiio = IO(Flipped(new MSITransBundle(params)))  // backpressure signal for axi4bus, from imsic working on cpu clock
     private val reggen = Module(new RegGen(params, beatBytes))
     // ---- instance sync fifo ----//
     // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//

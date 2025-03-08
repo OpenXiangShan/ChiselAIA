@@ -140,7 +140,7 @@ def wrap_topei(in_):
 
 async def write_csr_op(dut, miselect, data, op, imsicID=1):
   fromCSRx_addr_valid      = getattr(dut, f"fromCSR{imsicID}_addr_valid"     )
-  fromCSRx_addr_bits       = getattr(dut, f"fromCSR{imsicID}_addr_bits"      )
+  fromCSRx_addr_bits       = getattr(dut, f"fromCSR{imsicID}_addr_bits_addr"      )
   fromCSRx_wdata_valid     = getattr(dut, f"fromCSR{imsicID}_wdata_valid"    )
   fromCSRx_wdata_bits_op   = getattr(dut, f"fromCSR{imsicID}_wdata_bits_op"  )
   fromCSRx_wdata_bits_data = getattr(dut, f"fromCSR{imsicID}_wdata_bits_data")
@@ -159,7 +159,7 @@ async def write_csr(dut, miselect, data, imsicID=1):
 
 async def read_csr(dut, miselect, imsicID=1):
   fromCSRx_addr_valid = getattr(dut, f"fromCSR{imsicID}_addr_valid")
-  fromCSRx_addr_bits  = getattr(dut, f"fromCSR{imsicID}_addr_bits" )
+  fromCSRx_addr_bits  = getattr(dut, f"fromCSR{imsicID}_addr_bits_addr" )
   await FallingEdge(dut.clock)
   fromCSRx_addr_valid.value = 1
   fromCSRx_addr_bits.value = miselect
@@ -167,23 +167,23 @@ async def read_csr(dut, miselect, imsicID=1):
   fromCSRx_addr_valid.value = 0
 
 async def select_m_intfile(dut, imsicID=1):
-  fromCSRx_priv = getattr(dut, f"fromCSR{imsicID}_priv")
-  fromCSRx_virt = getattr(dut, f"fromCSR{imsicID}_virt")
+  fromCSRx_priv = getattr(dut, f"fromCSR{imsicID}_addr_bits_priv")
+  fromCSRx_virt = getattr(dut, f"fromCSR{imsicID}_addr_bits_virt")
   await FallingEdge(dut.clock)
   fromCSRx_priv.value = 3
   fromCSRx_virt.value = 0
 
 async def select_s_intfile(dut, imsicID=1):
-  fromCSRx_priv = getattr(dut, f"fromCSR{imsicID}_priv")
-  fromCSRx_virt = getattr(dut, f"fromCSR{imsicID}_virt")
+  fromCSRx_priv = getattr(dut, f"fromCSR{imsicID}_addr_bits_priv")
+  fromCSRx_virt = getattr(dut, f"fromCSR{imsicID}_addr_bits_virt")
   await FallingEdge(dut.clock)
   fromCSRx_priv.value = 1
   fromCSRx_virt.value = 0
 
 async def select_vs_intfile(dut, vgein, imsicID=1):
-  fromCSRx_priv = getattr(dut, f"fromCSR{imsicID}_priv")
+  fromCSRx_priv = getattr(dut, f"fromCSR{imsicID}_addr_bits_priv")
   fromCSRx_vgein = getattr(dut, f"fromCSR{imsicID}_vgein")
-  fromCSRx_virt = getattr(dut, f"fromCSR{imsicID}_virt")
+  fromCSRx_virt = getattr(dut, f"fromCSR{imsicID}_addr_bits_virt")
   await FallingEdge(dut.clock)
   fromCSRx_priv.value = 1
   fromCSRx_vgein.value = vgein

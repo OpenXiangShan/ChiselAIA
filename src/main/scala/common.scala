@@ -28,23 +28,17 @@ import freechips.rocketchip.regmapper._
 object pow2 { def apply(n: Int): Long = 1L << n }
 
 class AXI4ToLite()(implicit p: Parameters) extends LazyModule { 
-  // val node = AXI4AdapterNode( // identity
-  //   masterFn = { mp => 
-  //     val masters = Array.tabulate(65536 / 16) { i => 
-  //       AXI4MasterParameters(
-  //         name = "",
-  //         id = IdRange(i * 16, i * 16 + 15)
-  //       )
-  //     }
-  //     mp.copy(masters = masters)
-  //   },
-  //   slaveFn = { sp =>
-  //     sp.copy(slaves = sp.slaves.map(s =>
-  //       s.copy(address = s.address.map(a =>
-  //         AddressSet(a.base, a.mask)))))}
-  // )
+
   val node = AXI4AdapterNode( // identity
-    masterFn = { mp => mp},
+    masterFn = { mp => 
+      val masters = (0 until 3).map { i =>
+        AXI4MasterParameters(
+          name = s"master_$i",
+          id =IdRange(i * 16, (i + 1) * 16 - 1)
+        )
+      }.toList
+      mp.copy(masters = masters)
+    },
     slaveFn = { sp =>
       sp.copy(slaves = sp.slaves.map(s =>
         s.copy(address = s.address.map(a =>
@@ -99,14 +93,13 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val isWburstErr = aw_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
       val isWCErr = isWAligErr | isWCacheErr | isWburstErr
 
-
       val isRAligErr  = !((ar_l.size === 2.U) & isValidAlignmentAR)
       val isRCacheErr = (ar_l.cache(3,1)).orR  //non device
       val isRLockErr = ar_l.lock      // AMO access
       val isRburstErr = ar_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
       val isRCErr = isRAligErr | isRCacheErr | isRburstErr
-//      val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
-//      val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
+      // val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
+      // val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
 
       val isillegalAW = (!isValidAddressAW) | isWCErr | isWLockErr
       val isillegalAR = (!isValidAlignmentAR) | isRCErr | isRLockErr
@@ -265,24 +258,16 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
 class AXI4Map(fn: AddressSet => BigInt)(implicit p: Parameters) extends LazyModule
 {
-  // val node = AXI4AdapterNode( // identity
-  //   masterFn = { mp => 
-  //     val masters = Array.tabulate(65536 / 16) { i => 
-  //       AXI4MasterParameters(
-  //         name = "",
-  //         id = IdRange(i * 16, i * 16 + 15)
-  //       )
-  //     }
-  //     mp.copy(masters = masters)
-  //   },
-  //   slaveFn = { sp =>
-  //     sp.copy(slaves = sp.slaves.map(s =>
-  //       s.copy(address = s.address.map(a =>
-  //         AddressSet(fn(a), a.mask)))))}
-  // )
-  
-  val node = AXI4AdapterNode(
-    masterFn = { mp => mp },
+  val node = AXI4AdapterNode( // identity
+    masterFn = { mp => 
+      val masters = (0 until 3).map { i =>
+        AXI4MasterParameters(
+          name = s"master_$i",
+          id =IdRange(i * 16, (i + 1) * 16 - 1)
+        )
+      }.toList
+      mp.copy(masters = masters)
+    },
     slaveFn = { sp =>
       sp.copy(slaves = sp.slaves.map(s =>
         s.copy(address = s.address.map(a =>
