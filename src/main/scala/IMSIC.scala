@@ -222,6 +222,12 @@ class IMSIC(
           }
         }
       }
+      val validAddresses = Seq(
+          0x70, 0x72, 0x80, 0xc0
+        ) ++ (1 until eips.length).map(i => 0x82 + i * 2
+        ).toSeq ++ (1 until eies.length).map(i => 0xc2 + i * 2
+        ).toSeq ++ (0 until 16).map(i => 0xc0 + i).toSeq
+      val isValidAddress = VecInit(validAddresses.map(_.U === fromCSR.addr.bits)).asUInt.orR
       def bit0ReadOnlyZero(x: UInt): UInt = x & ~1.U(x.getWidth.W)
       def fixEIDelivery(x: UInt): UInt = Mux(x(params.xlen - 1, 1) =/= 0.U, x & ~1.U, x)
       RegMapDV.generate(
@@ -244,8 +250,14 @@ class IMSIC(
         /*wdata*/ wdata,
         /*wmask*/ wmask
       )
+      val illegal_csr_illegal = WireDefault(false.B)
+      when(fromCSR.addr.bits >= 0x00.U && fromCSR.addr.bits <= 0xFF.U &&
+          !isValidAddress) {
+        illegal_csr_illegal := true.B
+      }
+      
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
-      ~toCSR.rdata.valid | illegal_wdata_op
+      ~toCSR.rdata.valid | illegal_wdata_op | illegal_csr_illegal
       )
     } // end of scope for xiselect CSR reg map
 
