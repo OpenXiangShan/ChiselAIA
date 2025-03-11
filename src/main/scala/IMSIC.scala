@@ -250,21 +250,21 @@ class IMSIC(
         /*wdata*/ wdata,
         /*wmask*/ wmask
       )
-      val illegal_csr_illegal = WireDefault(false.B)
+      val illegal_csr = WireDefault(false.B)
       when(fromCSR.addr.bits >= 0x00.U && fromCSR.addr.bits <= 0xFF.U &&
           !isValidAddress) {
-        illegal_csr_illegal := true.B
+        illegal_csr := true.B
       }
       
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
-      ~toCSR.rdata.valid | illegal_wdata_op | illegal_csr_illegal
+      ~toCSR.rdata.valid | illegal_wdata_op | illegal_csr
       )
     } // end of scope for xiselect CSR reg map
 
     locally {
       val index  = fromCSR.seteipnum.bits(params.imsicIntSrcWidth - 1, params.xlenWidth)
       val offset = fromCSR.seteipnum.bits(params.xlenWidth - 1, 0)
-      when(fromCSR.seteipnum.valid & eies(index)(offset)) {
+      when(fromCSR.seteipnum.valid) {
         // set eips bit
         eips(index) := eips(index) | UIntToOH(offset)
       }
@@ -383,13 +383,19 @@ class IMSIC(
     toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
     toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
     toCSR.topeis(2) := wrap(ParallelMux(
-      UIntToOH(fromCSR.vgein + 1.U, params.geilen).asBools,
+      UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
+// UIntToOH(0,geilen=5) -> 00001 
+// vgein = 1 - 对应第一个vs - 如果drop(2)，那么就应该是  00001
+// 
   }
+  val illegal_fromCSR_num = WireDefault(false.B)
+  when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
   toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
     fromCSR.vgein >= params.geilen.asUInt + 1.U,
+    illegal_fromCSR_num,
     illegal_priv
   ).reduce(_ | _)
 }
