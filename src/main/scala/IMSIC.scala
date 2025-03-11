@@ -224,12 +224,12 @@ class IMSIC(
       }
       val validAddresses = Seq(
           0x70, 0x72, 0x80, 0xc0
-        ) ++ (1 until eips.length).map(i => 0x82 + i * 2
-        ).toSeq ++ (1 until eies.length).map(i => 0xc2 + i * 2
-        ).toSeq ++ (0 until 16).map(i => 0xc0 + i).toSeq
+        ) ++ (0 until eips.length).map(i => 0x82 + i * 2
+        ).toSeq ++ (0 until eies.length).map(i => 0xc2 + i * 2
+        ).toSeq ++ (0 until 16).map(i => 0x30 + i).toSeq
       val isValidAddress = VecInit(validAddresses.map(_.U === fromCSR.addr.bits)).asUInt.orR
       def bit0ReadOnlyZero(x: UInt): UInt = x & ~1.U(x.getWidth.W)
-      def fixEIDelivery(x: UInt): UInt = Mux(x(params.xlen - 1, 1) =/= 0.U, x & ~1.U, x)
+      def fixEIDelivery(x: UInt): UInt = x & 1.U
       RegMapDV.generate(
         0.U,
         Map(
