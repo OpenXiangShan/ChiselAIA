@@ -222,8 +222,14 @@ class IMSIC(
           }
         }
       }
+      val validAddresses = Seq(
+          0x70, 0x72, 0x80, 0xc0
+        ) ++ (0 until eips.length).map(i => 0x82 + i * 2
+        ).toSeq ++ (0 until eies.length).map(i => 0xc2 + i * 2
+        ).toSeq ++ (0 until 16).map(i => 0x30 + i).toSeq
+      val isValidAddress = VecInit(validAddresses.map(_.U === fromCSR.addr.bits)).asUInt.orR
       def bit0ReadOnlyZero(x: UInt): UInt = x & ~1.U(x.getWidth.W)
-      def fixEIDelivery(x: UInt): UInt = Mux(x(params.xlen - 1, 1) =/= 0.U, x & ~1.U, x)
+      def fixEIDelivery(x: UInt): UInt = x & 1.U
       RegMapDV.generate(
         0.U,
         Map(
@@ -244,15 +250,21 @@ class IMSIC(
         /*wdata*/ wdata,
         /*wmask*/ wmask
       )
+      val illegal_csr = WireDefault(false.B)
+      when(fromCSR.addr.bits >= 0x00.U && fromCSR.addr.bits <= 0xFF.U &&
+          !isValidAddress) {
+        illegal_csr := true.B
+      }
+      
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
-      ~toCSR.rdata.valid | illegal_wdata_op
+      ~toCSR.rdata.valid | illegal_wdata_op | illegal_csr
       )
     } // end of scope for xiselect CSR reg map
 
     locally {
       val index  = fromCSR.seteipnum.bits(params.imsicIntSrcWidth - 1, params.xlenWidth)
       val offset = fromCSR.seteipnum.bits(params.xlenWidth - 1, 0)
-      when(fromCSR.seteipnum.valid & eies(index)(offset)) {
+      when(fromCSR.seteipnum.valid) {
         // set eips bit
         eips(index) := eips(index) | UIntToOH(offset)
       }
@@ -371,13 +383,19 @@ class IMSIC(
     toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
     toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
     toCSR.topeis(2) := wrap(ParallelMux(
-      UIntToOH(fromCSR.vgein + 1.U, params.geilen).asBools,
+      UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
+// UIntToOH(0,geilen=5) -> 00001 
+// vgein = 1 - 对应第一个vs - 如果drop(2)，那么就应该是  00001
+// 
   }
+  val illegal_fromCSR_num = WireDefault(false.B)
+  when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
   toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
     fromCSR.vgein >= params.geilen.asUInt + 1.U,
+    illegal_fromCSR_num,
     illegal_priv
   ).reduce(_ | _)
 }
