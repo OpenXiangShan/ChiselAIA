@@ -257,8 +257,7 @@ class IMSIC(
       }
       
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
-      ~toCSR.rdata.valid | illegal_wdata_op | illegal_csr
-      )
+      illegal_wdata_op | illegal_csr) & toCSR.rdata.valid
     } // end of scope for xiselect CSR reg map
 
     locally {
