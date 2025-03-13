@@ -199,6 +199,12 @@ class IMSIC(
     val eips        = RegInit(VecInit.fill(params.eixNum)(0.U(params.xlen.W)))
     val eies        = RegInit(VecInit.fill(params.eixNum)(0.U(params.xlen.W)))
 
+    val fromCSR_addr_valid_d = RegNext(fromCSR.addr.valid)
+    when (fromCSR.addr.valid) {
+      toCSR.rdata.bits := fromCSR.wdata.bits.data
+    }
+    toCSR.rdata.valid := fromCSR_addr_valid_d
+
     val illegal_wdata_op = WireDefault(false.B)
     locally { // scope for xiselect CSR reg map
       val wdata = WireDefault(0.U(params.xlen.W))
@@ -258,6 +264,7 @@ class IMSIC(
       
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
       illegal_wdata_op | illegal_csr) & toCSR.rdata.valid
+
     } // end of scope for xiselect CSR reg map
 
     locally {
