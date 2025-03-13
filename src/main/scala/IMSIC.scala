@@ -40,7 +40,6 @@ object RegMapDV {
     val rdata_valid_d = RegNext(rdata_valid)
     rdata := rdata_valid_d(rdata.getWidth, 1)
     rvalid := rdata_valid_d(0) | raddr_access
-    rvalid := rdata_valid_d(0)
     chiselMapping.map { case (a, r, w) =>
       if (w != null) when(wen && waddr === a)(r := w(MaskData(r, wdata, wmask)))
     }
@@ -264,7 +263,6 @@ class IMSIC(
       val fromCSR_addr_valid_d = RegNext(fromCSR.addr.valid)
       toCSR.illegal := (fromCSR_addr_valid_d | fromCSR.wdata.valid) & (
       illegal_wdata_op | illegal_csr) & toCSR.rdata.valid
-
     } // end of scope for xiselect CSR reg map
 
     locally {
