@@ -21,6 +21,7 @@ object RegMapDV {
       default: UInt,
       mapping: Map[Int, (UInt, UInt => UInt)],
       raddr:   UInt,
+      rvld :   Bool,
       rdata:   UInt,
       rvalid:  Bool,
       waddr:   UInt,
@@ -29,24 +30,16 @@ object RegMapDV {
       wmask:   UInt
   ): Unit = {
     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
-    // val rdata_valid   = WireDefault(0.U((rdata.getWidth + 1).W))
-    // rdata_valid := LookupTreeDefault(
-    //   raddr,
-    //   Cat(default, false.B),
-    //   chiselMapping.map { case (a, r, w) => (a, Cat(r, true.B)) }
-    // )
-    // rdata  := rdata_valid(rdata.getWidth, 1)
-    // rvalid := rdata_valid(0)
-
     val rdata_valid = WireDefault(0.U((rdata.getWidth + 1).W))
-    val rdata_valid_d = RegNext(rdata_valid)
     rdata_valid := LookupTreeDefault(
       raddr,
       Cat(default, false.B),
       chiselMapping.map { case (a, r, w) => (a, Cat(r, true.B)) }
     )
-    rdata := rdata_valid(rdata.getWidth, 1)
-    rvalid := rdata_valid_d(0)
+    val raddr_access = RegNext(rvld)
+    val rdata_valid_d = RegNext(rdata_valid)
+    rdata := rdata_valid_d(rdata.getWidth, 1)
+    rvalid := rdata_valid_d(0) | raddr_access
     chiselMapping.map { case (a, r, w) =>
       if (w != null) when(wen && waddr === a)(r := w(MaskData(r, wdata, wmask)))
     }
@@ -55,12 +48,13 @@ object RegMapDV {
       default: UInt,
       mapping: Map[Int, (UInt, UInt => UInt)],
       addr:    UInt,
+      rvld :   Bool,
       rdata:   UInt,
       rvalid:  Bool,
       wen:     Bool,
       wdata:   UInt,
       wmask:   UInt
-  ): Unit = generate(default, mapping, addr, rdata, rvalid, addr, wen, wdata, wmask)
+  ): Unit = generate(default, mapping, addr, rvld, rdata, rvalid, addr, wen, wdata, wmask)
 }
 
 // Based on Xiangshan NewCSR
@@ -209,12 +203,6 @@ class IMSIC(
     val eips        = RegInit(VecInit.fill(params.eixNum)(0.U(params.xlen.W)))
     val eies        = RegInit(VecInit.fill(params.eixNum)(0.U(params.xlen.W)))
 
-    // val fromCSR_addr_valid_d = RegNext(fromCSR.addr.valid)
-    // when (fromCSR.addr.valid) {
-    //   toCSR.rdata.bits := fromCSR.wdata.bits.data
-    // }
-    // toCSR.rdata.valid := fromCSR_addr_valid_d
-
     val illegal_wdata_op = WireDefault(false.B)
     locally { // scope for xiselect CSR reg map
       val wdata = WireDefault(0.U(params.xlen.W))
@@ -259,6 +247,7 @@ class IMSIC(
           RegMapDV(0xc2 + i * 2, eie)
         },
         /*raddr*/ fromCSR.addr.bits,
+        /*rvld*/  fromCSR.addr.valid,
         /*rdata*/ toCSR.rdata.bits,
         /*rdata*/ toCSR.rdata.valid,
         /*waddr*/ fromCSR.addr.bits,
@@ -368,14 +357,13 @@ class IMSIC(
           new_
         }
         val intFile = Module(new IntFile)
-        val toCSR_rdata = RegNext(intFile.toCSR.rdata)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
         intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
         intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi)
-        vec_rdata(flati)                := toCSR_rdata
+        vec_rdata(flati)                := intFile.toCSR.rdata
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
         illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
