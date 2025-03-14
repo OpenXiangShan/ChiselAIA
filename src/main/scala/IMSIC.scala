@@ -21,6 +21,7 @@ object RegMapDV {
       default: UInt,
       mapping: Map[Int, (UInt, UInt => UInt)],
       raddr:   UInt,
+      rvld:    Bool,
       rdata:   UInt,
       rvalid:  Bool,
       waddr:   UInt,
@@ -36,7 +37,7 @@ object RegMapDV {
       chiselMapping.map { case (a, r, w) => (a, Cat(r, true.B)) }
     )
     rdata  := rdata_valid(rdata.getWidth, 1)
-    rvalid := rdata_valid(0)
+    rvalid := rdata_valid(0) | rvld
     chiselMapping.map { case (a, r, w) =>
       if (w != null) when(wen && waddr === a)(r := w(MaskData(r, wdata, wmask)))
     }
@@ -45,12 +46,13 @@ object RegMapDV {
       default: UInt,
       mapping: Map[Int, (UInt, UInt => UInt)],
       addr:    UInt,
+      rvld:    Bool,
       rdata:   UInt,
       rvalid:  Bool,
       wen:     Bool,
       wdata:   UInt,
       wmask:   UInt
-  ): Unit = generate(default, mapping, addr, rdata, rvalid, addr, wen, wdata, wmask)
+  ): Unit = generate(default, mapping, addr, rvld, rdata, rvalid, addr, wen, wdata, wmask)
 }
 
 // Based on Xiangshan NewCSR
@@ -243,6 +245,7 @@ class IMSIC(
           RegMapDV(0xc2 + i * 2, eie)
         },
         /*raddr*/ fromCSR.addr.bits,
+        /*rvld */ fromCSR.addr.valid,
         /*rdata*/ toCSR.rdata.bits,
         /*rdata*/ toCSR.rdata.valid,
         /*waddr*/ fromCSR.addr.bits,
