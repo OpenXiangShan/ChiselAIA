@@ -259,6 +259,7 @@ class IMSIC(
         illegal_csr := true.B
       }
 
+
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
       illegal_wdata_op | illegal_csr) & toCSR.rdata.valid
     } // end of scope for xiselect CSR reg map
@@ -394,7 +395,6 @@ class IMSIC(
 // 
   }
   val illegal_fromCSR_num = WireDefault(false.B)
-
   when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
   val fromCSR_addr_valid_d = RegNext(fromCSR.addr.valid)
   val fromCSR_wdata_valid_d = RegNext(fromCSR.wdata.valid)
