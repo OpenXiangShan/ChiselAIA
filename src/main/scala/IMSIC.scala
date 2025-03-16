@@ -36,6 +36,7 @@ object RegMapDV {
       Cat(default, false.B),
       chiselMapping.map { case (a, r, w) => (a, Cat(r, true.B)) }
     )
+    // RegEnable()
     rdata  := rdata_valid(rdata.getWidth, 1)
     rvalid := rdata_valid(0) | rvld
     chiselMapping.map { case (a, r, w) =>
@@ -260,7 +261,7 @@ class IMSIC(
       }
 
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
-      illegal_wdata_op | illegal_csr) & toCSR.rdata.valid
+      illegal_wdata_op | illegal_csr)
     } // end of scope for xiselect CSR reg map
 
     locally {
@@ -354,18 +355,16 @@ class IMSIC(
           new_
         }
         val intFile = Module(new IntFile)
-        val intfile_rdata_d = RegNext(intFile.toCSR.rdata)
-        val intfile_illegal_d = RegNext(intFile.toCSR.illegal)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
         intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
         intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi)
-        vec_rdata(flati)                := intfile_rdata_d
+        vec_rdata(flati)                := intFile.toCSR.rdata
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
-        illegals_forEachIntFiles(flati) := intfile_illegal_d
+        illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
       }
     }
   }
@@ -389,21 +388,17 @@ class IMSIC(
       UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
-// UIntToOH(0,geilen=5) -> 00001 
-// vgein = 1 - 对应第一个vs - 如果drop(2)，那么就应该是  00001
-// 
   }
   val illegal_fromCSR_num = WireDefault(false.B)
 
   when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
-  val fromCSR_addr_valid_d = RegNext(fromCSR.addr.valid)
-  val fromCSR_wdata_valid_d = RegNext(fromCSR.wdata.valid)
-  toCSR.illegal := (fromCSR_addr_valid_d | fromCSR.wdata.valid) & Seq(
+  val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
     fromCSR.vgein >= params.geilen.asUInt + 1.U,
     illegal_fromCSR_num,
     illegal_priv
-  ).reduce(_ | _)
+  ).reduce(_ | _))
+  toCSR.illegal := toCSR_illegal_d
 }
 
 //define IMSIC_WRAP: instance one imsic when HasCVMExtention is supported, else instance two imsic modules.
