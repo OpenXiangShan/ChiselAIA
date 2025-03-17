@@ -31,17 +31,25 @@ object RegMapDV {
   ): Unit = {
     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
     val rdata_valid   = WireDefault(0.U((rdata.getWidth + 1).W))
-    rdata_valid := LookupTreeDefault(
-      raddr,
-      Cat(default, false.B),
-      chiselMapping.map { case (a, r, w) => (a, Cat(r, true.B)) }
-    )
-    // RegEnable()
-    rdata  := rdata_valid(rdata.getWidth, 1)
-    rvalid := rdata_valid(0) | rvld
+    when(rvld)
+    {
+      rdata_valid := LookupTreeDefault(
+        raddr,
+        Cat(default, false.B),
+        chiselMapping.map { case (a, r, w) => (a, Cat(r, true.B)) }
+      )
+      // RegEnable()
+      rdata  := rdata_valid(rdata.getWidth, 1)
+      rvalid := rdata_valid(0)
+    }.otherwise {
+      rdata  := 0.U((rdata.getWidth).W)
+      rvalid := false.B
+    }
+
     chiselMapping.map { case (a, r, w) =>
       if (w != null) when(wen && waddr === a)(r := w(MaskData(r, wdata, wmask)))
     }
+    
   }
   def generate(
       default: UInt,
@@ -137,7 +145,7 @@ case class IMSICParams(
   require(
     iselectWidth >= 8,
     f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63"
-  )
+  ) 
   lazy val INTP_FILE_WIDTH = log2Ceil(intFilesNum) 
   lazy val MSI_INFO_WIDTH  = imsicIntSrcWidth + INTP_FILE_WIDTH
 }
@@ -245,14 +253,14 @@ class IMSIC(
         } ++ eies.drop(1).zipWithIndex.map { case (eie: UInt, i: Int) =>
           RegMapDV(0xc2 + i * 2, eie)
         },
-        /*raddr*/ fromCSR.addr.bits,
-        /*rvld */ fromCSR.addr.valid,
-        /*rdata*/ toCSR.rdata.bits,
-        /*rdata*/ toCSR.rdata.valid,
-        /*waddr*/ fromCSR.addr.bits,
-        /*wen  */ fromCSR.wdata.valid,
-        /*wdata*/ wdata,
-        /*wmask*/ wmask
+        /*raddr*/  fromCSR.addr.bits,
+        /*rvld */  fromCSR.addr.valid,
+        /*rdata*/  toCSR.rdata.bits,
+        /*rvalid*/ toCSR.rdata.valid,
+        /*waddr*/  fromCSR.addr.bits,
+        /*wen  */  fromCSR.wdata.valid,
+        /*wdata*/  wdata,
+        /*wmask*/  wmask
       )
       val illegal_csr = WireDefault(false.B)
       when(fromCSR.addr.bits >= 0x00.U && fromCSR.addr.bits <= 0xFF.U &&
