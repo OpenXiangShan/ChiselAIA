@@ -30,22 +30,18 @@ object RegMapDV {
       wmask:   UInt
   ): Unit = {
     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
-    val rdata_valid   = WireDefault(0.U((rdata.getWidth + 1).W))
     when(rvld)
     {
-      rdata_valid := LookupTreeDefault(
+      rdata := LookupTreeDefault(
         raddr,
-        Cat(default, false.B),
-        chiselMapping.map { case (a, r, w) => (a, Cat(r, true.B)) }
+        Cat(default),
+        chiselMapping.map { case (a, r, w) => (a, r) }
       )
-      // RegEnable()
-      rdata  := rdata_valid(rdata.getWidth, 1)
-      rvalid := rdata_valid(0)
+      rvalid := true.B
     }.otherwise {
       rdata  := 0.U((rdata.getWidth).W)
       rvalid := false.B
     }
-
     chiselMapping.map { case (a, r, w) =>
       if (w != null) when(wen && waddr === a)(r := w(MaskData(r, wdata, wmask)))
     }
