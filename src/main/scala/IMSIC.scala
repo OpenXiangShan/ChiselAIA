@@ -30,7 +30,7 @@ object RegMapDV {
       wmask:   UInt
   ): Unit = {
     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
-    when(rvld)
+    when(rvld | wen)
     {
       rdata := LookupTreeDefault(
         raddr,
@@ -42,10 +42,15 @@ object RegMapDV {
       rdata  := 0.U((rdata.getWidth).W)
       rvalid := false.B
     }
+    when(wen)
+    {
+      rdata   := wdata
+      rvalid  := wen
+    }
+
     chiselMapping.map { case (a, r, w) =>
       if (w != null) when(wen && waddr === a)(r := w(MaskData(r, wdata, wmask)))
     }
-    
   }
   def generate(
       default: UInt,
@@ -347,6 +352,7 @@ class IMSIC(
         def sel_addr(old: AddrBundle): AddrBundle = {
           val new_ = Wire(new AddrBundle(params))
           new_.valid := old.valid & intFilesSelOH(flati)
+          when (illegal_priv === true.B) { new_.valid := old.valid }
           new_.bits.addr := old.bits.addr
           new_.bits.virt := old.bits.virt
           new_.bits.priv := old.bits.priv
@@ -356,6 +362,7 @@ class IMSIC(
           val new_ = Wire(Valid(chiselTypeOf(old.bits)))
           new_.bits  := old.bits
           new_.valid := old.valid & intFilesSelOH(flati)
+          when (illegal_priv === true.B) { new_.valid := old.valid }
           new_
         }
         val intFile = Module(new IntFile)
@@ -373,7 +380,8 @@ class IMSIC(
       }
     }
   }
-  toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
+  // toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
+  toCSR.rdata.valid := RegNext(fromCSR.addr.valid)
   toCSR.rdata.bits    := vec_rdata.map(_.bits).reduce(_|_)
   toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
   locally {
