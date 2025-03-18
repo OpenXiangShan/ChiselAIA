@@ -30,7 +30,7 @@ object RegMapDV {
       wmask:   UInt
   ): Unit = {
     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
-    when(rvld | wen)
+    when(rvld)
     {
       rdata := LookupTreeDefault(
         raddr,
@@ -41,11 +41,6 @@ object RegMapDV {
     }.otherwise {
       rdata  := 0.U((rdata.getWidth).W)
       rvalid := false.B
-    }
-    when(wen)
-    {
-      rdata   := wdata
-      rvalid  := wen
     }
 
     chiselMapping.map { case (a, r, w) =>
@@ -380,8 +375,8 @@ class IMSIC(
       }
     }
   }
-  // toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
-  toCSR.rdata.valid := RegNext(fromCSR.addr.valid)
+  toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
+  // toCSR.rdata.valid := RegNext(fromCSR.addr.valid)
   toCSR.rdata.bits    := vec_rdata.map(_.bits).reduce(_|_)
   toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
   locally {
