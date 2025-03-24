@@ -42,7 +42,6 @@ object RegMapDV {
       rdata  := 0.U((rdata.getWidth).W)
       rvalid := false.B
     }
-
     chiselMapping.map { case (a, r, w) =>
       if (w != null) when(wen && waddr === a)(r := w(MaskData(r, wdata, wmask)))
     }
@@ -264,7 +263,6 @@ class IMSIC(
           !isValidAddress) {
         illegal_csr := true.B
       }
-
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
       illegal_wdata_op | illegal_csr)
     } // end of scope for xiselect CSR reg map
@@ -372,7 +370,7 @@ class IMSIC(
         vec_rdata(flati)                := intfile_rdata_d
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
-        illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
+        illegals_forEachIntFiles(flati) := intfile_illegal_d
       }
     }
   }
@@ -397,9 +395,11 @@ class IMSIC(
       UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
+// UIntToOH(0,geilen=5) -> 00001 
+// vgein = 1 - 对应第一个vs - 如果drop(2)，那么就应该是  00001
+// 
   }
   val illegal_fromCSR_num = WireDefault(false.B)
-
   when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
   val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
