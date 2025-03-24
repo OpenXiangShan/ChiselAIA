@@ -370,7 +370,7 @@ class IMSIC(
         vec_rdata(flati)                := intfile_rdata_d
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
-        illegals_forEachIntFiles(flati) := intfile_illegal_d
+        illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
       }
     }
   }
