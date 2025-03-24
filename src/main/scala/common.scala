@@ -197,6 +197,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.b.valid := state === sBCH
       in.b.bits.id := aw_l.id
       in.b.bits.resp := Cat(isWCErr, 0.U)
+      val in_ar_valid_d = RegNext(in.ar.valid)
       val rvalid = RegInit(false.B)
       when(in.ar.valid) {
         rvalid := true.B
