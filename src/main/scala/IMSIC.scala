@@ -42,7 +42,6 @@ object RegMapDV {
       rdata  := 0.U((rdata.getWidth).W)
       rvalid := false.B
     }
-
     chiselMapping.map { case (a, r, w) =>
       if (w != null) when(wen && waddr === a)(r := w(MaskData(r, wdata, wmask)))
     }
@@ -167,7 +166,8 @@ class IMSIC(
     }.otherwise {
       msi_vld_req_cpu := msiio.vld_req
     }
-    val msi_vld_ack_cpu = RegNext(msi_vld_req_cpu)
+    val msi_vld_ack_cpu = RegInit(false.B)
+    msi_vld_ack_cpu := RegNext(msi_vld_req_cpu)
     // generate the msi_vld_ack,to handle with the input msi request.
     msiio.vld_ack := msi_vld_ack_cpu
     val msi_vld_ris_cpu = msi_vld_req_cpu & (~msi_vld_ack_cpu) // rising of msi_vld_req
@@ -257,15 +257,15 @@ class IMSIC(
         /*wen  */  fromCSR.wdata.valid,
         /*wdata*/  wdata,
         /*wmask*/  wmask
+
       )
       val illegal_csr = WireDefault(false.B)
       when(fromCSR.addr.bits >= 0x00.U && fromCSR.addr.bits <= 0xFF.U &&
           !isValidAddress) {
         illegal_csr := true.B
       }
-
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
-      illegal_wdata_op | illegal_csr)
+      illegal_wdata_op | illegal_csr) & toCSR.rdata.valid
     } // end of scope for xiselect CSR reg map
 
     locally {
@@ -347,7 +347,6 @@ class IMSIC(
         def sel_addr(old: AddrBundle): AddrBundle = {
           val new_ = Wire(new AddrBundle(params))
           new_.valid := old.valid & intFilesSelOH(flati)
-          when (illegal_priv === true.B) { new_.valid := old.valid }
           new_.bits.addr := old.bits.addr
           new_.bits.virt := old.bits.virt
           new_.bits.priv := old.bits.priv
@@ -362,6 +361,7 @@ class IMSIC(
         }
         val intFile = Module(new IntFile)
         val intfile_rdata_d = RegNext(intFile.toCSR.rdata)
+        val intfile_illegal_d = RegNext(intFile.toCSR.illegal)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
@@ -371,7 +371,7 @@ class IMSIC(
         vec_rdata(flati)                := intfile_rdata_d
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
-        illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
+        illegals_forEachIntFiles(flati) := intfile_illegal_d
       }
     }
   }
@@ -396,11 +396,15 @@ class IMSIC(
       UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
+// UIntToOH(0,geilen=5) -> 00001 
+// vgein = 1 - 对应第一个vs - 如果drop(2)，那么就应该是  00001
+// 
   }
   val illegal_fromCSR_num = WireDefault(false.B)
-
   when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
-  val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
+  val fromCSR_addr_valid_d = RegNext(fromCSR.addr.valid)
+  val fromCSR_wdata_valid_d = RegNext(fromCSR.wdata.valid)
+  toCSR.illegal := (fromCSR_addr_valid_d | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
     fromCSR.vgein >= params.geilen.asUInt + 1.U,
     illegal_fromCSR_num,
