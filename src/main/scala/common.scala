@@ -103,7 +103,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val isillegalAW = (!isValidAddressAW) | isWCErr | isWLockErr
       val isillegalAR = (!isValidAlignmentAR) | isRCErr | isRLockErr
 
-      in.r.bits.last := (state === sRCH) && (awcnt === ar_l.len) && in.r.ready && in.r.valid
+      in.r.bits.last := (awcnt === ar_l.len) && in.r.valid
       val awready = RegInit(true.B) // temp signal ,out.awready for the first data, true.B for other data transaction.
       val wready = RegInit(true.B) // temp signal
       val aw_last = RegInit(false.B)
@@ -117,7 +117,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         aw_last := false.B
       }
       when (state === sWCH){
-        when(in.w.bits.last){
+        when(in.w.bits.last & in.w.ready){
           w_last := true.B
         }
       }.otherwise{
@@ -146,7 +146,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
           }
         }
         is(sRCH) {
-          when(in.r.bits.last){
+          when(in.r.bits.last & in.r.ready){
             next_state := sIDLE
           }
         }
@@ -166,7 +166,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       when(state === sWCH) {
         when((!isillegalAW) & (!wready) & out.w.ready & in.w.valid) { //first data
           wready := true.B
-        }.elsewhen(in.w.bits.last | w_last) {
+        }.elsewhen(in.w.bits.last & in.w.ready | w_last) {
           wready := false.B // legal or non first data
         }.elsewhen(isillegalAW === true.B) {
           wready := true.B
@@ -199,13 +199,9 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.b.bits.resp := Cat(isWCErr, 0.U)
       val in_ar_valid_d = RegNext(in.ar.valid)
       val rvalid = RegInit(false.B)
-      when(state === sRCH) {
-        when(in_ar_valid_d) {
-          rvalid := true.B
-        }.elsewhen(in.r.bits.last) {
-          rvalid := false.B
-        }
-      }.otherwise {
+      when(in.ar.valid) {
+        rvalid := true.B
+      }.elsewhen(in.r.bits.last & in.r.ready) {
         rvalid := false.B
       }
       in.r.valid := rvalid
