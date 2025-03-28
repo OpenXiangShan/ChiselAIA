@@ -167,7 +167,11 @@ class IMSIC(
       msi_vld_req_cpu := msiio.vld_req
     }
     val msi_vld_ack_cpu = RegInit(false.B)
-    msi_vld_ack_cpu := RegNext(msi_vld_req_cpu)
+    when(msi_vld_req_cpu)(
+      msi_vld_ack_cpu := true.B
+    ).otherwise(
+      msi_vld_ack_cpu := false.B
+    )
     // generate the msi_vld_ack,to handle with the input msi request.
     msiio.vld_ack := msi_vld_ack_cpu
     val msi_vld_ris_cpu = msi_vld_req_cpu & (~msi_vld_ack_cpu) // rising of msi_vld_req
