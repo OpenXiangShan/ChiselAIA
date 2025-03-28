@@ -197,18 +197,23 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.b.valid := state === sBCH
       in.b.bits.id := aw_l.id
       in.b.bits.resp := Cat(isWCErr, 0.U)
-      val in_ar_valid_d = RegNext(in.ar.valid)
       val rvalid = RegInit(false.B)
-      when(in.ar.valid) {
-        rvalid := true.B
-      }.elsewhen(in.r.bits.last & in.r.ready) {
+      when(state === sRCH) {
+        when(in.r.bits.last & in.r.ready) {
+          rvalid := false.B
+        }.otherwise {
+          rvalid := true.B
+        }
+      }.otherwise {
         rvalid := false.B
       }
       in.r.valid := rvalid
       in.r.bits.resp := Cat(isRCErr, 0.U)
       in.r.bits.id := ar_l.id
       in.r.bits.data := 0.U
-      in.ar.ready := true.B
+      val arready = RegInit(false.B)
+      arready := RegNext(arpulse_l)
+      in.ar.ready := arready
 
       // When either AW or AR is valid, perform address checks
       val m_awvalid = RegInit(false.B)
