@@ -104,8 +104,8 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val isillegalAR = (!isValidAlignmentAR) | isRCErr | isRLockErr
 
       in.r.bits.last := (awcnt === ar_l.len) && in.r.valid
-      val awready = RegInit(true.B) // temp signal ,out.awready for the first data, true.B for other data transaction.
-      val wready = RegInit(true.B) // temp signal
+      val awready = RegInit(false.B) // temp signal ,out.awready for the first data, true.B for other data transaction.
+      val wready = RegInit(false.B) // temp signal
       val aw_last = RegInit(false.B)
       val w_last = RegInit(false.B)
       // aw_last: the last addr for burst,
@@ -212,7 +212,10 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.r.bits.id := ar_l.id
       in.r.bits.data := 0.U
       val arready = RegInit(false.B)
-      arready := RegNext(arpulse_l)
+      when(arpulse_l) {
+        arready := true.B
+      }.otherwise(arready := false.B)
+
       in.ar.ready := arready
 
       // When either AW or AR is valid, perform address checks
