@@ -188,11 +188,11 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         awcnt := 0.U
       }
       // response for in
-      val isFinaldly = RegInit(false.B)
-      isFinaldly := isFinalBurst
-      val isFinalris = isFinalBurst & (!isFinaldly)
+      val awready_dly = RegInit(false.B)
+      awready_dly := awready
+      val awready_ris = awready & (!awready_dly)
 
-      in.aw.ready := isFinalris
+      in.aw.ready := awready_ris
       in.w.ready := wready
       in.b.valid := state === sBCH
       in.b.bits.id := aw_l.id
