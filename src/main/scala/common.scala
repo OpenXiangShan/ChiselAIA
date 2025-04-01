@@ -58,13 +58,23 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       // in.aw.bits.addr = in.aw.bits.addr.pad(32)
       val isAWValid = in.aw.valid
       val isARValid = in.ar.valid
-      val sIDLE :: sWCH :: sBCH :: sRCH :: Nil =Enum(4)
+      val sIDLE :: sWCH :: sBCH :: Nil =Enum(3)
       val state = RegInit(sIDLE)
       val next_state = WireInit(sIDLE)
       state := next_state
-      
+      //code about read state
+      val rstate = RegInit(false.B)
+      when(isARValid && (!rstate)) {
+        rstate := true.B
+      }.elsewhen(rstate & in.r.bits.last & in.r.ready) {
+        rstate := false.B
+      }.otherwise(rstate := rstate)
+
+      val rstate_dly = RegInit(false.B)
+      rstate_dly := RegNext(rstate)
+
       val awpulse_l = (state === sIDLE) && (next_state === sWCH)
-      val arpulse_l = (state === sIDLE) && (next_state === sRCH)
+      val arpulse_l = isARValid && (!rstate)
       val awchvld = isAWValid & in.w.valid
       val aw_l = RegEnable(in.aw.bits, awpulse_l)
       val w_l = RegEnable(in.w.bits, awpulse_l)
@@ -125,14 +135,14 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }
       val isFinalBurst = aw_last & w_last // may be level signal ,the final data for a transaction
       val w2b_vld = (state === sWCH) & (isillegalAW | out.b.valid) & isFinalBurst
-//      val rready = out.ar.ready //ready from downstream
+      //      val rready = out.ar.ready //ready from downstream
+
+      //code about write state
       next_state := state
       switch(state){
         is(sIDLE) {
           when(awchvld){
             next_state := sWCH
-          }.elsewhen(isARValid){
-            next_state := sRCH
           }
         }
         is(sWCH) {
@@ -145,11 +155,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
             next_state := sIDLE
           }
         }
-        is(sRCH) {
-          when(in.r.bits.last & in.r.ready){
-            next_state := sIDLE
-          }
-        }
+
       }
       when(state === sWCH) {
         when((!isillegalAW) & (!awready) & out.aw.ready & in.aw.valid) { // only the first illegal data to downstream
@@ -180,7 +186,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         }.elsewhen(awready) {
           awcnt := awcnt + 1.U
         }
-      }.elsewhen(state === sRCH) {
+      }.elsewhen(rstate) {
         when(in.r.valid & in.r.ready) {
           awcnt := awcnt + 1.U
         }
@@ -198,7 +204,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.b.bits.id := aw_l.id
       in.b.bits.resp := Cat(isWCErr, 0.U)
       val rvalid = RegInit(false.B)
-      when(state === sRCH) {
+      when(rstate) {
         when(in.r.bits.last & in.r.ready) {
           rvalid := false.B
         }.otherwise {
@@ -212,9 +218,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.r.bits.id := ar_l.id
       in.r.bits.data := 0.U
       val arready = RegInit(false.B)
-      when(arpulse_l) {
-        arready := true.B
-      }.otherwise(arready := false.B)
+      arready := arpulse_l
 
       in.ar.ready := arready
 
