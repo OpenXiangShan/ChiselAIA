@@ -116,7 +116,7 @@ case class IMSICParams(
     // MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
     sgAddr: Long = 0x10000L,
     // MC 👉 客户中断文件的数量（Number of guest interrupt files）:
-    geilen: Int = 5,
+    geilen: Int = 7,
     // MC vgein信号的位宽（The width of the vgein signal）:
     vgeinWidth: Int = 6,
     // MC iselect信号的位宽(The width of iselect signal):
