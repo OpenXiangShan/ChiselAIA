@@ -234,7 +234,11 @@ class IMSIC(
         ) ++ (0 until eips.length).map(i => 0x82 + i * 2
         ).toSeq ++ (0 until eies.length).map(i => 0xc2 + i * 2
         ).toSeq ++ (0 until 16).map(i => 0x30 + i).toSeq
-      val isValidAddress = VecInit(validAddresses.map(_.U === fromCSR.addr.bits)).asUInt.orR
+      val ignoredAddresses = Seq(0x71) ++ (0x73 to 0x7F)
+      val isValidAddress = validAddresses.map(a => fromCSR.addr.bits === a.U).reduce(_ || _)
+      val isIgnoredAddress = ignoredAddresses.map(a => fromCSR.addr.bits === a.U).reduce(_ || _)
+      dontTouch(isValidAddress)
+      dontTouch(isIgnoredAddress)
       def bit0ReadOnlyZero(x: UInt): UInt = x & ~1.U(x.getWidth.W)
       def fixEIDelivery(x: UInt): UInt = x & 1.U
       RegMapDV.generate(
@@ -260,7 +264,7 @@ class IMSIC(
       )
       val illegal_csr = WireDefault(false.B)
       when(fromCSR.addr.bits >= 0x00.U && fromCSR.addr.bits <= 0xFF.U &&
-          !isValidAddress) {
+          !(isValidAddress || isIgnoredAddress)) {
         illegal_csr := true.B
       }
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
