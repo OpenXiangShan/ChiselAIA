@@ -229,16 +229,6 @@ class IMSIC(
           }
         }
       }
-      val validAddresses = Seq(
-          0x70, 0x72, 0x80, 0xc0
-        ) ++ (0 until eips.length).map(i => 0x82 + i * 2
-        ).toSeq ++ (0 until eies.length).map(i => 0xc2 + i * 2
-        ).toSeq ++ (0 until 16).map(i => 0x30 + i).toSeq
-      val ignoredAddresses = Seq(0x71) ++ (0x73 to 0x7F)
-      val isValidAddress = validAddresses.map(a => fromCSR.addr.bits === a.U).reduce(_ || _)
-      val isIgnoredAddress = ignoredAddresses.map(a => fromCSR.addr.bits === a.U).reduce(_ || _)
-      dontTouch(isValidAddress)
-      dontTouch(isIgnoredAddress)
       def bit0ReadOnlyZero(x: UInt): UInt = x & ~1.U(x.getWidth.W)
       def fixEIDelivery(x: UInt): UInt = x & 1.U
       RegMapDV.generate(
@@ -263,9 +253,9 @@ class IMSIC(
         /*wmask*/  wmask
       )
       val illegal_csr = WireDefault(false.B)
-      when(fromCSR.addr.bits >= 0x00.U && fromCSR.addr.bits <= 0xFF.U &&
-          !(isValidAddress || isIgnoredAddress)) {
-        illegal_csr := true.B
+      when(fromCSR.addr.bits >= 0x80.U && fromCSR.addr.bits <= 0xFF.U &&
+        fromCSR.addr.bits(0) === 1.U) {
+          illegal_csr := true.B
       }
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
       illegal_wdata_op | illegal_csr)
@@ -399,15 +389,12 @@ class IMSIC(
       UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
-// UIntToOH(0,geilen=5) -> 00001 
-// vgein = 1 - 对应第一个vs - 如果drop(2)，那么就应该是  00001
-// 
   }
   val illegal_fromCSR_num = WireDefault(false.B)
   when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
   val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
-    fromCSR.vgein >= params.geilen.asUInt + 1.U,
+    fromCSR.vgein >= (params.geilen + 1).U ,
     illegal_fromCSR_num,
     illegal_priv
   ).reduce(_ | _))
