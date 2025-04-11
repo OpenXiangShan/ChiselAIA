@@ -407,7 +407,7 @@ class IMSIC(
   when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
   val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
-    fromCSR.vgein >= params.geilen.asUInt + 1.U,
+    fromCSR.vgein >= (params.geilen + 1).U,
     illegal_fromCSR_num,
     illegal_priv
   ).reduce(_ | _))
