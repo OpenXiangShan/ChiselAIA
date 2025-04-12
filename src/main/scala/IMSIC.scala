@@ -116,7 +116,7 @@ case class IMSICParams(
     // MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
     sgAddr: Long = 0x10000L,
     // MC 👉 客户中断文件的数量（Number of guest interrupt files）:
-    geilen: Int = 5,
+    geilen: Int = 7,
     // MC vgein信号的位宽（The width of the vgein signal）:
     vgeinWidth: Int = 6,
     // MC iselect信号的位宽(The width of iselect signal):
@@ -233,12 +233,6 @@ class IMSIC(
           }
         }
       }
-      val validAddresses = Seq(
-          0x70, 0x72, 0x80, 0xc0
-        ) ++ (0 until eips.length).map(i => 0x82 + i * 2
-        ).toSeq ++ (0 until eies.length).map(i => 0xc2 + i * 2
-        ).toSeq ++ (0 until 16).map(i => 0x30 + i).toSeq
-      val isValidAddress = VecInit(validAddresses.map(_.U === fromCSR.addr.bits)).asUInt.orR
       def bit0ReadOnlyZero(x: UInt): UInt = x & ~1.U(x.getWidth.W)
       def fixEIDelivery(x: UInt): UInt = x & 1.U
       RegMapDV.generate(
@@ -263,9 +257,9 @@ class IMSIC(
         /*wmask*/  wmask
       )
       val illegal_csr = WireDefault(false.B)
-      when(fromCSR.addr.bits >= 0x00.U && fromCSR.addr.bits <= 0xFF.U &&
-          !isValidAddress) {
-        illegal_csr := true.B
+      when(fromCSR.addr.bits >= 0x80.U && fromCSR.addr.bits <= 0xFF.U &&
+        fromCSR.addr.bits(0) === 1.U) {
+          illegal_csr := true.B
       }
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
       illegal_wdata_op | illegal_csr)
@@ -399,9 +393,6 @@ class IMSIC(
       UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
-// UIntToOH(0,geilen=5) -> 00001 
-// vgein = 1 - 对应第一个vs - 如果drop(2)，那么就应该是  00001
-// 
   }
   val illegal_fromCSR_num = WireDefault(false.B)
   when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
