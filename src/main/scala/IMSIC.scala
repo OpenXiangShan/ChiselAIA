@@ -140,8 +140,8 @@ case class IMSICParams(
   require(
     iselectWidth >= 8,
     f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63"
-  ) 
-  lazy val INTP_FILE_WIDTH = log2Ceil(intFilesNum) 
+  )
+  lazy val INTP_FILE_WIDTH = log2Ceil(intFilesNum)
   lazy val MSI_INFO_WIDTH  = imsicIntSrcWidth + INTP_FILE_WIDTH
 }
 
@@ -258,7 +258,7 @@ class IMSIC(
       )
       val illegal_csr = WireDefault(false.B)
       when(fromCSR.addr.bits >= 0x80.U && fromCSR.addr.bits <= 0xFF.U &&
-        fromCSR.addr.bits(0) === 1.U) {
+        fromCSR.addr.bits(0) === 1.U ) {
           illegal_csr := true.B
       }
       toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
@@ -387,12 +387,19 @@ class IMSIC(
       val zeros = 0.U((16 - params.imsicIntSrcWidth).W)
       Cat(zeros, topei, zeros, topei)
     }
-    toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
-    toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
-    toCSR.topeis(2) := wrap(ParallelMux(
-      UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
-      topeis_forEachIntFiles.drop(2)
-    )) // vs
+    val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
+    when(pv === Cat(PrivType.M.asUInt, false.B))(toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)))
+      .elsewhen(pv === Cat(PrivType.S.asUInt, false.B))(toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)))
+      .elsewhen(pv === Cat(PrivType.S.asUInt, true.B))(toCSR.topeis(2) := wrap(ParallelMux(
+        UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
+        topeis_forEachIntFiles.drop(2)))
+    )
+    // toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
+    // toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
+    // toCSR.topeis(2) := wrap(ParallelMux(
+    //   UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
+    //   topeis_forEachIntFiles.drop(2)
+    // )) // vs
   }
   val illegal_fromCSR_num = WireDefault(false.B)
   when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
