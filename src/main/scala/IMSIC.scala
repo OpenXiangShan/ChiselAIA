@@ -27,23 +27,34 @@ object RegMapDV {
       waddr:   UInt,
       wen:     Bool,
       wdata:   UInt,
-      wmask:   UInt
+      wmask:   UInt,
+      illegal_priv: Bool,
+      illegal_op:   Bool
   ): Unit = {
     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
-    when(rvld)
-    {
-      rdata := LookupTreeDefault(
-        raddr,
-        Cat(default),
-        chiselMapping.map { case (a, r, w) => (a, r) }
-      )
+
+    when(rvld) {
+      when(illegal_priv) {
+        rdata  := 0.U((rdata.getWidth).W)
+      }.otherwise {
+        rdata := LookupTreeDefault(
+          raddr,
+          Cat(default),
+          chiselMapping.map { case (a, r, _) => (a, r) }
+        )
+      }
       rvalid := true.B
     }.otherwise {
       rdata  := 0.U((rdata.getWidth).W)
       rvalid := false.B
     }
-    chiselMapping.map { case (a, r, w) =>
-      if (w != null) when(wen && waddr === a)(r := w(MaskData(r, wdata, wmask)))
+
+    chiselMapping.foreach { case (a, r, w) =>
+      if (w != null) {
+        when(wen && waddr === a && !illegal_priv && !illegal_op) {
+          r := w(MaskData(r, wdata, wmask))
+        }
+      }
     }
   }
   def generate(
@@ -55,8 +66,10 @@ object RegMapDV {
       rvalid:  Bool,
       wen:     Bool,
       wdata:   UInt,
-      wmask:   UInt
-  ): Unit = generate(default, mapping, addr, rvld, rdata, rvalid, addr, wen, wdata, wmask)
+      wmask:   UInt,
+      illegal_priv: Bool,
+      illegal_op:   Bool
+  ): Unit = generate(default, mapping, addr, rvld, rdata, rvalid, addr, wen, wdata, wmask, illegal_priv, illegal_op)
 }
 
 // Based on Xiangshan NewCSR
@@ -69,6 +82,7 @@ object OpType extends ChiselEnum {
 object PrivType extends ChiselEnum {
   val U = Value(0.U)
   val S = Value(1.U)
+  val H = Value(2.U)
   val M = Value(3.U)
 }
 class MSITransBundle(params: IMSICParams) extends Bundle {
@@ -191,11 +205,15 @@ class IMSIC(
     val fromCSR = IO(Input(new Bundle {
       val seteipnum = ValidIO(UInt(params.imsicIntSrcWidth.W))
       val addr      = ValidIO(UInt(params.iselectWidth.W))
+      val virt      = Bool()
+      val priv      = PrivType()
+      val vgein     = UInt(params.vgeinWidth.W)
       val wdata = ValidIO(new Bundle {
         val op   = OpType()
         val data = UInt(params.xlen.W)
       })
       val claim = Bool()
+
     }))
     val toCSR = IO(Output(new Bundle {
       val rdata   = ValidIO(UInt(params.xlen.W))
@@ -204,6 +222,21 @@ class IMSIC(
       val topei   = UInt(params.imsicIntSrcWidth.W)
     }))
 
+    private val illegal_op = WireDefault(false.B)
+    when(fromCSR.wdata.valid && fromCSR.wdata.bits.op.asUInt === 0.U) {
+      illegal_op := true.B
+    }
+
+    private val illegal_priv = WireDefault(false.B)
+    when(fromCSR.addr.valid) {
+      val isillegalPriv = (fromCSR.priv === PrivType.M && fromCSR.virt) 
+      val isIllegalVGEIN = fromCSR.virt && (fromCSR.vgein === 0.U)
+      val isIllegalPrivLevel = (fromCSR.priv.asUInt === 0.U || fromCSR.priv.asUInt === 2.U)
+
+      when(isillegalPriv || isIllegalVGEIN || isIllegalPrivLevel) {
+        illegal_priv := true.B
+      }
+    }
     /// indirect CSRs
     val eidelivery  = RegInit(0.U(params.xlen.W))
     val eithreshold = RegInit(0.U(params.xlen.W))
@@ -254,7 +287,9 @@ class IMSIC(
         /*waddr*/  fromCSR.addr.bits,
         /*wen  */  fromCSR.wdata.valid,
         /*wdata*/  wdata,
-        /*wmask*/  wmask
+        /*wmask*/  wmask,
+        /*priv*/   illegal_priv,
+        /*op*/     illegal_op
       )
       val illegal_csr = WireDefault(false.B)
       when(fromCSR.addr.bits >= 0x80.U && fromCSR.addr.bits <= 0xFF.U &&
@@ -268,7 +303,7 @@ class IMSIC(
     locally {
       val index  = fromCSR.seteipnum.bits(params.imsicIntSrcWidth - 1, params.xlenWidth)
       val offset = fromCSR.seteipnum.bits(params.xlenWidth - 1, 0)
-      when(fromCSR.seteipnum.valid) {
+      when(fromCSR.seteipnum.valid && fromCSR.wdata.bits.op.asUInt =/= 0.U) {
         // set eips bit
         eips(index) := eips(index) | UIntToOH(offset)
       }
@@ -315,7 +350,12 @@ class IMSIC(
   val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
   val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
   val msiio   = IO(new MSITransBundle(params))
-  private val illegal_priv  = WireDefault(false.B)
+
+  private val illegal_priv = WireDefault(false.B)
+
+  private val illegal_pv  = WireDefault(false.B)
+  private val illegal_fromCSR_num = WireDefault(false.B)
+  private val illegal_priv_num = WireDefault(false.B)
   private val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
   locally {
     when (fromCSR.addr.valid)
@@ -324,9 +364,15 @@ class IMSIC(
       when(pv === Cat(PrivType.M.asUInt, false.B))(intFilesSelOH := UIntToOH(0.U))
         .elsewhen(pv === Cat(PrivType.S.asUInt, false.B))(intFilesSelOH := UIntToOH(1.U))
         .elsewhen(pv === Cat(PrivType.S.asUInt, true.B))(intFilesSelOH := UIntToOH(1.U + fromCSR.vgein))
-        .otherwise(illegal_priv := true.B)
+        .otherwise(illegal_pv := true.B)
+      when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
+      when(fromCSR.addr.bits.priv.asUInt === 0.U || fromCSR.addr.bits.priv.asUInt === 2.U) { illegal_priv_num := true.B }
     }
   }
+    when(illegal_pv || illegal_fromCSR_num || illegal_priv_num) {
+      illegal_priv := true.B
+  }
+  
   private val topeis_forEachIntFiles   = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
   private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
   // instance and connect IMSICGateWay.
@@ -340,11 +386,11 @@ class IMSIC(
       val maps = (0 until intFilesNum).map { j =>
         val flati = i + j
         val pi    = if (flati > 2) 2 else flati // index for privileges: M, S, VS.
-
+        
         def sel_addr(old: AddrBundle): AddrBundle = {
           val new_ = Wire(new AddrBundle(params))
           new_.valid := old.valid & intFilesSelOH(flati)
-          when (illegal_priv === true.B) { new_.valid := old.valid }
+          // when (illegal_priv === true.B) { new_.valid := old.valid }
           new_.bits.addr := old.bits.addr
           new_.bits.virt := old.bits.virt
           new_.bits.priv := old.bits.priv
@@ -354,15 +400,20 @@ class IMSIC(
           val new_ = Wire(Valid(chiselTypeOf(old.bits)))
           new_.bits  := old.bits
           new_.valid := old.valid & intFilesSelOH(flati)
-          when (illegal_priv === true.B) { new_.valid := old.valid }
+          // when (illegal_priv === true.B) { new_.valid := old.valid }
           new_
         }
+        val vgein_num = WireDefault(0.U(params.vgeinWidth.W))
+        when(flati.U === fromCSR.vgein) {vgein_num := fromCSR.vgein}
         val intFile = Module(new IntFile)
         val intfile_rdata_d = RegNext(intFile.toCSR.rdata)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
         intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
+        intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt
+        intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv
+        intFile.fromCSR.vgein           := vgein_num
         intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi)
         vec_rdata(flati)                := intfile_rdata_d
@@ -388,25 +439,46 @@ class IMSIC(
       Cat(zeros, topei, zeros, topei)
     }
     val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
-    when(pv === Cat(PrivType.M.asUInt, false.B))(toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)))
-      .elsewhen(pv === Cat(PrivType.S.asUInt, false.B))(toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)))
-      .elsewhen(pv === Cat(PrivType.S.asUInt, true.B))(toCSR.topeis(2) := wrap(ParallelMux(
-        UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
-        topeis_forEachIntFiles.drop(2)))
-    )
-    // toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
-    // toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
-    // toCSR.topeis(2) := wrap(ParallelMux(
-    //   UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
-    //   topeis_forEachIntFiles.drop(2)
-    // )) // vs
-  }
-  val illegal_fromCSR_num = WireDefault(false.B)
-  when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
+  //   switch(pv) {
+  //   is(Cat(PrivType.M.asUInt, false.B)) {
+  //     toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0))
+  //   }
+  //   is(Cat(PrivType.S.asUInt, false.B)) {
+  //     toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1))
+  //   }
+  //   is(Cat(PrivType.S.asUInt, true.B)) {
+  //     toCSR.topeis(2) := wrap(ParallelMux(
+  //       UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
+  //       topeis_forEachIntFiles.drop(2)
+  //     ))
+  //   }otherwise {
+  //     toCSR.topeis.foreach(_ := 0.U)
+  //   }
+  // }
+  
+    // toCSR.topeis.foreach(_ := 0.U)
+    // when(pv === Cat(PrivType.M.asUInt, false.B)){
+    //   toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0))
+    // }.elsewhen(pv === Cat(PrivType.S.asUInt, false.B)){
+    //   toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1))
+    // }.elsewhen(pv === Cat(PrivType.S.asUInt, true.B)){
+    //   toCSR.topeis(2) := wrap(ParallelMux(
+    //     UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
+    //       topeis_forEachIntFiles.drop(2)))
+    // }.otherwise{
+    //   toCSR.topeis(0) := 0.U;toCSR.topeis(1) := 0.U;toCSR.topeis(2) := 0.U
+    // }
+
+    toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
+    toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
+    toCSR.topeis(2) := wrap(ParallelMux(
+      UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
+      topeis_forEachIntFiles.drop(2)
+    )) // vs
+  }  
   val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
     fromCSR.vgein >= (params.geilen + 1).U,
-    illegal_fromCSR_num,
     illegal_priv
   ).reduce(_ | _))
   toCSR.illegal := toCSR_illegal_d
