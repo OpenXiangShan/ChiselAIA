@@ -303,7 +303,7 @@ class IMSIC(
     locally {
       val index  = fromCSR.seteipnum.bits(params.imsicIntSrcWidth - 1, params.xlenWidth)
       val offset = fromCSR.seteipnum.bits(params.xlenWidth - 1, 0)
-      when(fromCSR.seteipnum.valid && fromCSR.wdata.bits.op.asUInt =/= 0.U) {
+      when(fromCSR.seteipnum.valid) {
         // set eips bit
         eips(index) := eips(index) | UIntToOH(offset)
       }
@@ -390,7 +390,7 @@ class IMSIC(
         def sel_addr(old: AddrBundle): AddrBundle = {
           val new_ = Wire(new AddrBundle(params))
           new_.valid := old.valid & intFilesSelOH(flati)
-          // when (illegal_priv === true.B) { new_.valid := old.valid }
+          when (illegal_priv === true.B) { new_.valid := old.valid }
           new_.bits.addr := old.bits.addr
           new_.bits.virt := old.bits.virt
           new_.bits.priv := old.bits.priv
@@ -400,12 +400,17 @@ class IMSIC(
           val new_ = Wire(Valid(chiselTypeOf(old.bits)))
           new_.bits  := old.bits
           new_.valid := old.valid & intFilesSelOH(flati)
-          // when (illegal_priv === true.B) { new_.valid := old.valid }
+          when (illegal_priv === true.B) { new_.valid := old.valid }
           new_
         }
-        val vgein_num = WireDefault(0.U(params.vgeinWidth.W))
-        when(flati.U === fromCSR.vgein) {vgein_num := fromCSR.vgein}
+        
         val intFile = Module(new IntFile)
+        // Preventing overflow
+        when (flati.U((params.vgeinWidth + 1).W) === fromCSR.vgein.pad(params.vgeinWidth + 1)+1.U) {
+          intFile.fromCSR.vgein := fromCSR.vgein
+        } .otherwise {
+          intFile.fromCSR.vgein := 0.U
+        }
         val intfile_rdata_d = RegNext(intFile.toCSR.rdata)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
@@ -413,7 +418,6 @@ class IMSIC(
         intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
         intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt
         intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv
-        intFile.fromCSR.vgein           := vgein_num
         intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi)
         vec_rdata(flati)                := intfile_rdata_d
@@ -439,36 +443,6 @@ class IMSIC(
       Cat(zeros, topei, zeros, topei)
     }
     val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
-  //   switch(pv) {
-  //   is(Cat(PrivType.M.asUInt, false.B)) {
-  //     toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0))
-  //   }
-  //   is(Cat(PrivType.S.asUInt, false.B)) {
-  //     toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1))
-  //   }
-  //   is(Cat(PrivType.S.asUInt, true.B)) {
-  //     toCSR.topeis(2) := wrap(ParallelMux(
-  //       UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
-  //       topeis_forEachIntFiles.drop(2)
-  //     ))
-  //   }otherwise {
-  //     toCSR.topeis.foreach(_ := 0.U)
-  //   }
-  // }
-  
-    // toCSR.topeis.foreach(_ := 0.U)
-    // when(pv === Cat(PrivType.M.asUInt, false.B)){
-    //   toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0))
-    // }.elsewhen(pv === Cat(PrivType.S.asUInt, false.B)){
-    //   toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1))
-    // }.elsewhen(pv === Cat(PrivType.S.asUInt, true.B)){
-    //   toCSR.topeis(2) := wrap(ParallelMux(
-    //     UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
-    //       topeis_forEachIntFiles.drop(2)))
-    // }.otherwise{
-    //   toCSR.topeis(0) := 0.U;toCSR.topeis(1) := 0.U;toCSR.topeis(2) := 0.U
-    // }
-
     toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
     toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
     toCSR.topeis(2) := wrap(ParallelMux(
