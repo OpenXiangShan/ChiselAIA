@@ -357,6 +357,7 @@ class IMSIC(
   private val illegal_fromCSR_num = WireDefault(false.B)
   private val illegal_priv_num = WireDefault(false.B)
   private val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
+  private val illegal_vgein = WireDefault(false.B)
   locally {
     when (fromCSR.addr.valid)
     {
@@ -367,9 +368,10 @@ class IMSIC(
         .otherwise(illegal_pv := true.B)
       when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
       when(fromCSR.addr.bits.priv.asUInt === 0.U || fromCSR.addr.bits.priv.asUInt === 2.U) { illegal_priv_num := true.B }
+      when(fromCSR.vgein.pad(params.vgeinWidth + 1) >= (params.geilen + 1).U) { illegal_vgein := true.B}
     }
   }
-    when(illegal_pv || illegal_fromCSR_num || illegal_priv_num) {
+    when(illegal_pv || illegal_fromCSR_num || illegal_priv_num || illegal_vgein) {
       illegal_priv := true.B
   }
   
@@ -452,7 +454,6 @@ class IMSIC(
   }  
   val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
-    fromCSR.vgein >= (params.geilen + 1).U,
     illegal_priv
   ).reduce(_ | _))
   toCSR.illegal := toCSR_illegal_d
