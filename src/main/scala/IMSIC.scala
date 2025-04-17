@@ -137,8 +137,9 @@ case class IMSICParams(
   lazy val xlen: Int = 64 // currently only support xlen = 64
   lazy val xlenWidth = log2Ceil(xlen)
   require(
-    imsicIntSrcWidth <= 11,
-    f"imsicIntSrcWidth=${imsicIntSrcWidth}, must not greater than log2(2048)=11, as there are at most 2048 eip/eie bits"
+    imsicIntSrcWidth <= 11 && imsicIntSrcWidth >= 6,
+    f"imsicIntSrcWidth=${imsicIntSrcWidth}, must not greater than log2(2048)=11, as there are at most 2048 eip/eie bits\n" +
+      "must not be less than log2(64)=6, as there must be at least 64 eip/eie bits"
   )
   lazy val privNum:     Int = 3          // number of privilege modes: machine, supervisor, virtualized supervisor
   lazy val intFilesNum: Int = 2 + geilen // number of interrupt files, m, s, vs0, vs1, ...
