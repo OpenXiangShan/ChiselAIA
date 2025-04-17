@@ -13,63 +13,6 @@ import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 import org.chipsalliance.cde.config.Parameters
 import utility._
-// RegMap that supports Default and Valid
-// object RegMapDV {
-//   def Unwritable = null
-//   def apply(addr: Int, reg: UInt, wfn: UInt => UInt = (x => x)) = (addr, (reg, wfn))
-//   def generate(
-//       default: UInt,
-//       mapping: Map[Int, (UInt, UInt => UInt)],
-//       raddr:   UInt,
-//       rvld:    Bool,
-//       rdata:   UInt,
-//       rvalid:  Bool,
-//       waddr:   UInt,
-//       wen:     Bool,
-//       wdata:   UInt,
-//       wmask:   UInt,
-//       illegal_priv: Bool,
-//       illegal_op:   Bool
-//   ): Unit = {
-//     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
-//     when(rvld) {
-//       when(illegal_priv) {
-//         rdata  := 0.U((rdata.getWidth).W)
-//       }.otherwise {
-//         rdata := LookupTreeDefault(
-//           raddr,
-//           Cat(default),
-//           chiselMapping.map { case (a, r, _) => (a, r) }
-//         )
-//       }
-//       rvalid := true.B
-//     }.otherwise {
-//       rdata  := 0.U((rdata.getWidth).W)
-//       rvalid := false.B
-//     }
-
-//     chiselMapping.foreach { case (a, r, w) =>
-//       if (w != null) {
-//         when(wen && waddr === a && !illegal_priv && !illegal_op) {
-//           r := w(MaskData(r, wdata, wmask))
-//         }
-//       }
-//     }
-//   }
-//   def generate(
-//       default: UInt,
-//       mapping: Map[Int, (UInt, UInt => UInt)],
-//       addr:    UInt,
-//       rvld:    Bool,
-//       rdata:   UInt,
-//       rvalid:  Bool,
-//       wen:     Bool,
-//       wdata:   UInt,
-//       wmask:   UInt,
-//       illegal_priv: Bool,
-//       illegal_op:   Bool
-//   ): Unit = generate(default, mapping, addr, rvld, rdata, rvalid, addr, wen, wdata, wmask, illegal_priv, illegal_op)
-// }
 
 object RegMapDV {
   def Unwritable = null
@@ -280,17 +223,6 @@ class IMSIC(
     when(fromCSR.wdata.valid && fromCSR.wdata.bits.op.asUInt === 0.U) {
       illegal_op := true.B
     }
-
-    // private val illegal_priv = WireDefault(false.B)
-    // when(fromCSR.addr.valid) {
-    //   val isillegalPriv = (fromCSR.priv === PrivType.M && fromCSR.virt) 
-    //   val isIllegalVGEIN = fromCSR.virt && (fromCSR.vgein === 0.U)
-    //   val isIllegalPrivLevel = (fromCSR.priv.asUInt === 0.U || fromCSR.priv.asUInt === 2.U)
-    //   val 
-    //   when(isillegalPriv || isIllegalVGEIN || isIllegalPrivLevel) {
-    //     illegal_priv := true.B
-    //   }
-    // }
   
     /// indirect CSRs
     val eidelivery  = RegInit(0.U(params.xlen.W))
@@ -404,19 +336,12 @@ class IMSIC(
   val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
   val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
   val msiio   = IO(new MSITransBundle(params))
-  // private val illegal_pv  = WireDefault(false.B)
-  // private val illegal_fromCSR_num = WireDefault(false.B)
-  // private val illegal_priv_num = WireDefault(false.B)
-  // private val illegal_vgein = WireDefault(false.B)
   val illegal_priv = WireInit(false.B)
 
   private val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
   locally {
     when (fromCSR.addr.valid)
     {
-      // when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
-      // when(fromCSR.addr.bits.priv.asUInt === 0.U || fromCSR.addr.bits.priv.asUInt === 2.U) { illegal_priv_num := true.B }
-      // when(fromCSR.vgein.pad(params.vgeinWidth + 1) >= (params.geilen + 1).U) { illegal_vgein := true.B}
       when(fromCSR.addr.bits.virt === false.B )
       {
         when(((fromCSR.addr.bits.priv.asUInt === 3.U) || (fromCSR.addr.bits.priv.asUInt === 1.U)) && fromCSR.vgein === 0.U){
@@ -425,21 +350,15 @@ class IMSIC(
           illegal_priv := true.B
         }
       }.otherwise{
-        // when((fromCSR.addr.bits.priv.asUInt === 3.U || fromCSR.addr.bits.priv.asUInt === 1.U)){
-        //   illegal_priv := false.B
-        // }.otherwise{
-        //   illegal_priv := true.B
-        // }
         when(fromCSR.addr.bits.priv.asUInt === 1.U && (fromCSR.vgein >= 1.U) && (fromCSR.vgein < (params.geilen + 1).U(params.vgeinWidth.W)))
         {
           illegal_priv := false.B
         }.otherwise{
           illegal_priv := true.B
         }
-      } // rdata.valid illegal
-        // .otherwise(illegal_pv := true.B)
+      }
+
     }
-    // op=0; 
     when (fromCSR.addr.valid)
     {
       val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
@@ -451,10 +370,6 @@ class IMSIC(
     }
   }
 
-  //   when(illegal_pv || illegal_fromCSR_num || illegal_priv_num || illegal_vgein) {
-  //     illegal_priv := true.B
-  // }
-  
   private val topeis_forEachIntFiles   = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
   private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
   // instance and connect IMSICGateWay.
@@ -472,7 +387,6 @@ class IMSIC(
         def sel_addr(old: AddrBundle): AddrBundle = {
           val new_ = Wire(new AddrBundle(params))
           new_.valid := old.valid & intFilesSelOH(flati)
-          // when (illegal_pv === true.B) { new_.valid := old.valid }
           new_.bits.addr := old.bits.addr
           new_.bits.virt := old.bits.virt
           new_.bits.priv := old.bits.priv
@@ -482,7 +396,6 @@ class IMSIC(
           val new_ = Wire(Valid(chiselTypeOf(old.bits)))
           new_.bits  := old.bits
           new_.valid := old.valid & intFilesSelOH(flati)
-          // when (illegal_pv === true.B) { new_.valid := old.valid }
           new_
         }
         
@@ -497,12 +410,12 @@ class IMSIC(
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
-        intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr // IMSIC层 对应intfile-rdata.valid = true.B
-        intFile.illegal_io.illegal_priv := illegal_priv                     // virt vgein非法 illegal_priv
-        intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt // illegal_priv
-        intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv // illegal信息只能传给对应的intfile
-        intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)         // fromCSR.wdata.bits.op
-        intFile.fromCSR.claim           := fromCSR.claims(pi)               // 256
+        intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr 
+        intFile.illegal_io.illegal_priv := illegal_priv                     
+        intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt 
+        intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv 
+        intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)         
+        intFile.fromCSR.claim           := fromCSR.claims(pi)               
         vec_rdata(flati)                := intfile_rdata_d
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
@@ -511,7 +424,6 @@ class IMSIC(
     }
   }
   toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
-  // toCSR.rdata.valid := RegNext(fromCSR.addr.valid)
   toCSR.rdata.bits    := vec_rdata.map(_.bits).reduce(_|_)
   toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
   locally {
