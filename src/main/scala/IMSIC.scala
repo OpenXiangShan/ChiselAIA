@@ -13,7 +13,7 @@ import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 import org.chipsalliance.cde.config.Parameters
 import utility._
-// RegMap that supports Default and Valid
+
 object RegMapDV {
   def Unwritable = null
   def apply(addr: Int, reg: UInt, wfn: UInt => UInt = (x => x)) = (addr, (reg, wfn))
@@ -32,21 +32,16 @@ object RegMapDV {
       illegal_op:   Bool
   ): Unit = {
     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
-
     when(rvld) {
-      when(illegal_priv) {
-        rdata  := 0.U((rdata.getWidth).W)
-      }.otherwise {
-        rdata := LookupTreeDefault(
-          raddr,
-          Cat(default),
-          chiselMapping.map { case (a, r, _) => (a, r) }
-        )
-      }
+      rdata := LookupTreeDefault(
+        raddr,
+        Cat(default),
+        chiselMapping.map { case (a, r, _) => (a, r) }
+      )
       rvalid := true.B
     }.otherwise {
       rdata  := 0.U((rdata.getWidth).W)
-      rvalid := false.B
+      rvalid := illegal_priv
     }
 
     chiselMapping.foreach { case (a, r, w) =>
@@ -119,12 +114,12 @@ class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
   val topeis   = Vec(params.privNum, UInt(32.W))
 }
 case class IMSICParams(
-    // MC IMSIC中断源数量的对数，默认值9表示IMSIC支持最多512（2^9）个中断源
+    // MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多256（2^8）个中断源
 
     // MC （Logarithm of number of interrupt sources to IMSIC.
-    // MC The default 9 means IMSIC support at most 512 (2^9) interrupt sources）:
+    // MC The default 8 means IMSIC support at most 256 (2^8) interrupt sources）:
     // MC{visible}
-    imsicIntSrcWidth: Int = 9,
+    imsicIntSrcWidth: Int = 8,
     // MC 👉 本IMSIC的机器态中断文件的地址（Address of machine-level interrupt files for this IMSIC）：
     mAddr: Long = 0x00000L,
     // MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
@@ -213,7 +208,6 @@ class IMSIC(
         val data = UInt(params.xlen.W)
       })
       val claim = Bool()
-
     }))
     val toCSR = IO(Output(new Bundle {
       val rdata   = ValidIO(UInt(params.xlen.W))
@@ -221,22 +215,15 @@ class IMSIC(
       val pending = Bool()
       val topei   = UInt(params.imsicIntSrcWidth.W)
     }))
-
+    val illegal_io = IO(new Bundle {
+      val illegal_priv = Input(Bool())
+    })
+    val illegal_priv = illegal_io.illegal_priv
     private val illegal_op = WireDefault(false.B)
     when(fromCSR.wdata.valid && fromCSR.wdata.bits.op.asUInt === 0.U) {
       illegal_op := true.B
     }
-
-    private val illegal_priv = WireDefault(false.B)
-    when(fromCSR.addr.valid) {
-      val isillegalPriv = (fromCSR.priv === PrivType.M && fromCSR.virt) 
-      val isIllegalVGEIN = fromCSR.virt && (fromCSR.vgein === 0.U)
-      val isIllegalPrivLevel = (fromCSR.priv.asUInt === 0.U || fromCSR.priv.asUInt === 2.U)
-
-      when(isillegalPriv || isIllegalVGEIN || isIllegalPrivLevel) {
-        illegal_priv := true.B
-      }
-    }
+  
     /// indirect CSRs
     val eidelivery  = RegInit(0.U(params.xlen.W))
     val eithreshold = RegInit(0.U(params.xlen.W))
@@ -346,35 +333,43 @@ class IMSIC(
       eips(index) := eips(index) & ~UIntToOH(offset)
     }
   }
-
   val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
   val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
   val msiio   = IO(new MSITransBundle(params))
+  val illegal_priv = WireInit(false.B)
 
-  private val illegal_priv = WireDefault(false.B)
-
-  private val illegal_pv  = WireDefault(false.B)
-  private val illegal_fromCSR_num = WireDefault(false.B)
-  private val illegal_priv_num = WireDefault(false.B)
   private val intFilesSelOH = WireDefault(0.U(params.intFilesNum.W))
-  private val illegal_vgein = WireDefault(false.B)
   locally {
     when (fromCSR.addr.valid)
     {
+      when(fromCSR.addr.bits.virt === false.B )
+      {
+        when(((fromCSR.addr.bits.priv.asUInt === 3.U) || (fromCSR.addr.bits.priv.asUInt === 1.U)) && fromCSR.vgein === 0.U){
+          illegal_priv := false.B
+        }.otherwise{
+          illegal_priv := true.B
+        }
+      }.otherwise{
+        when(fromCSR.addr.bits.priv.asUInt === 1.U && (fromCSR.vgein >= 1.U) && (fromCSR.vgein < (params.geilen + 1).U(params.vgeinWidth.W)))
+        {
+          illegal_priv := false.B
+        }.otherwise{
+          illegal_priv := true.B
+        }
+      }
+
+    }
+    when (fromCSR.addr.valid)
+    {
       val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
-      when(pv === Cat(PrivType.M.asUInt, false.B))(intFilesSelOH := UIntToOH(0.U))
-        .elsewhen(pv === Cat(PrivType.S.asUInt, false.B))(intFilesSelOH := UIntToOH(1.U))
-        .elsewhen(pv === Cat(PrivType.S.asUInt, true.B))(intFilesSelOH := UIntToOH(1.U + fromCSR.vgein))
-        .otherwise(illegal_pv := true.B)
-      when(fromCSR.addr.bits.virt === true.B && fromCSR.vgein === 0.U) { illegal_fromCSR_num := true.B }
-      when(fromCSR.addr.bits.priv.asUInt === 0.U || fromCSR.addr.bits.priv.asUInt === 2.U) { illegal_priv_num := true.B }
-      when(fromCSR.vgein.pad(params.vgeinWidth + 1) >= (params.geilen + 1).U) { illegal_vgein := true.B}
+      when(pv === Cat(PrivType.M.asUInt, false.B)){intFilesSelOH := UIntToOH(0.U)}
+        .elsewhen(pv === Cat(PrivType.S.asUInt, false.B)){intFilesSelOH := UIntToOH(1.U)}
+        .elsewhen(pv === Cat(PrivType.S.asUInt, true.B)){intFilesSelOH := UIntToOH(1.U((fromCSR.vgein.getWidth+1).W)
+         + fromCSR.vgein.pad(params.vgeinWidth+1))
+      }
     }
   }
-    when(illegal_pv || illegal_fromCSR_num || illegal_priv_num || illegal_vgein) {
-      illegal_priv := true.B
-  }
-  
+
   private val topeis_forEachIntFiles   = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
   private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
   // instance and connect IMSICGateWay.
@@ -388,11 +383,10 @@ class IMSIC(
       val maps = (0 until intFilesNum).map { j =>
         val flati = i + j
         val pi    = if (flati > 2) 2 else flati // index for privileges: M, S, VS.
-        
+
         def sel_addr(old: AddrBundle): AddrBundle = {
           val new_ = Wire(new AddrBundle(params))
           new_.valid := old.valid & intFilesSelOH(flati)
-          when (illegal_priv === true.B) { new_.valid := old.valid }
           new_.bits.addr := old.bits.addr
           new_.bits.virt := old.bits.virt
           new_.bits.priv := old.bits.priv
@@ -402,7 +396,6 @@ class IMSIC(
           val new_ = Wire(Valid(chiselTypeOf(old.bits)))
           new_.bits  := old.bits
           new_.valid := old.valid & intFilesSelOH(flati)
-          when (illegal_priv === true.B) { new_.valid := old.valid }
           new_
         }
         
@@ -417,11 +410,12 @@ class IMSIC(
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
-        intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
-        intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt
-        intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv
-        intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
-        intFile.fromCSR.claim           := fromCSR.claims(pi)
+        intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr 
+        intFile.illegal_io.illegal_priv := illegal_priv                     
+        intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt 
+        intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv 
+        intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)         
+        intFile.fromCSR.claim           := fromCSR.claims(pi)               
         vec_rdata(flati)                := intfile_rdata_d
         pendings(flati)                 := intFile.toCSR.pending
         topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
@@ -430,7 +424,6 @@ class IMSIC(
     }
   }
   toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
-  // toCSR.rdata.valid := RegNext(fromCSR.addr.valid)
   toCSR.rdata.bits    := vec_rdata.map(_.bits).reduce(_|_)
   toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
   locally {
