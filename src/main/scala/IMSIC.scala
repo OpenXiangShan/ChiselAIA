@@ -32,7 +32,7 @@ object RegMapDV {
       illegal_op:   Bool
   ): Unit = {
     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
-    when(rvld && !illegal_op) {
+    when(rvld /*&& !illegal_op*/ ) {
       rdata := LookupTreeDefault(
         raddr,
         Cat(default),
