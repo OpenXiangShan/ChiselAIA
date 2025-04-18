@@ -198,7 +198,7 @@ async def init_imsic(dut, imsicID=1):
   await write_csr(dut, csr_addr_eidelivery, 1, imsicID)
   for e in range(0,32):
     await write_csr(dut, csr_addr_eie0 + 2*e, -1, imsicID)
-  for i in range(0,4):
+  for i in range(0,64):
     await select_vs_intfile(dut, i, imsicID)
     await write_csr(dut, csr_addr_eidelivery, 1, imsicID)
     for e in range(0,32):
