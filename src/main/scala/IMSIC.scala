@@ -281,7 +281,7 @@ class IMSIC(
           illegal_csr := true.B
       }
       toCSR.illegal := illegal_csr
-
+    }
     locally {
       val index  = fromCSR.seteipnum.bits(params.imsicIntSrcWidth - 1, params.xlenWidth)
       val offset = fromCSR.seteipnum.bits(params.xlenWidth - 1, 0)
