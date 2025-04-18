@@ -32,7 +32,7 @@ object RegMapDV {
       illegal_op:   Bool
   ): Unit = {
     val chiselMapping = mapping.map { case (a, (r, w)) => (a.U, r, w) }
-    when(rvld /*&& !illegal_op*/ ) {
+    when(rvld) {
       rdata := LookupTreeDefault(
         raddr,
         Cat(default),
@@ -220,10 +220,6 @@ class IMSIC(
       val illegal_priv = Input(Bool())
     })
     val illegal_priv = illegal_io.illegal_priv
-    // private val illegal_op = WireDefault(false.B)
-    // when(fromCSR.wdata.valid && (fromCSR.wdata.bits.op.asUInt === 0.U)) {
-    //   illegal_op := true.B
-    // }
   
     /// indirect CSRs
     val eidelivery  = RegInit(0.U(params.xlen.W))
@@ -284,10 +280,7 @@ class IMSIC(
         fromCSR.addr.bits(0) === 1.U) {
           illegal_csr := true.B
       }
-      // toCSR.illegal := (fromCSR.addr.valid | fromCSR.wdata.valid) & (
-      // illegal_wdata_op | illegal_csr)
       toCSR.illegal := illegal_csr
-    } // end of scope for xiselect CSR reg map
 
     locally {
       val index  = fromCSR.seteipnum.bits(params.imsicIntSrcWidth - 1, params.xlenWidth)
