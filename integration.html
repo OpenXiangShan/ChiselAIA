@@ -1,0 +1,1292 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>🧭集成指南（Integration Guide） - ChiselAIA</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">ChiselAIA</li><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> 😺AIA</a></li><li class="chapter-item expanded "><a href="imsic.html"><strong aria-hidden="true">2.</strong> 📩IMSIC</a></li><li class="chapter-item expanded "><a href="aplic.html"><strong aria-hidden="true">3.</strong> 🧶APLIC</a></li><li class="chapter-item expanded "><a href="integration.html" class="active"><strong aria-hidden="true">4.</strong> 🧭集成指南（Integration Guide）</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">ChiselAIA</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://openxiangshan.github.io/ChiselAIA/" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="集成指南integration-guide"><a class="header" href="#集成指南integration-guide">🧭集成指南（Integration Guide）</a></h1>
+<!-- vim-markdown-toc GFM -->
+<ul>
+<li><a href="#%E6%A6%82%E8%A7%88overview">概览（Overview）</a></li>
+<li><a href="#%E5%8F%82%E6%95%B0parameters">参数（Parameters）</a>
+<ul>
+<li><a href="#imsicparams"><code>IMSICParams</code></a></li>
+<li><a href="#aplicparams"><code>APLICParams</code></a></li>
+</ul>
+</li>
+<li><a href="#%E5%AE%9E%E4%BE%8B%E5%8C%96instantiation">实例化（Instantiation）</a>
+<ul>
+<li><a href="#span-stylecolorred%E5%85%B3%E4%BA%8Ehartindexabout-hartindexspan"><span style="color:red;">关于hartIndex（About hartIndex）</span></a></li>
+</ul>
+</li>
+<li><a href="#%E7%A4%BA%E4%BE%8Bexamples">示例（Examples）</a>
+<ul>
+<li><a href="#%E7%AE%80%E5%8D%95%E7%9A%844%E6%A0%B8%E7%B3%BB%E7%BB%9Fa-simple-4-hart-system">简单的4核系统（A Simple 4-Hart System）</a></li>
+<li><a href="#%E5%88%86%E7%BB%84%E7%9A%844%E6%A0%B8%E7%B3%BB%E7%BB%9Fa-grouped-4-hart-system">分组的4核系统（A Grouped 4-Hart System）</a></li>
+</ul>
+</li>
+</ul>
+<!-- vim-markdown-toc -->
+<p>本指南介绍如何将ChiselAIA集成到RISC-V系统中。</p>
+<p>This guide introduces the integration process of ChiselAIA into a RISC-V system.</p>
+<h2 id="概览overview"><a class="header" href="#概览overview">概览（Overview）</a></h2>
+<p>集成涉及2个Scala文件，共4个Scala类：</p>
+<ul>
+<li><code>APLIC.scala</code>：
+<ul>
+<li><code>APLICParams</code>：用于配置APLIC实例的参数类</li>
+<li><code>APLIC</code>：APLIC模块的核心逻辑</li>
+<li>每个系统需要一个实例：
+<ul>
+<li><code>TLAPLIC</code>：对<code>APLIC</code>模块的Tilelink协议包装</li>
+<li><code>AXI4APLIC</code>：对<code>APLIC</code>模块的AXI4协议包装</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>IMSIC.scala</code>：
+<ul>
+<li><code>IMSICParams</code>：用于配置IMSIC实例的参数类</li>
+<li><code>IMSIC</code>：IMSIC模块的核心逻辑</li>
+<li>每个处理器核心需要一个实例：
+<ul>
+<li><code>TLIMSIC</code>：对<code>IMSIC</code>模块的Tilelink协议包装</li>
+<li><code>AXI4IMSIC</code>：对<code>IMSIC</code>模块的AXI4协议包装</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Integration involves 2 scala files, including 4 scala classes:</p>
+<ul>
+<li><code>APLIC.scala</code>:
+<ul>
+<li><code>APLICParams</code>: Parameter classes for configuring APLIC instance.</li>
+<li><code>APLIC</code>: The main logic of APLIC module.</li>
+<li>Requiring one instance per system:
+<ul>
+<li><code>TLAPLIC</code>: The <code>APLIC</code> module wrapped by Tilelink protocol,</li>
+<li><code>AXI4APLIC</code>: The <code>APLIC</code> module wrapped by AXI4 protocol.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>IMSIC.scala</code>:
+<ul>
+<li><code>IMSICParams</code>: Parameter classes for configuring IMSIC instances.</li>
+<li><code>IMSIC</code>: The main logic of IMSIC module.</li>
+<li>Requiring one instance per hart:
+<ul>
+<li><code>TLIMSIC</code>: The <code>IMSIC</code> module wrapped by Tilelink protocol,</li>
+<li><code>AXI4IMSIC</code>: The <code>IMSIC</code> module wrapped by AXI4 protocol.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="images/integration_files.svg" alt="" /></p>
+<h2 id="参数parameters"><a class="header" href="#参数parameters">参数（Parameters）</a></h2>
+<p>本节概述了APLIC和IMSIC的可配置参数。
+虽然提供了默认值，但我们强烈建议根据具体的集成需求，自定义带有👉标记的参数。
+其他参数要么是派生的，要么是硬编码的（详情参见<code>Params.scala</code>）。</p>
+<p>This section outlines the configurable parameters for APLIC and IMSIC.
+While defaul values are provided,
+we strongly recommend customizing parameters marked with 👉 to suit your specific integration needs.
+Other parameters are either derived or hard-coded, (see <code>Params.scala</code> for details).</p>
+<p>命名约定：</p>
+<ul>
+<li><code>Num</code>后缀：某实体的数量，</li>
+<li><code>Width</code>后缀：某实体的位宽（通常是<code>log2(实体数量)</code>），</li>
+<li><code>Addr</code>后缀：某实体的地址。</li>
+</ul>
+<p>Naming conventions:</p>
+<ul>
+<li><code>Num</code> suffix: Number of the items.</li>
+<li><code>Width</code> suffix: Bit width of an item (typically <code>log2(number of the item)</code>).</li>
+<li><code>Addr</code> suffix: Address of an item.</li>
+</ul>
+<h3 id="imsicparams"><a class="header" href="#imsicparams"><code>IMSICParams</code></a></h3>
+<pre><code class="language-scala">package aia
+
+import chisel3._
+import chisel3.IO
+import chisel3.util._
+import freechips.rocketchip.amba.axi4._
+import freechips.rocketchip.amba.axi4.AXI4Xbar
+import freechips.rocketchip.devices.tilelink._
+import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.prci.ClockSinkDomain
+import freechips.rocketchip.regmapper._
+import freechips.rocketchip.tilelink._
+import freechips.rocketchip.util._
+import org.chipsalliance.cde.config.Parameters
+import utility._
+
+object RegMapDV {
+  def Unwritable = null
+  def apply(addr: Int, reg: UInt, wfn: UInt =&gt; UInt = (x =&gt; x)) = (addr, (reg, wfn))
+  def generate(
+      default: UInt,
+      mapping: Map[Int, (UInt, UInt =&gt; UInt)],
+      raddr:   UInt,
+      rvld:    Bool,
+      rdata:   UInt,
+      rvalid:  Bool,
+      waddr:   UInt,
+      wen:     Bool,
+      wdata:   UInt,
+      wmask:   UInt,
+      illegal_priv: Bool,
+      illegal_op:   Bool
+  ): Unit = {
+    val chiselMapping = mapping.map { case (a, (r, w)) =&gt; (a.U, r, w) }
+    when(rvld) {
+      rdata := LookupTreeDefault(
+        raddr,
+        Cat(default),
+        chiselMapping.map { case (a, r, _) =&gt; (a, r) }
+      )
+      rvalid := true.B
+    }.otherwise {
+      rdata  := 0.U((rdata.getWidth).W)
+      rvalid := illegal_priv | illegal_op
+    }
+
+    chiselMapping.foreach { case (a, r, w) =&gt;
+      if (w != null) {
+        when(wen &amp;&amp; waddr === a &amp;&amp; !illegal_priv &amp;&amp; !illegal_op) {
+          r := w(MaskData(r, wdata, wmask))
+        }
+      }
+    }
+  }
+  def generate(
+      default: UInt,
+      mapping: Map[Int, (UInt, UInt =&gt; UInt)],
+      addr:    UInt,
+      rvld:    Bool,
+      rdata:   UInt,
+      rvalid:  Bool,
+      wen:     Bool,
+      wdata:   UInt,
+      wmask:   UInt,
+      illegal_priv: Bool,
+      illegal_wdata_op:   Bool
+  ): Unit = generate(default, mapping, addr, rvld, rdata, rvalid, addr, wen, wdata, wmask, illegal_priv, illegal_wdata_op)
+}
+
+// Based on Xiangshan NewCSR
+object OpType extends ChiselEnum {
+  val ILLEGAL = Value(0.U)
+  val CSRRW   = Value(1.U)
+  val CSRRS   = Value(2.U)
+  val CSRRC   = Value(3.U)
+}
+object PrivType extends ChiselEnum {
+  val U = Value(0.U)
+  val S = Value(1.U)
+  val H = Value(2.U)
+  val M = Value(3.U)
+}
+class MSITransBundle(params: IMSICParams) extends Bundle {
+  val vld_req = Input(Bool()) // request from axireg
+  val data = Input(UInt(params.MSI_INFO_WIDTH.W))
+  val vld_ack = Output(Bool())  // ack for axireg from imsic. which indicates imsic can work actively.
+}
+class ForCVMBundle extends Bundle {
+  val cmode = Input(Bool()) // add port: cpu mode is tee or ree
+  val notice_pending =
+    Output(Bool()) // add port: interrupt pending of ree when cmode is tee,else interrupt pending of tee.
+}
+class AddrBundle(params: IMSICParams) extends  Bundle {
+  val valid = Bool()                      // 表示 addr 是否有效
+  val bits  = new Bundle {
+    val addr = UInt(params.iselectWidth.W) // 存储实际地址值
+    val virt  = Bool()
+    val priv  = PrivType()
+  }
+}
+class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
+  val addr  = new AddrBundle(params)
+  val vgein = UInt(params.vgeinWidth.W)
+  val wdata = ValidIO(new Bundle {
+    val op   = OpType()
+    val data = UInt(params.xlen.W)
+  })
+  val claims = Vec(params.privNum, Bool())
+}
+class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
+  val rdata    = ValidIO(UInt(params.xlen.W))
+  val illegal  = Bool()
+  val pendings = UInt(params.intFilesNum.W)
+  val topeis   = Vec(params.privNum, UInt(32.W))
+}
+case class IMSICParams(
+    // MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多256（2^8）个中断源
+
+    // MC （Logarithm of number of interrupt sources to IMSIC.
+    // MC The default 8 means IMSIC support at most 256 (2^8) interrupt sources）:
+    // MC{visible}
+    imsicIntSrcWidth: Int = 8,
+    // MC 👉 本IMSIC的机器态中断文件的地址（Address of machine-level interrupt files for this IMSIC）：
+    mAddr: Long = 0x00000L,
+    // MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
+    sgAddr: Long = 0x10000L,
+    // MC 👉 客户中断文件的数量（Number of guest interrupt files）:
+    geilen: Int = 7,
+    // MC vgein信号的位宽（The width of the vgein signal）:
+    vgeinWidth: Int = 6,
+    // MC iselect信号的位宽(The width of iselect signal):
+    iselectWidth:           Int = 12,
+    EnableImsicAsyncBridge: Boolean = false,
+    HasTEEIMSIC:            Boolean = false
+    // MC{hide}
+) {
+  lazy val xlen: Int = 64 // currently only support xlen = 64
+  lazy val xlenWidth = log2Ceil(xlen)
+  require(
+    imsicIntSrcWidth &lt;= 11 &amp;&amp; imsicIntSrcWidth &gt;= 6,
+    f"imsicIntSrcWidth=${imsicIntSrcWidth}, must not greater than log2(2048)=11, as there are at most 2048 eip/eie bits" +
+      "must not be less than log2(64)=6, as there must be at least 64 eip/eie bits"
+  )
+  lazy val privNum:     Int = 3          // number of privilege modes: machine, supervisor, virtualized supervisor
+  lazy val intFilesNum: Int = 2 + geilen // number of interrupt files, m, s, vs0, vs1, ...
+
+  lazy val eixNum: Int = pow2(imsicIntSrcWidth).toInt / xlen // number of eip/eie registers
+  lazy val intFileMemWidth: Int = 12 // interrupt file memory region width: 12-bit width =&gt; 4KB size
+  require(vgeinWidth &gt;= log2Ceil(geilen))
+  require(
+    iselectWidth &gt;= 8,
+    f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63"
+  )
+  lazy val INTP_FILE_WIDTH = log2Ceil(intFilesNum)
+  lazy val MSI_INFO_WIDTH  = imsicIntSrcWidth + INTP_FILE_WIDTH
+}
+
+class IMSIC(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+)(implicit p: Parameters) extends Module {
+  println(f"IMSICParams.geilen:            ${params.geilen}%d")
+
+  class IMSICGateWay extends Module {
+    // === io port define ===
+    val msiio = IO(new MSITransBundle(params))
+    val msi_data_o  = IO(Output(UInt(params.imsicIntSrcWidth.W)))
+    val msi_valid_o = IO(Output(UInt(params.intFilesNum.W)))
+
+    // === main body ===
+    val msi_in = Wire(UInt(params.MSI_INFO_WIDTH.W))
+    msi_in := msiio.data
+    val msi_vld_req_cpu = WireInit(false.B)
+    when(params.EnableImsicAsyncBridge.B) {
+      msi_vld_req_cpu := AsyncResetSynchronizerShiftReg(msiio.vld_req, 3, 0)
+    }.otherwise {
+      msi_vld_req_cpu := msiio.vld_req
+    }
+    val msi_vld_ack_cpu = RegInit(false.B)
+    when(msi_vld_req_cpu)(
+      msi_vld_ack_cpu := true.B
+    ).otherwise(
+      msi_vld_ack_cpu := false.B
+    )
+    // generate the msi_vld_ack,to handle with the input msi request.
+    msiio.vld_ack := msi_vld_ack_cpu
+    val msi_vld_ris_cpu = msi_vld_req_cpu &amp; (~msi_vld_ack_cpu) // rising of msi_vld_req
+    val msi_data_catch  = RegInit(0.U(params.imsicIntSrcWidth.W))
+    val msi_intf_valids = RegInit(0.U(params.intFilesNum.W))
+    msi_data_o  := msi_data_catch(params.imsicIntSrcWidth - 1, 0)
+    msi_valid_o := msi_intf_valids // multi-bis switch vector
+    when(msi_vld_ris_cpu) {
+      msi_data_catch := msi_in(params.imsicIntSrcWidth - 1, 0)
+      msi_intf_valids := 1.U &lt;&lt; msi_in(params.MSI_INFO_WIDTH - 1,params.imsicIntSrcWidth)
+    }.otherwise {
+      msi_intf_valids := 0.U
+    }
+  }
+  class IntFile extends Module {
+    override def desiredName = "IntFile"
+    val fromCSR = IO(Input(new Bundle {
+      val seteipnum = ValidIO(UInt(params.imsicIntSrcWidth.W))
+      val addr      = ValidIO(UInt(params.iselectWidth.W))
+      val virt      = Bool()
+      val priv      = PrivType()
+      val vgein     = UInt(params.vgeinWidth.W)
+      val wdata = ValidIO(new Bundle {
+        val op   = OpType()
+        val data = UInt(params.xlen.W)
+      })
+      val claim = Bool()
+    }))
+    val toCSR = IO(Output(new Bundle {
+      val rdata   = ValidIO(UInt(params.xlen.W))
+      val illegal = Bool()
+      val pending = Bool()
+      val topei   = UInt(params.imsicIntSrcWidth.W)
+    }))
+    val illegal_io = IO(new Bundle {
+      val illegal_priv = Input(Bool())
+    })
+    val illegal_priv = illegal_io.illegal_priv
+  
+    /// indirect CSRs
+    val eidelivery  = RegInit(0.U(params.xlen.W))
+    val eithreshold = RegInit(0.U(params.xlen.W))
+    val eips        = RegInit(VecInit.fill(params.eixNum)(0.U(params.xlen.W)))
+    val eies        = RegInit(VecInit.fill(params.eixNum)(0.U(params.xlen.W)))
+
+    val illegal_wdata_op = WireDefault(false.B)
+    locally { // scope for xiselect CSR reg map
+      val wdata = WireDefault(0.U(params.xlen.W))
+      val wmask = WireDefault(0.U(params.xlen.W))
+      when(fromCSR.wdata.valid) {
+        switch(fromCSR.wdata.bits.op) {
+          is(OpType.ILLEGAL) {
+            illegal_wdata_op := true.B
+          }
+          is(OpType.CSRRW) {
+            wdata := fromCSR.wdata.bits.data
+            wmask := Fill(params.xlen, 1.U)
+          }
+          is(OpType.CSRRS) {
+            wdata := Fill(params.xlen, 1.U)
+            wmask := fromCSR.wdata.bits.data
+          }
+          is(OpType.CSRRC) {
+            wdata := 0.U
+            wmask := fromCSR.wdata.bits.data
+          }
+        }
+      }
+      def bit0ReadOnlyZero(x: UInt): UInt = x &amp; ~1.U(x.getWidth.W)
+      def fixEIDelivery(x: UInt): UInt = x &amp; 1.U
+      RegMapDV.generate(
+        0.U,
+        Map(
+          RegMapDV(0x70, eidelivery, fixEIDelivery),
+          RegMapDV(0x72, eithreshold),
+          RegMapDV(0x80, eips(0), bit0ReadOnlyZero),
+          RegMapDV(0xc0, eies(0), bit0ReadOnlyZero)
+        ) ++ eips.drop(1).zipWithIndex.map { case (eip: UInt, i: Int) =&gt;
+          RegMapDV(0x82 + i * 2, eip)
+        } ++ eies.drop(1).zipWithIndex.map { case (eie: UInt, i: Int) =&gt;
+          RegMapDV(0xc2 + i * 2, eie)
+        },
+        /*raddr*/  fromCSR.addr.bits,
+        /*rvld */  fromCSR.addr.valid,
+        /*rdata*/  toCSR.rdata.bits,
+        /*rvalid*/ toCSR.rdata.valid,
+        /*waddr*/  fromCSR.addr.bits,
+        /*wen  */  fromCSR.wdata.valid,
+        /*wdata*/  wdata,
+        /*wmask*/  wmask,
+        /*priv*/   illegal_priv,
+        /*op*/     illegal_wdata_op
+      )
+      val illegal_csr = WireDefault(false.B)
+      when(fromCSR.addr.bits &gt;= 0x80.U &amp;&amp; fromCSR.addr.bits &lt;= 0xFF.U &amp;&amp;
+        fromCSR.addr.bits(0) === 1.U) {
+          illegal_csr := true.B
+      }
+      toCSR.illegal := illegal_csr
+    }
+    locally {
+      val index  = fromCSR.seteipnum.bits(params.imsicIntSrcWidth - 1, params.xlenWidth)
+      val offset = fromCSR.seteipnum.bits(params.xlenWidth - 1, 0)
+      when(fromCSR.seteipnum.valid) {
+        // set eips bit
+        eips(index) := eips(index) | UIntToOH(offset)
+      }
+    }
+
+    locally { // scope for xtopei
+      // The ":+ true.B" trick explain:
+      //  Append true.B to handle the cornor case, where all bits in eip and eie are disabled.
+      //  If do not append true.B, then we need to check whether the eip &amp; eie are empty,
+      //  otherwise, the returned topei will become the max index, that is 2^intSrcWidth-1
+      // Noted: the support max interrupt sources number = 2^intSrcWidth
+      //              [0,     2^intSrcWidth-1] :+ 2^intSrcWidth
+      val eipBools = Cat(eips.reverse).asBools :+ true.B
+      val eieBools = Cat(eies.reverse).asBools :+ true.B
+      
+      def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
+        val tmp_xtopei = Mux(xeidelivery(params.xlen - 1, 1) === 0.U, Mux(xeidelivery(0), xtopei, 0.U) , 0.U)
+        // {
+        //   all interrupts are enabled, when eithreshold == 1;
+        //   interrupts, when i &lt; eithreshold, are enabled;
+        // } &lt;=&gt; interrupts, when i &lt;= (eithreshold -1), are enabled
+        Mux(tmp_xtopei &lt;= (xeithreshold - 1.U), tmp_xtopei, 0.U)
+      }
+      toCSR.topei := xtopei_filter(
+        eidelivery,
+        eithreshold,
+        ParallelPriorityMux(
+          (eipBools zip eieBools).zipWithIndex.map {
+            case ((p: Bool, e: Bool), i: Int) =&gt; (p &amp; e, i.U)
+          }
+        )
+      )
+    } // end of scope for xtopei
+    toCSR.pending := toCSR.topei =/= 0.U
+
+    when(fromCSR.claim) {
+      val index  = toCSR.topei(params.imsicIntSrcWidth - 1, params.xlenWidth)
+      val offset = toCSR.topei(params.xlenWidth - 1, 0)
+      // clear the pending bit indexed by xtopei in xeip
+      eips(index) := eips(index) &amp; ~UIntToOH(offset)
+    }
+  }
+  val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
+  val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
+  val msiio   = IO(new MSITransBundle(params))
+  val illegal_priv = WireInit(false.B)
+
+  private val intFilesSelOH_r = WireDefault(0.U(params.intFilesNum.W))
+  private val intFilesSelOH_w = WireDefault(0.U(params.intFilesNum.W))
+  locally {
+    when (fromCSR.addr.valid)
+    {
+      when(fromCSR.addr.bits.virt === false.B )
+      {
+        when(((fromCSR.addr.bits.priv.asUInt === 3.U) || (fromCSR.addr.bits.priv.asUInt === 1.U)) &amp;&amp; fromCSR.vgein === 0.U){
+          illegal_priv := false.B
+        }.otherwise{
+          illegal_priv := true.B
+        }
+      }.otherwise{
+        when(fromCSR.addr.bits.priv.asUInt === 1.U &amp;&amp; (fromCSR.vgein &gt;= 1.U) &amp;&amp; (fromCSR.vgein &lt; (params.geilen + 1).U(params.vgeinWidth.W)))
+        {
+          illegal_priv := false.B
+        }.otherwise{
+          illegal_priv := true.B
+        }
+      }
+    }
+    when (fromCSR.addr.valid &amp;&amp; !illegal_priv) // read
+    {
+      val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
+      when(pv === Cat(PrivType.M.asUInt, false.B)){intFilesSelOH_r := UIntToOH(0.U)}
+        .elsewhen(pv === Cat(PrivType.S.asUInt, false.B)){intFilesSelOH_r := UIntToOH(1.U)}
+        .elsewhen(pv === Cat(PrivType.S.asUInt, true.B)){intFilesSelOH_r := UIntToOH(1.U((fromCSR.vgein.getWidth+1).W)
+         + fromCSR.vgein.pad(params.vgeinWidth+1))
+      }
+    }
+    when (fromCSR.addr.valid &amp;&amp; fromCSR.wdata.valid &amp;&amp; !(fromCSR.wdata.bits.op.asUInt === 0.U) &amp;&amp; !illegal_priv) // write
+    {
+        val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
+        when(pv === Cat(PrivType.M.asUInt, false.B)){intFilesSelOH_w := UIntToOH(0.U)}
+        .elsewhen(pv === Cat(PrivType.S.asUInt, false.B)){intFilesSelOH_w := UIntToOH(1.U)}
+        .elsewhen(pv === Cat(PrivType.S.asUInt, true.B)){intFilesSelOH_w := UIntToOH(1.U((fromCSR.vgein.getWidth+1).W)
+         + fromCSR.vgein.pad(params.vgeinWidth+1))
+        }
+    }
+  }
+
+  private val topeis_forEachIntFiles   = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
+  private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
+  // instance and connect IMSICGateWay.
+  val imsicGateWay = Module(new IMSICGateWay)
+  imsicGateWay.msiio &lt;&gt; msiio
+  val pendings = Wire(Vec(params.intFilesNum,Bool()))
+  val vec_rdata = Wire(Vec(params.intFilesNum, ValidIO(UInt(params.xlen.W))))
+  Seq(1, 1 + params.geilen).zipWithIndex.map {
+    case (intFilesNum: Int, i: Int) =&gt; {
+      // j: index for S intFile: S, G1, G2, ...
+      val maps = (0 until intFilesNum).map { j =&gt;
+        val flati = i + j
+        val pi    = if (flati &gt; 2) 2 else flati // index for privileges: M, S, VS.
+
+        def sel_addr(old: AddrBundle): AddrBundle = {
+          val new_ = Wire(new AddrBundle(params))
+          new_.valid := old.valid &amp; intFilesSelOH_r(flati)
+          new_.bits.addr := old.bits.addr
+          new_.bits.virt := old.bits.virt
+          new_.bits.priv := old.bits.priv
+          new_
+        }
+        def sel_wdata[T &lt;: Data](old: Valid[T]): Valid[T] = {
+          val new_ = Wire(Valid(chiselTypeOf(old.bits)))
+          new_.bits  := old.bits
+          new_.valid := old.valid &amp; intFilesSelOH_w(flati)
+          new_
+        }
+
+        val intFile = Module(new IntFile)
+        // Preventing overflow
+        when (flati.U((params.vgeinWidth + 1).W) === fromCSR.vgein.pad(params.vgeinWidth + 1)+1.U) {
+          intFile.fromCSR.vgein := fromCSR.vgein
+        } .otherwise {
+          intFile.fromCSR.vgein := 0.U
+        }
+        val intfile_rdata_d = RegNext(intFile.toCSR.rdata)
+        intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
+        intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
+        intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
+        intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
+        intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt
+        intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv
+        intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
+        intFile.fromCSR.claim           := fromCSR.claims(pi)
+        intFile.illegal_io.illegal_priv := illegal_priv
+        vec_rdata(flati)                := intfile_rdata_d
+        pendings(flati)                 := intFile.toCSR.pending
+        topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
+        illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
+      }
+    }
+  }
+  toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
+  toCSR.rdata.bits    := vec_rdata.map(_.bits).reduce(_|_)
+  toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) =&gt; p &lt;&lt; i.U}).reduce(_ | _) //vector -&gt; multi-bit
+  locally {
+    // Format of *topei:
+    // * bits 26:16 Interrupt identity
+    // * bits 10:0 Interrupt priority (same as identity)
+    // * All other bit positions are zeros.
+    // For detailed explainations of these memory region arguments,
+    // please refer to the manual *The RISC-V Advanced Interrupt Architeture*: 3.9. Top external interrupt CSRs
+    def wrap(topei: UInt): UInt = {
+      val zeros = 0.U((16 - params.imsicIntSrcWidth).W)
+      Cat(zeros, topei, zeros, topei)
+    }
+    val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
+    toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
+    toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
+    toCSR.topeis(2) := wrap(ParallelMux(
+      UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
+      topeis_forEachIntFiles.drop(2)
+    )) // vs
+  }  
+  val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) &amp; Seq(
+    illegals_forEachIntFiles.reduce(_ | _),
+    (fromCSR.wdata.valid &amp;&amp; fromCSR.wdata.bits.op.asUInt === 0.U),
+    illegal_priv
+  ).reduce(_ | _))
+  toCSR.illegal := toCSR_illegal_d
+}
+
+//define IMSIC_WRAP: instance one imsic when HasCVMExtention is supported, else instance two imsic modules.
+class IMSIC_WRAP(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+)(implicit p: Parameters) extends Module {
+  // define the ports
+  val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
+  val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
+  val msiio = IO(new MSITransBundle(params))
+  // define additional ports when HasCVMExtention is supported.
+  val sec = if (params.HasTEEIMSIC) Some(IO(new ForCVMBundle()))
+  else None // include cmode input port,and o_notice_pending output port.
+  val teemsiio = if (params.HasTEEIMSIC) Some(IO(new MSITransBundle(params))) else None
+  // instance module,and body logic
+  private val imsic = Module(new IMSIC(params, beatBytes))
+  imsic.fromCSR := fromCSR
+  toCSR         := imsic.toCSR
+  imsic.msiio &lt;&gt; msiio
+  // define additional logic for sec extention
+  // .foreach logic only happens when sec is not none.
+  sec.foreach { secIO =&gt;
+    // get the sec.mode, connect sec.o_notice_pending to top.
+    val cmode          = Wire(Bool())
+    val notice_pending = Wire(Bool())
+    cmode                := secIO.cmode
+    secIO.notice_pending := notice_pending
+
+    // instance tee imsic module.
+    val teeimsic = Module(new IMSIC(params, beatBytes))
+    teemsiio.foreach(teemsiio =&gt; teeimsic.msiio &lt;&gt; teemsiio)
+    toCSR.rdata   := Mux(cmode, teeimsic.toCSR.rdata, imsic.toCSR.rdata) // toCSR needs to the selected depending cmode.
+    toCSR.illegal := Mux(cmode, teeimsic.toCSR.illegal, imsic.toCSR.illegal)
+    val s_pendings = Mux(cmode, teeimsic.toCSR.pendings(params.intFilesNum-1,1), imsic.toCSR.pendings(params.intFilesNum-1,1))
+    val m_pendings = imsic.toCSR.pendings(0) // machine mode only from imsic.
+    toCSR.pendings := Cat(s_pendings,m_pendings)
+    //  toCSR.pendings := VecInit((0 until params.intFilesNum).map(i =&gt; pendings(i))) // uint-&gt;vector
+    
+    toCSR.topeis    := Mux(cmode, teeimsic.toCSR.topeis, imsic.toCSR.topeis)
+    toCSR.topeis(0) := imsic.toCSR.topeis(0) // machine mode only from imsic.
+    // to get the o_notice_pending, excluding the machine interrupt
+//    val s_orpend_ree = imsic.toCSR.pendings.slice(1, params.intFilesNum) // extract the | of vector(1,N-1)
+//    val s_orpend_tee = teeimsic.toCSR.pendings.slice(1, params.intFilesNum)
+//    notice_pending := Mux(cmode, s_orpend_ree.reduce(_ | _), s_orpend_tee.reduce(_ | _))
+    val s_orpend_ree = imsic.toCSR.pendings(params.intFilesNum-1,1) // extract the | of vector(1,N-1)
+    val s_orpend_tee = teeimsic.toCSR.pendings(params.intFilesNum-1,1) //bit(params.intFilesNum-1:1)
+    notice_pending   := Mux(cmode, s_orpend_ree.orR, s_orpend_tee.orR)
+    teeimsic.fromCSR := fromCSR
+    teeimsic.fromCSR.addr.valid := cmode &amp; fromCSR.addr.valid // cmode=1,controls tee csr access to interrupt file indirectly
+    teeimsic.fromCSR.wdata.valid := cmode &amp; fromCSR.wdata.valid
+    teeimsic.fromCSR.claims(0)   := false.B // machine interrupts are inactive for tee imsic.
+    for (i &lt;- 1 until params.privNum) {
+      teeimsic.fromCSR.claims(i) := cmode &amp; fromCSR.claims(i)
+    }
+
+    imsic.fromCSR.addr.valid := (cmode === false.B) &amp; fromCSR.addr.valid // cmode=1,controls tee csr access to interrupt file indirectly
+    imsic.fromCSR.wdata.valid := (cmode === false.B) &amp; fromCSR.wdata.valid
+    imsic.fromCSR.claims(0)   := fromCSR.claims(0) // machine interrupts are inactive for tee imsic.
+    for (i &lt;- 1 until params.privNum) {
+      imsic.fromCSR.claims(i) := (cmode === false.B) &amp; fromCSR.claims(i)
+    }
+  }
+}
+
+//generate TLIMSIC top module:including TLRegIMSIC_WRAP and IMSIC_WRAP
+class TLIMSIC(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+//  asyncQueueParams: AsyncQueueParams
+)(implicit p: Parameters) extends LazyModule with HasIMSICParameters {
+  val axireg      = LazyModule(new TLRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+  lazy val module = new Imp
+
+  class Imp extends LazyModuleImp(this) {
+    val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
+    val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
+    private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+    toCSR := imsic.toCSR
+    imsic.fromCSR := fromCSR
+    axireg.module.msiio &lt;&gt; imsic.msiio // msi_req/msi_ack interconnect
+    // define additional ports for cvm extention
+    val io_sec = if (GHasTEEIMSIC) Some(IO(new ForCVMBundle()))
+    else None // include cmode input port,and o_notice_pending output port.
+    /* code on when imsic has two clock domains.*/
+    // --- define soc_clock for imsic bus logic ***//
+    val soc_clock = IO(Input(Clock()))
+    val soc_reset = IO(Input(Reset()))
+    axireg.module.clock := soc_clock
+    axireg.module.reset := soc_reset
+    imsic.clock         := clock
+    imsic.reset         := reset
+    axireg.module.msiio &lt;&gt; imsic.msiio // msi_req/msi_ack interconnect
+    // code will be compiled only when io_sec is not None.
+    io_sec.foreach(iosec =&gt; imsic.sec.foreach(imsicsec =&gt; imsicsec &lt;&gt; iosec))
+    // code will be compiled only when tee_axireg is not None.
+    axireg.module.teemsiio.foreach(tee_msi_trans =&gt; imsic.teemsiio.foreach(teemsiio =&gt; tee_msi_trans &lt;&gt; teemsiio))
+  }
+}
+
+class AXI4IMSIC(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+)(implicit p: Parameters) extends LazyModule with HasIMSICParameters {
+  val axireg      = LazyModule(new AXIRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+  lazy val module = new Imp
+  class Imp extends LazyModuleImp(this) {
+    val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
+    val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
+    private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+    toCSR := imsic.toCSR
+    imsic.fromCSR := fromCSR
+    axireg.module.msiio &lt;&gt; imsic.msiio // msi_req/msi_ack interconnect
+    // define additional ports for cvm extention
+    val io_sec = if (GHasTEEIMSIC) Some(IO(new ForCVMBundle()))
+    else None // include cmode input port,and o_notice_pending output port.
+    /* code on when imsic has two clock domains.*/
+    // --- define soc_clock for imsic bus logic ***//
+    val soc_clock = IO(Input(Clock()))
+    val soc_reset = IO(Input(Reset()))
+    axireg.module.clock := soc_clock
+    axireg.module.reset := soc_reset
+    imsic.clock         := clock
+    imsic.reset         := reset
+    // code will be compiled only when io_sec is not None.
+    io_sec.foreach(iosec =&gt; imsic.sec.foreach(imsicsec =&gt; imsicsec &lt;&gt; iosec))
+    // code will be compiled only when tee_axireg is not None.
+    axireg.module.teemsiio.foreach(tee_msi_trans =&gt; imsic.teemsiio.foreach(teemsiio =&gt; tee_msi_trans &lt;&gt; teemsiio))
+  }
+}
+
+
+// code below is for SEC IMSIC spec
+//generate TLRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one
+class TLRegIMSIC_WRAP(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+)(implicit p: Parameters) extends LazyModule {
+  val axireg = LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))
+  val tee_axireg =
+    if (params.HasTEEIMSIC) Some(LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))) else None
+  lazy val module = new TLRegIMSICImp(this)
+
+  class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val msiio = IO(Flipped(new MSITransBundle(params)))
+    msiio &lt;&gt; axireg.module.msiio
+    val teemsiio = if (params.HasTEEIMSIC) Some(IO(Flipped(new MSITransBundle(params))))
+      else None // backpressure signal for axi4bus, from imsic working on cpu clock
+
+    // code below will be compiled only when teeio is not none.
+    teemsiio.foreach(teemsiio =&gt; tee_axireg.foreach(tee_axireg =&gt; teemsiio &lt;&gt; tee_axireg.module.msiio))
+  }
+}
+
+//generate AXIRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one
+class AXIRegIMSIC_WRAP(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+)(implicit p: Parameters) extends LazyModule {
+  val axireg = LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))
+  //  val tee_axireg = if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(IMSICParams(teemode = true), beatBytes)(Parameters.empty))) else None
+  val tee_axireg =
+    if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))) else None
+  lazy val module = new AXIRegIMSICImp(this)
+
+  class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val msiio = IO(Flipped(new MSITransBundle(params))) // backpressure signal for axi4bus, from imsic working on cpu clock
+    msiio &lt;&gt; axireg.module.msiio
+    val teemsiio = if (params.HasTEEIMSIC) Some(IO(Flipped(new MSITransBundle(params))))
+    else None // backpressure signal for axi4bus, from imsic working on cpu clock
+    // code below will be compiled only when teeio is not none.
+    teemsiio.foreach(teemsiio =&gt; tee_axireg.foreach(tee_axireg =&gt; teemsiio &lt;&gt; tee_axireg.module.msiio))
+  }
+}
+
+class TLRegIMSIC(
+    params:      IMSICParams,
+    beatBytes:   Int = 4,
+    seperateBus: Boolean = false
+)(implicit p: Parameters) extends LazyModule {
+  val fromMem = Seq.fill(if (seperateBus) 2 else 1)(TLXbar())
+  // val fromMem = LazyModule(new TLXbar).node
+  private val intfileFromMems = Seq(
+    AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
+    AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)
+  ).zipWithIndex.map { case (addrset, i) =&gt;
+    val intfileFromMem = TLRegMapperNode(
+      address = Seq(addrset),
+      beatBytes = beatBytes
+    )
+    intfileFromMem := (if (seperateBus) fromMem(i) else fromMem.head)
+    intfileFromMem
+  }
+
+  lazy val module = new TLRegIMSICImp(this)
+  class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val msiio = IO(Flipped(new MSITransBundle(params)))  // backpressure signal for axi4bus, from imsic working on cpu clock
+    private val reggen = Module(new RegGen(params, beatBytes))
+    // ---- instance sync fifo ----//
+    // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
+    val FifoDataWidth = params.MSI_INFO_WIDTH
+    val fifo_wdata    = Wire(Valid(UInt(FifoDataWidth.W)))
+
+    // depth:8, data width: FifoDataWidth
+    private val fifo_sync = Module(new Queue(UInt(FifoDataWidth.W), 8))
+    // define about fifo write
+    fifo_wdata.bits        := reggen.io.seteipnum
+    fifo_wdata.valid       := reggen.io.valid
+    fifo_sync.io.enq.valid := fifo_wdata.valid
+    fifo_sync.io.enq.bits  := fifo_wdata.bits
+    // fifo rd,controlled by msi_vld_ack from imsic working on csr clock.
+    // msi_vld_ack_soc: sync result with soc clock
+    val msi_vld_ack_soc = WireInit(false.B)
+    val msi_vld_ack_cpu = msiio.vld_ack
+    val msi_vld_req     = RegInit(false.B)
+    when(params.EnableImsicAsyncBridge.B) {
+      msi_vld_ack_soc := AsyncResetSynchronizerShiftReg(msi_vld_ack_cpu, 3, 0)
+    }.otherwise {
+      msi_vld_ack_soc := msi_vld_ack_cpu
+    }
+    fifo_sync.io.deq.ready := ~msi_vld_req
+    // generate the msi_vld_req: high if ~empty,low when msi_vld_ack_soc
+    msiio.vld_req := msi_vld_req
+    val msi_vld_ack_soc_1f  = RegNext(msi_vld_ack_soc)
+    val msi_vld_ack_soc_ris = msi_vld_ack_soc &amp; (~msi_vld_ack_soc_1f)
+    //    val fifo_empty = ~fifo_sync.io.deq.valid
+    // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
+    when(fifo_sync.io.deq.valid === true.B) {
+      msi_vld_req := true.B
+    }.elsewhen(msi_vld_ack_soc_ris) {
+      msi_vld_req := false.B
+    }.otherwise {
+      msi_vld_req := msi_vld_req
+    }
+
+    // get the msi interrupt ID info
+    val msi_id_data = RegInit(0.U(params.MSI_INFO_WIDTH.W))
+    val rdata_vld   = fifo_sync.io.deq.fire // assign to fifo rdata
+    when(rdata_vld) { // fire: io.deq.valid &amp; io.deq.ready
+      msi_id_data := fifo_sync.io.deq.bits(params.MSI_INFO_WIDTH - 1, 0)
+    }.otherwise {
+      msi_id_data := msi_id_data
+    }
+    // port connect: io.valid is interrupt file index info.
+    msiio.data := msi_id_data
+    val backpress = fifo_sync.io.enq.ready
+    (intfileFromMems zip reggen.regmapIOs).map {
+      case (intfileFromMem, regmapIO) =&gt; intfileFromMem.regmap(regmapIO._1, regmapIO._2, backpress)
+    }
+  }
+}
+
+
+//generate axi42reg for IMSIC
+class AXIRegIMSIC(
+    params:      IMSICParams,
+    beatBytes:   Int = 4,
+    seperateBus: Boolean = false
+)(implicit p: Parameters) extends LazyModule {
+  val fromMem = Seq.fill(if (seperateBus) 2 else 1)(AXI4Xbar())
+  val axi4tolite = Seq.fill(if (seperateBus) 2 else 1)(LazyModule(new AXI4ToLite()(Parameters.empty)))
+  fromMem zip axi4tolite.map(_.node) foreach (x =&gt; x._1 := x._2)
+  private val intfileFromMems = Seq(
+    AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
+    AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)
+  ).zipWithIndex.map { case (addrset, i) =&gt;
+    val intfileFromMem = AXI4RegMapperNode(
+      address = addrset,
+      beatBytes = beatBytes
+    )
+    intfileFromMem := (if (seperateBus) fromMem(i) else fromMem.head)
+    intfileFromMem
+  }
+  
+  lazy val module = new AXIRegIMSICImp(this)
+  class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val msiio          = IO(Flipped(new MSITransBundle(params))) // backpressure signal for axi4bus, from imsic working on cpu clock
+    private val reggen = Module(new RegGen(params, beatBytes))
+    // ---- instance sync fifo ----//
+    // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
+    val FifoDataWidth = params.MSI_INFO_WIDTH
+    val fifo_wdata    = Wire(Valid(UInt(FifoDataWidth.W)))
+
+    // depth:8, data width: FifoDataWidth
+    private val fifo_sync = Module(new Queue(UInt(FifoDataWidth.W), 8))
+    // define about fifo write
+    fifo_wdata.bits        := reggen.io.seteipnum
+    fifo_wdata.valid       := reggen.io.valid
+    fifo_sync.io.enq.valid := fifo_wdata.valid
+    fifo_sync.io.enq.bits  := fifo_wdata.bits
+    // fifo rd,controlled by msi_vld_ack from imsic working on csr clock.
+    // msi_vld_ack_soc: sync result with soc clock
+    val msi_vld_ack_soc = WireInit(false.B)
+    val msi_vld_ack_cpu = msiio.vld_ack
+    val msi_vld_req     = RegInit(false.B)
+    when(params.EnableImsicAsyncBridge.B) {
+      msi_vld_ack_soc := AsyncResetSynchronizerShiftReg(msi_vld_ack_cpu, 3, 0)
+    }.otherwise {
+      msi_vld_ack_soc := msi_vld_ack_cpu
+    }
+    fifo_sync.io.deq.ready := ~msi_vld_req
+    // generate the msi_vld_req: high if ~empty,low when msi_vld_ack_soc
+    msiio.vld_req := msi_vld_req
+    val msi_vld_ack_soc_1f  = RegNext(msi_vld_ack_soc)
+    val msi_vld_ack_soc_ris = msi_vld_ack_soc &amp; (~msi_vld_ack_soc_1f)
+    // val fifo_empty = ~fifo_sync.io.deq.valid
+    // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
+    when(fifo_sync.io.deq.valid === true.B) {
+      msi_vld_req := true.B
+    }.elsewhen(msi_vld_ack_soc_ris) {
+      msi_vld_req := false.B
+    }.otherwise {
+      msi_vld_req := msi_vld_req
+    }
+
+    // get the msi interrupt ID info
+    val msi_id_data = RegInit(0.U(params.MSI_INFO_WIDTH.W))
+    val rdata_vld   = fifo_sync.io.deq.fire // assign to fifo rdata
+    when(rdata_vld) { // fire: io.deq.valid &amp; io.deq.ready
+      msi_id_data := fifo_sync.io.deq.bits(params.MSI_INFO_WIDTH - 1, 0)
+    }.otherwise {
+      msi_id_data := msi_id_data
+    }
+    // port connect: io.valid is interrupt file index info.
+    msiio.data := msi_id_data
+    val backpress = fifo_sync.io.enq.ready
+    (intfileFromMems zip reggen.regmapIOs).map {
+      case (intfileFromMem, regmapIO) =&gt; intfileFromMem.regmap(regmapIO._1, regmapIO._2, backpress)
+    }
+  }
+}
+
+//integrated for async clock domain,kmh,zhaohong
+class RegGen(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+) extends Module {
+  val regmapIOs = Seq(
+    params.intFileMemWidth,
+    params.intFileMemWidth + log2Ceil(1 + params.geilen)
+  ).map { width =&gt;
+    val regmapParams = RegMapperParams(width - log2Up(beatBytes), beatBytes)
+    (IO(Flipped(Decoupled(new RegMapperInput(regmapParams)))), IO(Decoupled(new RegMapperOutput(regmapParams))))
+  }
+  // define the output reg: seteipnum is the MSI id,vld[],valid flag for interrupt file domains: m,s,vs1~vsgeilen
+  val io = IO(Output(new Bundle {
+    val seteipnum = UInt(params.MSI_INFO_WIDTH.W)
+    val valid     = Bool()
+  }))
+  val valids       = WireInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
+  val seteipnums   = WireInit(VecInit(Seq.fill(params.intFilesNum)(0.U(params.imsicIntSrcWidth.W))))
+  val outseteipnum = RegInit(0.U(params.MSI_INFO_WIDTH.W))
+  val outvalids    = RegInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
+
+  (regmapIOs zip Seq(1, 1 + params.geilen)).zipWithIndex.map { // seq[0]: m interrupt file, seq[1]: s&amp;vs interrupt file
+    case ((regmapIO: (DecoupledIO[RegMapperInput], DecoupledIO[RegMapperOutput]), intFilesNum: Int), i: Int) =&gt;
+      {
+        // j: index is 0 for m file for seq[0],index is 0~params.geilen for S intFile for seq[1]: S, G1, G2, ...
+        val maps = (0 until intFilesNum).map { j =&gt;
+          val flati = i + j // seq[0]:0+0=0;seq[1]:(0~geilen)+1
+          val seteipnum = WireInit(0.U.asTypeOf(Valid(UInt(params.imsicIntSrcWidth.W)))); /*for debug*/
+          dontTouch(seteipnum)
+          valids(flati)     := seteipnum.valid
+          seteipnums(flati) := seteipnum.bits
+          j * pow2(params.intFileMemWidth).toInt -&gt; Seq(RegField(
+            32,
+            0.U,
+            RegWriteFn { (valid, data) =&gt;
+              when(valid) { seteipnum.bits := data(params.imsicIntSrcWidth - 1, 0); seteipnum.valid := true.B }; true.B
+            }
+          ))
+        }
+        regmapIO._2 &lt;&gt; RegMapper(beatBytes, 1, true, regmapIO._1, maps: _*)
+      }
+      for (i &lt;- 0 until params.intFilesNum) {
+        when(valids(i)) {
+          outseteipnum := Cat(i.U, seteipnums(i))
+        }
+      }
+      outvalids    := valids
+      io.seteipnum := outseteipnum
+      io.valid     := outvalids.reduce(_ | _)
+  }
+}
+</code></pre>
+<h3 id="aplicparams"><a class="header" href="#aplicparams"><code>APLICParams</code></a></h3>
+<p>APLIC接收的中断源数量的对数。
+默认值7表示APLIC支持最多128（2^7）个中断源。
+<strong>注意</strong>：<code>aplicIntSrcWidth</code>必须小于<code>imsicIntSrcWidth</code>，
+因为APLIC的中断源将被转换为MSI，
+而APLIC转换成的MSI是IMSIC中断源的子集。
+（Logarithm of number of interrupt sources to APLIC:
+The default 7 means APLIC support at most 128 (2^7) interrupt sources.
+<strong>Note</strong>: <code>aplicIntSrcWidth</code> must be <strong>less than</strong> <code>imsicIntSrcWidth</code>,
+as APLIC interrupt sources are converted to MSIs,
+which are a subset of IMSIC's interrupt sources）：</p>
+<pre><code class="language-scala">  aplicIntSrcWidth: Int = 7,
+  imsicIntSrcWidth: Int = 9,
+</code></pre>
+<p>👉 APLIC域的基地址（Base address of APLIC domains）:</p>
+<pre><code class="language-scala">  baseAddr: Long = 0x19960000L,
+</code></pre>
+<p><strong>注意</strong>：下述中括号内的变量与AIA规范中的一致（第3.6节：用于多个中断文件的内存区域排列）。</p>
+<p><strong>Note</strong>: The following variables in bracket align with the AIA specification (Section 3.6: Memory Region Arrangement for Multiple Interrupt Files).</p>
+<p>👉 每个组的成员数量（Number of members per group）[\(h_{max}\)]：</p>
+<pre><code class="language-scala">  membersNum      : Int  = 2           ,
+</code></pre>
+<p>👉 所有IMSIC的机器态中断文件的基地址（Base address of machine-level interrupt files for all IMSICs）[\(A\)]：</p>
+<pre><code class="language-scala">  mBaseAddr       : Long = 0x61000000L ,
+</code></pre>
+<p>👉 所有IMSIC的监管态和客户态中断文件的基地址（Base addr for supervisor-level and guest-level interrupt files for all IMSICs）[\(B\)]:</p>
+<pre><code class="language-scala">  sgBaseAddr      : Long = 0x82900000L ,
+</code></pre>
+<p>👉 组的数量（Number of groups ）[\(g_{max}\)]:</p>
+<pre><code class="language-scala">  groupsNum       : Int  = 1           ,
+</code></pre>
+<p>👉 客户中断文件的数量（Number of guest interrupt files）:</p>
+<pre><code class="language-scala">  geilen          : Int  = 7           ,
+</code></pre>
+<h2 id="实例化instantiation"><a class="header" href="#实例化instantiation">实例化（Instantiation）</a></h2>
+<ul>
+<li>
+<p><code>APLICParams</code>和<code>IMSICParams</code>：</p>
+<ul>
+<li>每个类一个实例，</li>
+<li>根据<a href="#%E5%8F%82%E6%95%B0parameters">参数</a>部分的说明，实例化参数。</li>
+</ul>
+</li>
+<li>
+<p><code>TLAPLIC</code>/<code>AXI4APLIC</code>：</p>
+<ul>
+<li>单个实例，</li>
+<li>参数<code>params</code>：接收<code>APLICParams</code>的实例，</li>
+</ul>
+</li>
+<li>
+<p><code>TLIMSIC</code>/<code>AXI4IMSIC</code>：</p>
+<ul>
+<li>每个核心一个实例，</li>
+<li>参数<code>params</code>：接收<code>IMSICParams</code>的实例，</li>
+</ul>
+</li>
+<li>
+<p><code>APLICParams</code> and <code>IMSICParams</code>:</p>
+<ul>
+<li>Single instance each,</li>
+<li>Instantiation parameters according to <a href="#%E5%8F%82%E6%95%B0parameters">Parameters</a> section.</li>
+</ul>
+</li>
+<li>
+<p><code>TLAPLIC</code>/<code>AXI4APLIC</code>:</p>
+<ul>
+<li>Single instance,</li>
+<li>Parameter <code>params</code>: receiving the <code>APLICParams</code>'s instance,</li>
+</ul>
+</li>
+<li>
+<p><code>TLIMSIC</code>/<code>AXI4IMSIC</code>:</p>
+<ul>
+<li>One instance per hart,</li>
+<li>Parameter <code>params</code>: receiving the <code>IMSICParams</code>'s instance,</li>
+</ul>
+</li>
+</ul>
+<!-- TODO: find a right place for hartIndex -->
+<h3 id="关于hartindexabout-hartindex"><a class="header" href="#关于hartindexabout-hartindex"><span style="color:red;">关于hartIndex（About hartIndex）</span></a></h3>
+<p>根据AIA规范：
+<span style="color:red;">AIA的hart编号</span>
+可能与RISC-V特权架构分配给hart的唯一
+<span style="color:red;">hart标识符（“hart ID”）无关</span>。
+在ChiselAIA中，hartIndex编码为groupID拼接上memberID。</p>
+<p>According to the AIA specification:
+The <span style="color:red;">AIA's hart index</span> may or
+<span style="color:red;">may not have any relationship to</span> the unique
+<span style="color:red;">hart identifier ("hart ID")</span>
+that the RISC-V Privileged Architecture assigns to the hart.
+In ChiselAIA, the hartIndex is encoded as a concatenation of <code>groupID</code> and <code>memberID</code>:</p>
+<p><img src="./images/hart_index.svg" alt="" /></p>
+<h2 id="示例examples"><a class="header" href="#示例examples">示例（Examples）</a></h2>
+<!-- TODO: markcode A Grouped 4-Hart System -->
+<h3 id="简单的4核系统a-simple-4-hart-system"><a class="header" href="#简单的4核系统a-simple-4-hart-system">简单的4核系统（A Simple 4-Hart System）</a></h3>
+<p>对于一个简单的未分组系统，设置groupsNum=1，则可以将hart ID复用作为AIA的`hartIndex：</p>
+<p>For a simple ungrouped system, set groupsNum=1 to allow reuse of hart ID as AIA's <code>hartIndex</code>:</p>
+<pre><code class="language-scala">val imsic_params = IMSICParams()
+val aplic_params = APLICParams(groupsNum=1, membersNum=4)
+val imsics = (0 until 4).map( i =&gt; {
+  val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
+val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
+</code></pre>
+<h3 id="分组的4核系统a-grouped-4-hart-system"><a class="header" href="#分组的4核系统a-grouped-4-hart-system">分组的4核系统（A Grouped 4-Hart System）</a></h3>
+<p>在<code>src/main/scala/Example.AIA</code>和<code>src/main/scala/Example-axi.scala</code>中，我们提供了一个如何实例化APLIC核IMSIC的示例
+（我们的单元测试也是基于该示例）。
+以Tilelink为例，我们接下来展示一些关键的代码：</p>
+<p>We provide an example of instantiating the APLIC and IMSIC, in <code>src/main/scala/Example.AIA</code> and <code>src/main/scala/Example-axi.scala</code>
+(Furthermore, we will use this example to conduct unit tests.).
+Take Tilelink as an example, we provide key lines of code below:</p>
+<pre><code class="language-scala">val imsic_params = IMSICParams()
+val aplic_params = APLICParams(groupsNum=2, membersNum=2)
+val imsics = (0 until 4).map( i =&gt; {
+  val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
+val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
+</code></pre>
+<p>此配置创建了一个2位的<code>hartIndex</code>，高位表示 groupID，低位表示 memberID。
+有关详细的IO连接，请参考下图和<code>src/main/scala/Example.AIA</code>。</p>
+<p>This configuration creates a 2-bit <code>hartIndex</code> where the higher bit represents <code>groupID</code> and the lower bit represents <code>memberID</code>.
+For detailed IO connections, refer to the following figure and <code>src/main/scala/Example.AIA</code>.</p>
+<p><img src="./images/example_py.svg" alt="" /></p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="aplic.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="aplic.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
