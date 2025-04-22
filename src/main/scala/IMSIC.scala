@@ -201,8 +201,6 @@ class IMSIC(
     val fromCSR = IO(Input(new Bundle {
       val seteipnum = ValidIO(UInt(params.imsicIntSrcWidth.W))
       val addr      = ValidIO(UInt(params.iselectWidth.W))
-      val virt      = Bool()
-      val priv      = PrivType()
       val vgein     = UInt(params.vgeinWidth.W)
       val wdata = ValidIO(new Bundle {
         val op   = OpType()
@@ -346,7 +344,7 @@ class IMSIC(
           illegal_priv := true.B
         }
       }.otherwise{
-        when(fromCSR.addr.bits.priv.asUInt === 1.U && (fromCSR.vgein >= 1.U) && (fromCSR.vgein < (params.geilen + 1).U(params.vgeinWidth.W)))
+        when(fromCSR.addr.bits.priv.asUInt === 1.U && (fromCSR.vgein >= 1.U) && (fromCSR.vgein < (params.geilen + 1).U((params.vgeinWidth+1).W)))
         {
           illegal_priv := false.B
         }.otherwise{
@@ -415,8 +413,6 @@ class IMSIC(
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
         intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
-        intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt
-        intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv
         intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi)
         intFile.illegal_io.illegal_priv := illegal_priv
@@ -441,7 +437,6 @@ class IMSIC(
       val zeros = 0.U((16 - params.imsicIntSrcWidth).W)
       Cat(zeros, topei, zeros, topei)
     }
-    val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
     toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
     toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
     toCSR.topeis(2) := wrap(ParallelMux(
