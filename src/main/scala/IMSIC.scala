@@ -682,10 +682,10 @@ class TLRegIMSIC(
     val msi_vld_ack_soc_ris = msi_vld_ack_soc & (~msi_vld_ack_soc_1f)
     //    val fifo_empty = ~fifo_sync.io.deq.valid
     // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
-    when(fifo_sync.io.deq.valid === true.B) {
-      msi_vld_req := true.B
-    }.elsewhen(msi_vld_ack_soc_ris) {
+    when(msi_vld_ack_soc_ris) {
       msi_vld_req := false.B
+    }.elsewhen(fifo_sync.io.deq.valid === true.B) {
+      msi_vld_req := true.B
     }.otherwise {
       msi_vld_req := msi_vld_req
     }
@@ -762,10 +762,10 @@ class AXIRegIMSIC(
     val msi_vld_ack_soc_ris = msi_vld_ack_soc & (~msi_vld_ack_soc_1f)
     // val fifo_empty = ~fifo_sync.io.deq.valid
     // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
-    when(fifo_sync.io.deq.valid === true.B) {
-      msi_vld_req := true.B
-    }.elsewhen(msi_vld_ack_soc_ris) {
+    when(msi_vld_ack_soc_ris) {
       msi_vld_req := false.B
+    }.elsewhen(fifo_sync.io.deq.valid === true.B) {
+      msi_vld_req := true.B
     }.otherwise {
       msi_vld_req := msi_vld_req
     }
