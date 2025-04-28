@@ -160,7 +160,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       when(state === sWCH) {
         when((!isillegalAW) & (!awready) & out.aw.ready & in.aw.valid) { // only the first illegal data to downstream
           awready := true.B
-        }.elsewhen(aw_last | (awready & (awcnt === aw_l.len))) {
+        }.elsewhen(aw_last /* | (awready & (awcnt === aw_l.len))*/) {
           awready := false.B
         }.elsewhen(isillegalAW === true.B) {
           awready := true.B
@@ -235,8 +235,8 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       out.aw.bits.addr := aw_l.addr
       out.aw.bits.id := 0.U
       out.ar.bits.id := 0.U
-      out.aw.bits.echo := aw_l.echo
-      out.ar.bits.echo := ar_l.echo
+      // out.aw.bits.echo := aw_l.echo
+      // out.ar.bits.echo := ar_l.echo
       out.aw.bits.size := 2.U
       val m_wvalid = RegInit(false.B)
       when(awpulse_l) {

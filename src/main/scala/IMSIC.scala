@@ -201,6 +201,8 @@ class IMSIC(
     val fromCSR = IO(Input(new Bundle {
       val seteipnum = ValidIO(UInt(params.imsicIntSrcWidth.W))
       val addr      = ValidIO(UInt(params.iselectWidth.W))
+      val virt      = Bool()
+      val priv      = PrivType()
       val vgein     = UInt(params.vgeinWidth.W)
       val wdata = ValidIO(new Bundle {
         val op   = OpType()
@@ -338,7 +340,7 @@ class IMSIC(
     {
       when(fromCSR.addr.bits.virt === false.B )
       {
-        when(((fromCSR.addr.bits.priv.asUInt === 3.U) || (fromCSR.addr.bits.priv.asUInt === 1.U)) && fromCSR.vgein === 0.U){
+        when(((fromCSR.addr.bits.priv.asUInt === 3.U) || (fromCSR.addr.bits.priv.asUInt === 1.U))/* && fromCSR.vgein === 0.U*/){
           illegal_priv := false.B
         }.otherwise{
           illegal_priv := true.B
@@ -413,6 +415,8 @@ class IMSIC(
         intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
         intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
+        intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt
+        intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv
         intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
         intFile.fromCSR.claim           := fromCSR.claims(pi)
         intFile.illegal_io.illegal_priv := illegal_priv
@@ -437,6 +441,7 @@ class IMSIC(
       val zeros = 0.U((16 - params.imsicIntSrcWidth).W)
       Cat(zeros, topei, zeros, topei)
     }
+    val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
     toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
     toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
     toCSR.topeis(2) := wrap(ParallelMux(
@@ -677,10 +682,10 @@ class TLRegIMSIC(
     val msi_vld_ack_soc_ris = msi_vld_ack_soc & (~msi_vld_ack_soc_1f)
     //    val fifo_empty = ~fifo_sync.io.deq.valid
     // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
-    when(fifo_sync.io.deq.valid === true.B) {
-      msi_vld_req := true.B
-    }.elsewhen(msi_vld_ack_soc_ris) {
+    when(msi_vld_ack_soc_ris) {
       msi_vld_req := false.B
+    }.elsewhen(fifo_sync.io.deq.valid === true.B) {
+      msi_vld_req := true.B
     }.otherwise {
       msi_vld_req := msi_vld_req
     }
@@ -757,10 +762,10 @@ class AXIRegIMSIC(
     val msi_vld_ack_soc_ris = msi_vld_ack_soc & (~msi_vld_ack_soc_1f)
     // val fifo_empty = ~fifo_sync.io.deq.valid
     // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
-    when(fifo_sync.io.deq.valid === true.B) {
-      msi_vld_req := true.B
-    }.elsewhen(msi_vld_ack_soc_ris) {
+    when(msi_vld_ack_soc_ris) {
       msi_vld_req := false.B
+    }.elsewhen(fifo_sync.io.deq.valid === true.B) {
+      msi_vld_req := true.B
     }.otherwise {
       msi_vld_req := msi_vld_req
     }
