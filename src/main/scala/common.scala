@@ -84,7 +84,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
       //======TODO======//
       val awcnt = RegInit(0.U(8.W)) // width of awcnt is same with awlen
-      
+      val arcnt = RegInit(0.U(8.W))
       val addrAW = aw_l.addr
       val addrAR = ar_l.addr
       // only support little-endian (0x0 is active) msi write address check for AW,refer to riscv aia spec.
@@ -97,15 +97,15 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       // val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
 
       val isWAligErr  = !((aw_l.size === 2.U) & (w_l.strb === 15.U) & isValidAlignmentAW)  // alignment with 4B.
-      val isWCacheErr = (aw_l.cache(3,1)).orR  //non device
+      val isWCacheErr = false.B//(aw_l.cache(3,1)).orR  //non device
       val isWLockErr = aw_l.lock      // AMO access
-      val isWburstErr = aw_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
+      val isWburstErr = false.B //aw_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
       val isWCErr = isWAligErr | isWCacheErr | isWburstErr
 
       val isRAligErr  = !((ar_l.size === 2.U) & isValidAlignmentAR)
-      val isRCacheErr = (ar_l.cache(3,1)).orR  //non device
+      val isRCacheErr = false.B//(ar_l.cache(3,1)).orR  //non device
       val isRLockErr = ar_l.lock      // AMO access
-      val isRburstErr = ar_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
+      val isRburstErr = false.B//ar_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
       val isRCErr = isRAligErr | isRCacheErr | isRburstErr
       // val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
       // val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
@@ -113,7 +113,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val isillegalAW = (!isValidAddressAW) | isWCErr | isWLockErr
       val isillegalAR = (!isValidAlignmentAR) | isRCErr | isRLockErr
 
-      in.r.bits.last := (awcnt === ar_l.len) && in.r.valid
+      in.r.bits.last := (arcnt === ar_l.len) && in.r.valid
       val awready = RegInit(false.B) // temp signal ,out.awready for the first data, true.B for other data transaction.
       val wready = RegInit(false.B) // temp signal
       val aw_last = RegInit(false.B)
@@ -186,12 +186,15 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         }.elsewhen(awready) {
           awcnt := awcnt + 1.U
         }
-      }.elsewhen(rstate) {
-        when(in.r.valid & in.r.ready) {
-          awcnt := awcnt + 1.U
-        }
       }.otherwise {
         awcnt := 0.U
+      }
+      when(rstate) {
+        when(in.r.valid & in.r.ready) {
+          arcnt := arcnt + 1.U
+        }
+      }.otherwise {
+        arcnt := 0.U
       }
       // response for in
       val awready_dly = RegInit(false.B)
