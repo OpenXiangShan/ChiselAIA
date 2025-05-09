@@ -114,12 +114,12 @@ class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
   val topeis   = Vec(params.privNum, UInt(32.W))
 }
 case class IMSICParams(
-    // MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多256（2^8）个中断源
+    // MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多512（2^9）个中断源
 
     // MC （Logarithm of number of interrupt sources to IMSIC.
-    // MC The default 8 means IMSIC support at most 256 (2^8) interrupt sources）:
+    // MC The default 9 means IMSIC support at most 256 (2^9) interrupt sources）:
     // MC{visible}
-    imsicIntSrcWidth: Int = 8,
+    imsicIntSrcWidth: Int = 9,
     // MC 👉 本IMSIC的机器态中断文件的地址（Address of machine-level interrupt files for this IMSIC）：
     mAddr: Long = 0x00000L,
     // MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
@@ -184,12 +184,12 @@ class IMSIC(
     )
     // generate the msi_vld_ack,to handle with the input msi request.
     msiio.vld_ack := msi_vld_ack_cpu
-    val msi_vld_ris_cpu = msi_vld_req_cpu & (~msi_vld_ack_cpu) // rising of msi_vld_req
+    // val msi_vld_ris_cpu = msi_vld_req_cpu & (~msi_vld_ack_cpu) // rising of msi_vld_req
     val msi_data_catch  = RegInit(0.U(params.imsicIntSrcWidth.W))
     val msi_intf_valids = RegInit(0.U(params.intFilesNum.W))
     msi_data_o  := msi_data_catch(params.imsicIntSrcWidth - 1, 0)
     msi_valid_o := msi_intf_valids // multi-bis switch vector
-    when(msi_vld_ris_cpu) {
+    when(msi_vld_req_cpu) {
       msi_data_catch := msi_in(params.imsicIntSrcWidth - 1, 0)
       msi_intf_valids := 1.U << msi_in(params.MSI_INFO_WIDTH - 1,params.imsicIntSrcWidth)
     }.otherwise {
@@ -340,13 +340,13 @@ class IMSIC(
     {
       when(fromCSR.addr.bits.virt === false.B )
       {
-        when(((fromCSR.addr.bits.priv.asUInt === 3.U) || (fromCSR.addr.bits.priv.asUInt === 1.U)) && fromCSR.vgein === 0.U){
+        when(((fromCSR.addr.bits.priv.asUInt === 3.U) || (fromCSR.addr.bits.priv.asUInt === 1.U))/* && fromCSR.vgein === 0.U*/){
           illegal_priv := false.B
         }.otherwise{
           illegal_priv := true.B
         }
       }.otherwise{
-        when(fromCSR.addr.bits.priv.asUInt === 1.U && (fromCSR.vgein >= 1.U) && (fromCSR.vgein < (params.geilen + 1).U(params.vgeinWidth.W)))
+        when(fromCSR.addr.bits.priv.asUInt === 1.U && (fromCSR.vgein >= 1.U) && (fromCSR.vgein < (params.geilen + 1).U((params.vgeinWidth+1).W)))
         {
           illegal_priv := false.B
         }.otherwise{
