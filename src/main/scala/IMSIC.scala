@@ -119,7 +119,7 @@ case class IMSICParams(
     // MC （Logarithm of number of interrupt sources to IMSIC.
     // MC The default 9 means IMSIC support at most 256 (2^9) interrupt sources）:
     // MC{visible}
-    imsicIntSrcWidth: Int = 8,
+    imsicIntSrcWidth: Int = 9,
     // MC 👉 本IMSIC的机器态中断文件的地址（Address of machine-level interrupt files for this IMSIC）：
     mAddr: Long = 0x00000L,
     // MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
