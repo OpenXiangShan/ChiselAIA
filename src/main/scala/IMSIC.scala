@@ -130,7 +130,7 @@ case class IMSICParams(
     vgeinWidth: Int = 6,
     // MC iselect信号的位宽(The width of iselect signal):
     iselectWidth:           Int = 12,
-    EnableImsicAsyncBridge: Boolean = false,
+    EnableImsicAsyncBridge: Boolean = true,
     HasTEEIMSIC:            Boolean = false
     // MC{hide}
 ) {
