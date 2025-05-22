@@ -184,12 +184,12 @@ class IMSIC(
     )
     // generate the msi_vld_ack,to handle with the input msi request.
     msiio.vld_ack := msi_vld_ack_cpu
-    // val msi_vld_ris_cpu = msi_vld_req_cpu & (~msi_vld_ack_cpu) // rising of msi_vld_req
+    val msi_vld_ris_cpu = msi_vld_req_cpu & (~msi_vld_ack_cpu) // rising of msi_vld_req
     val msi_data_catch  = RegInit(0.U(params.imsicIntSrcWidth.W))
     val msi_intf_valids = RegInit(0.U(params.intFilesNum.W))
     msi_data_o  := msi_data_catch(params.imsicIntSrcWidth - 1, 0)
     msi_valid_o := msi_intf_valids // multi-bis switch vector
-    when(msi_vld_req_cpu) {
+    when(msi_vld_ris_cpu) {
       msi_data_catch := msi_in(params.imsicIntSrcWidth - 1, 0)
       msi_intf_valids := 1.U << msi_in(params.MSI_INFO_WIDTH - 1,params.imsicIntSrcWidth)
     }.otherwise {
