@@ -411,8 +411,9 @@ class IMSIC(
           intFile.fromCSR.vgein := 0.U
         }
         val intfile_rdata_d = RegNext(intFile.toCSR.rdata)
+        val msi_valid_delayed = RegNext(imsicGateWay.msi_valid_o(flati), false.B)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
-        intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
+        intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati) | msi_valid_delayed
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
         intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
         intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt
