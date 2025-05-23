@@ -130,7 +130,7 @@ case class IMSICParams(
     vgeinWidth: Int = 6,
     // MC iselect信号的位宽(The width of iselect signal):
     iselectWidth:           Int = 12,
-    EnableImsicAsyncBridge: Boolean = false,
+    EnableImsicAsyncBridge: Boolean = true,
     HasTEEIMSIC:            Boolean = false
     // MC{hide}
 ) {
@@ -184,12 +184,12 @@ class IMSIC(
     )
     // generate the msi_vld_ack,to handle with the input msi request.
     msiio.vld_ack := msi_vld_ack_cpu
-    // val msi_vld_ris_cpu = msi_vld_req_cpu & (~msi_vld_ack_cpu) // rising of msi_vld_req
+    val msi_vld_ris_cpu = msi_vld_req_cpu & (~msi_vld_ack_cpu) // rising of msi_vld_req
     val msi_data_catch  = RegInit(0.U(params.imsicIntSrcWidth.W))
     val msi_intf_valids = RegInit(0.U(params.intFilesNum.W))
     msi_data_o  := msi_data_catch(params.imsicIntSrcWidth - 1, 0)
     msi_valid_o := msi_intf_valids // multi-bis switch vector
-    when(msi_vld_req_cpu) {
+    when(msi_vld_ris_cpu) {
       msi_data_catch := msi_in(params.imsicIntSrcWidth - 1, 0)
       msi_intf_valids := 1.U << msi_in(params.MSI_INFO_WIDTH - 1,params.imsicIntSrcWidth)
     }.otherwise {
@@ -233,9 +233,9 @@ class IMSIC(
       val wmask = WireDefault(0.U(params.xlen.W))
       when(fromCSR.wdata.valid) {
         switch(fromCSR.wdata.bits.op) {
-          is(OpType.ILLEGAL) {
-            illegal_wdata_op := true.B
-          }
+          // is(OpType.ILLEGAL) {
+          //   illegal_wdata_op := true.B
+          // }
           is(OpType.CSRRW) {
             wdata := fromCSR.wdata.bits.data
             wmask := Fill(params.xlen, 1.U)
@@ -411,8 +411,9 @@ class IMSIC(
           intFile.fromCSR.vgein := 0.U
         }
         val intfile_rdata_d = RegNext(intFile.toCSR.rdata)
+        val msi_valid_delayed = RegNext(imsicGateWay.msi_valid_o(flati), false.B)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
-        intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati)
+        intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati) | msi_valid_delayed
         intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
         intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
         intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt
