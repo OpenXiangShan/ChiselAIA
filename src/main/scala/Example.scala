@@ -88,10 +88,7 @@ class TLAIA()(implicit p: Parameters) extends LazyModule {
         }
       }
       sec_notice_pending.foreach { sec_notice_pending =>
-        imsics(i).module.io_sec.foreach {
-          instance_iosec =>
-            sec_notice_pending(i) := instance_iosec.notice_pending
-        }
+        sec_notice_pending(i) := imsics(i).module.toCSR.notice_pending.get
       }
     }
   }

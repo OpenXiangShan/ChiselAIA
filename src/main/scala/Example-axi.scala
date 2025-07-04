@@ -33,7 +33,7 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
   toAIA_xbar := toAIA
 
   // Here we create 2 imsic groups, each group contains two 2 CPUs
-  val imsic_params = IMSICParams(EnableImsicAsyncBridge = true)
+  val imsic_params = IMSICParams(EnableImsicAsyncBridge = true, HasTEEIMSIC = false)
   val aplic_params = APLICParams(groupsNum = 2, membersNum = 2)
   val imsics_fromMem_xbar = LazyModule(new AXI4Xbar).node
   imsics_fromMem_xbar := toAIA_xbar
@@ -91,10 +91,7 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
       }
 
       sec_notice_pending.foreach { sec_notice_pending =>
-        imsics(i).module.io_sec.foreach {
-          instance_iosec =>
-            sec_notice_pending(i) := instance_iosec.notice_pending
-        }
+        sec_notice_pending(i) := imsics(i).module.toCSR.notice_pending.get
       }
     }
   }
@@ -107,7 +104,7 @@ object AXI4AIA extends App {
 
   val axi4top = LazyModule(new AXI4AIA()(
     Parameters.empty.alterPartial({
-      case IMSICParameKey => IMSICParameters(HasTEEIMSIC=false)
+      case IMSICParameKey => IMSICParameters(HasTEEIMSIC = false)
     })
   ))
 

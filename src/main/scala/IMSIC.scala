@@ -482,6 +482,7 @@ class IMSIC(
     illegal_priv
   ).reduce(_ | _))
   toCSR.illegal := toCSR_illegal_d
+  toCSR.notice_pending.foreach(_ := false.B)
 }
 
 //define IMSIC_WRAP: instance one imsic when HasCVMExtention is supported, else instance two imsic modules.
@@ -509,7 +510,7 @@ class IMSIC_WRAP(
     val cmode = RegInit(false.B)
     val notice_pending = RegInit(false.B)
     cmode := secIO.cmode
-    toCSR.notice_pending := notice_pending
+    toCSR.notice_pending.foreach(_ := notice_pending)
 
     // instance tee imsic module.
     val teeimsic = Module(new IMSIC(params, beatBytes))
