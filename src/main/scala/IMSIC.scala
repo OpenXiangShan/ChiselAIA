@@ -616,7 +616,8 @@ class TLRegIMSIC_WRAP(
 //generate AXIRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one
 class AXIRegIMSIC_WRAP(
     params:    IMSICParams,
-    beatBytes: Int = 4
+    beatBytes: Int = 4,
+    seperateBus: Boolean = false
 )(implicit p: Parameters) extends LazyModule {
   // def IMSIC access AXI4Xbar
   val imsic_xbar1to2 = AXI4Xbar()
