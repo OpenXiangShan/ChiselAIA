@@ -595,13 +595,61 @@ class AXI4IMSIC(
 //generate TLRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one
 class TLRegIMSIC_WRAP(
     params:    IMSICParams,
-    beatBytes: Int = 4
+    beatBytes: Int = 4,
+    seperateBus: Boolean = false
 )(implicit p: Parameters) extends LazyModule {
+  // def IMSIC access TLXbar
+//  require((params.HasTEEIMSIC && seperateBus) == false,
+//    f"both seperateTLBus and HasTEEIMSIC are true !!")
+  require(seperateBus == false,
+    f"seperateTLBus is true inside TLRegIMSIC_WRAP !!")
   val axireg = LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))
   val tee_axireg =
     if (params.HasTEEIMSIC) Some(LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))) else None
-  lazy val module = new TLRegIMSICImp(this)
+  val imsic_xbar1to2 = TLXbar()
+  private val ree_sNode = TLManagerNode(Seq(TLSlavePortParameters.v1(
+      managers = Seq(TLSlaveParameters.v1(
+        address = Seq(
+          AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
+          AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
+        regionType = RegionType.UNCACHED,
+        executable = false,
+        supportsGet = TransferSizes(1, beatBytes),
+        supportsPutPartial = TransferSizes(1, beatBytes),
+        supportsPutFull = TransferSizes(1, beatBytes),
+        //          fifoId = Some(0)
+      )),
+      beatBytes = beatBytes
+    )))
 
+  private val tee_sNode =  Option.when(params.HasTEEIMSIC)(TLManagerNode(Seq(TLSlavePortParameters.v1(
+    managers = Seq(TLSlaveParameters.v1(
+      address = Seq(
+        AddressSet(params.tee_mAddr, pow2(params.intFileMemWidth) - 1),
+        AddressSet(params.tee_sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
+      regionType = RegionType.UNCACHED,
+      executable = false,
+      supportsGet = TransferSizes(1, beatBytes),
+      supportsPutPartial = TransferSizes(1, beatBytes),
+      supportsPutFull = TransferSizes(1, beatBytes),
+      //          fifoId = Some(0)
+    )),
+    beatBytes = beatBytes
+  ))))
+  ree_sNode := imsic_xbar1to2
+  tee_sNode.foreach (_ := imsic_xbar1to2)
+  val ree_mNode = TLClientNode(
+    Seq(TLMasterPortParameters.v1(
+      Seq(TLMasterParameters.v1("s_tl_", IdRange(0, 65536)))
+    )))
+  val tee_mNode = Option.when(params.HasTEEIMSIC)(
+    TLClientNode(
+      Seq(TLMasterPortParameters.v1(
+        Seq(TLMasterParameters.v1("s_tl_", IdRange(0, 65536)))
+      ))))
+  axireg.fromMem.head := ree_mNode
+  tee_mNode.foreach(tee_axireg.get.fromMem.head := _)
+  lazy val module = new TLRegIMSICImp(this)
   class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
     val msiio = IO(Flipped(new MSITransBundle(params)))
     msiio <> axireg.module.msiio
@@ -610,6 +658,8 @@ class TLRegIMSIC_WRAP(
 
     // code below will be compiled only when teeio is not none.
     teemsiio.foreach(teemsiio => tee_axireg.foreach(tee_axireg => teemsiio <> tee_axireg.module.msiio))
+    ree_mNode.out.head._1 <> ree_sNode.in.head._1
+    tee_mNode.foreach(_.out.head._1 <> tee_sNode.get.in.head._1)
   }
 }
 
