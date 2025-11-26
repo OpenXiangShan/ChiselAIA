@@ -131,7 +131,8 @@ case class IMSICParams(
     // MC iselect信号的位宽(The width of iselect signal):
     iselectWidth:           Int = 12,
     EnableImsicAsyncBridge: Boolean = true,
-    HasTEEIMSIC:            Boolean = false
+    HasTEEIMSIC:            Boolean = false,
+    HartIDBits: Int = 9
     // MC{hide}
 ) {
   lazy val xlen: Int = 64 // currently only support xlen = 64
@@ -146,7 +147,7 @@ case class IMSICParams(
 
   lazy val eixNum: Int = pow2(imsicIntSrcWidth).toInt / xlen // number of eip/eie registers
   lazy val intFileMemWidth: Int = 12 // interrupt file memory region width: 12-bit width => 4KB size
-  lazy val tee_shift: Int = 10 + log2Ceil(1+ geilen) + intFileMemWidth // 9: max 512 hart, bit10 is 1, tee imsic accessed.
+  lazy val tee_shift: Int = 1 + HartIDBits + log2Ceil(1+ geilen) + intFileMemWidth // 9: max 512 hart, bit10 is 1, tee imsic accessed.
   lazy val tee_mAddr: Long = mAddr | (1L << tee_shift)
   lazy val tee_sgAddr: Long = sgAddr | (1L << tee_shift)
   require(vgeinWidth >= log2Ceil(geilen))
