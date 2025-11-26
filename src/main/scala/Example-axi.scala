@@ -46,8 +46,6 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
     val map = LazyModule(new AXI4Map(addrSet => addrSet.base.toLong match {
       case imsic_params.mAddr => groupID * pow2(aplic_params.groupStrideWidth) + aplic_params.mBaseAddr + memberID * pow2(aplic_params.mStrideWidth)
       case imsic_params.sgAddr => groupID * pow2(aplic_params.groupStrideWidth) + aplic_params.sgBaseAddr + memberID * pow2(aplic_params.sgStrideWidth)
-      case imsic_params.tee_mAddr => groupID * pow2(aplic_params.groupStrideWidth) + 0x40010000L + memberID * pow2(aplic_params.mStrideWidth)
-      case imsic_params.tee_sgAddr => groupID * pow2(aplic_params.groupStrideWidth) + 0x80010000L + memberID * pow2(aplic_params.sgStrideWidth)
       case _ => assert(false, f"unknown address ${addrSet.base}"); 0
     })(Parameters.empty)).node
 
@@ -61,9 +59,8 @@ class AXI4AIA()(implicit p: Parameters) extends LazyModule {
       case IMSICParameKey => IMSICParameters(HasTEEIMSIC = false)
     })))
 
-//    imsic.axireg.axireg.axi4tolite.head.node := map := imsics_fromMem_xbar
-    imsic.axireg.imsic_xbar1to2 := map := imsics_fromMem_xbar
-//    imsic.axireg.tee_axireg.foreach { tee_axireg => tee_axireg.axi4tolite.head.node := teemap := imsics_fromMem_xbar }
+    imsic.axireg.axireg.axi4tolite.head.node := map := imsics_fromMem_xbar
+    imsic.axireg.tee_axireg.foreach { tee_axireg => tee_axireg.axi4tolite.head.node := teemap := imsics_fromMem_xbar }
     imsic
   })
 

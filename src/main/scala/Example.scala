@@ -45,8 +45,6 @@ class TLAIA()(implicit p: Parameters) extends LazyModule {
     val map = LazyModule(new TLMap( addrSet => addrSet.base.toLong match {
       case imsic_params.mAddr => groupID * pow2(aplic_params.groupStrideWidth) + aplic_params.mBaseAddr + memberID * pow2(aplic_params.mStrideWidth)
       case imsic_params.sgAddr=> groupID * pow2(aplic_params.groupStrideWidth) + aplic_params.sgBaseAddr+ memberID * pow2(aplic_params.sgStrideWidth)
-      case imsic_params.tee_mAddr => groupID * pow2(aplic_params.groupStrideWidth) + 0x40010000L + memberID * pow2(aplic_params.mStrideWidth)
-      case imsic_params.tee_sgAddr => groupID * pow2(aplic_params.groupStrideWidth) + 0x80010000L + memberID * pow2(aplic_params.sgStrideWidth)
       case _ => assert(false, f"unknown address ${addrSet.base}"); 0
     })(Parameters.empty)).node
 
@@ -59,9 +57,8 @@ class TLAIA()(implicit p: Parameters) extends LazyModule {
       case IMSICParameKey => IMSICParameters(HasTEEIMSIC = false)
     })))
 
-//    imsic.axireg.axireg.fromMem.head := map := imsics_fromMem_xbar
-//    imsic.axireg.tee_axireg.foreach { tee_axireg => tee_axireg.fromMem.head := teemap := imsics_fromMem_xbar }
-    imsic.axireg.imsic_xbar1to2 := map := imsics_fromMem_xbar
+    imsic.axireg.axireg.fromMem.head := map := imsics_fromMem_xbar
+    imsic.axireg.tee_axireg.foreach { tee_axireg => tee_axireg.fromMem.head := teemap := imsics_fromMem_xbar }
     imsic
   })
 
