@@ -149,8 +149,8 @@ case class IMSICParams(
   lazy val intFileMemWidth: Int = 12 // interrupt file memory region width: 12-bit width => 4KB size
   lazy val tee_mshift: Int = 1 + HartIDBits + intFileMemWidth // 9: max 512 hart, bit10 is 1, tee imsic accessed.
   lazy val tee_sshift: Int = 1 + HartIDBits + log2Ceil(1+ geilen) + intFileMemWidth // 9: max 512 hart, bit10 is 1, tee imsic accessed.
-  lazy val tee_mAddr: Long = mAddr | (1L << tee_mshift)
-  lazy val tee_sgAddr: Long = sgAddr | (1L << tee_sshift)
+  lazy val tee_mAddr: Long = mAddr + (1L << tee_mshift)
+  lazy val tee_sgAddr: Long = sgAddr + (1L << tee_sshift)
   require(vgeinWidth >= log2Ceil(geilen))
   require(
     iselectWidth >= 8,
