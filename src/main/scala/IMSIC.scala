@@ -435,7 +435,8 @@ class IMSIC(
   }
   toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
   toCSR.rdata.bits    := vec_rdata.map(_.bits).reduce(_|_)
-  toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
+  //vector -> multi-bit
+  toCSR.pendings := RegNext((pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _), init=0.U(params.intFilesNum.W))
   locally {
     // Format of *topei:
     // * bits 26:16 Interrupt identity
@@ -448,12 +449,12 @@ class IMSIC(
       Cat(zeros, topei, zeros, topei)
     }
     val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
-    toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
-    toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
-    toCSR.topeis(2) := wrap(ParallelMux(
+    toCSR.topeis(0) := RegNext(wrap(topeis_forEachIntFiles(0)), init=0.U(32.W))// m
+    toCSR.topeis(1) := RegNext(wrap(topeis_forEachIntFiles(1)), init=0.U(32.W)) // s
+    toCSR.topeis(2) := RegNext(wrap(ParallelMux(
       UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
-    )) // vs
+    )), init=0.U(32.W)) // vs
   }  
   val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
