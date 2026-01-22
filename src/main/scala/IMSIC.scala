@@ -9,10 +9,13 @@ import freechips.rocketchip.devices.tilelink._
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.prci.ClockSinkDomain
 import freechips.rocketchip.regmapper._
+import freechips.rocketchip.tilelink
 import freechips.rocketchip.tilelink._
 import freechips.rocketchip.util._
 import org.chipsalliance.cde.config.Parameters
 import utility._
+
+import scala.collection.immutable.Seq
 
 object RegMapDV {
   def Unwritable = null
@@ -132,7 +135,8 @@ case class IMSICParams(
     iselectWidth:           Int = 12,
     EnableImsicAsyncBridge: Boolean = true,
     HasTEEIMSIC:            Boolean = false,
-    HartIDBits: Int = 9
+    HartIDBits: Int = 9,
+    AXIIDWidth: Int = 11
     // MC{hide}
 ) {
   lazy val xlen: Int = 64 // currently only support xlen = 64
@@ -530,10 +534,11 @@ class IMSIC_WRAP(
 //generate TLIMSIC top module:including TLRegIMSIC_WRAP and IMSIC_WRAP
 class TLIMSIC(
     params:    IMSICParams,
-    beatBytes: Int = 4
+    beatBytes: Int = 4,
+    seperateBus: Boolean = false
 //  asyncQueueParams: AsyncQueueParams
 )(implicit p: Parameters) extends LazyModule with HasIMSICParameters {
-  val axireg      = LazyModule(new TLRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+  val axireg      = LazyModule(new TLRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes, seperateBus))
   lazy val module = new Imp
 
   class Imp extends LazyModuleImp(this) {
@@ -606,14 +611,72 @@ class TLRegIMSIC_WRAP(
 //    f"both seperateTLBus and HasTEEIMSIC are true !!")
   require(seperateBus == false,
     f"seperateTLBus is true inside TLRegIMSIC_WRAP !!")
-  val axireg = LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))
+  val axireg = LazyModule(new TLRegIMSIC(params, beatBytes, seperateBus)(Parameters.empty))
   val tee_axireg =
     if (params.HasTEEIMSIC) Some(LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))) else None
-  val imsic_xbar1to2 = TLXbar()
-  private val ree_sNode = TLManagerNode(Seq(TLSlavePortParameters.v1(
+  val fromMem = Seq.fill(if (seperateBus) 2 else 1)(TLXbar())
+//  val Sepdef: Option[(TLManagerNode,TLManagerNode,TLClientNode,TLClientNode)] = Option.when(seperateBus) {
+ val Sepdef = Option.when(seperateBus) {
+  val addrsetSeq = Seq(
+      AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1), // ree m
+      AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1), // ree sg
+      AddressSet(params.tee_mAddr, pow2(params.intFileMemWidth) - 1), // tee m
+      AddressSet(params.tee_mAddr, pow2(params.intFileMemWidth) - 1) // tee sg
+    )
+    val NumSeq = if(params.HasTEEIMSIC) 4 else 2
+    val SNodes = Seq.tabulate(NumSeq) { idx =>
+      TLManagerNode(Seq(TLSlavePortParameters.v1(
+        managers = Seq(TLSlaveParameters.v1(
+          address = Seq(addrsetSeq(idx)),
+          regionType = RegionType.UNCACHED,
+          executable = false,
+          supportsGet = TransferSizes(1, beatBytes),
+          supportsPutPartial = TransferSizes(1, beatBytes),
+          supportsPutFull = TransferSizes(1, beatBytes),
+          //          fifoId = Some(0)
+        )),
+        beatBytes = beatBytes
+      )))
+    }
+    SNodes(0) := fromMem(0)
+    SNodes(1) := fromMem(1)
+    if(params.HasTEEIMSIC) {
+      SNodes(2) := fromMem(0)
+      SNodes(3) := fromMem(1)
+    }
+    val masterNodeFromSlave =
+       TLBuffer() := TLIdentityNode() := SNodes(0)
+//    val MNodes = Seq.fill(if(params.HasTEEIMSIC) 4 else 2) {TLClientNode(
+//      Seq(TLMasterPortParameters.v1(
+//        Seq(TLMasterParameters.v1("s_tl_", IdRange(0,1 << params.AXIIDWidth)))
+//      ))
+//    )}
+
+    for(i <- 0 until 2){
+      axireg.fromMem(i) := masterNodeFromSlave
+      tee_axireg.foreach(_.fromMem(i) := masterNodeFromSlave)
+    }
+//    (SNodes,MNodes) // return Nodes
+  }
+  println("===Sep def end===")
+
+  /*
+    val ree_mNode = TLManagerNode(Seq(TLSlavePortParameters.v1(
       managers = Seq(TLSlaveParameters.v1(
         address = Seq(
-          AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
+          AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1)),
+        regionType = RegionType.UNCACHED,
+        executable = false,
+        supportsGet = TransferSizes(1, beatBytes),
+        supportsPutPartial = TransferSizes(1, beatBytes),
+        supportsPutFull = TransferSizes(1, beatBytes),
+        //          fifoId = Some(0)
+      )),
+      beatBytes = beatBytes
+    )))
+    val ree_sgNode = TLManagerNode(Seq(TLSlavePortParameters.v1(
+      managers = Seq(TLSlaveParameters.v1(
+        address = Seq(
           AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
         regionType = RegionType.UNCACHED,
         executable = false,
@@ -624,46 +687,119 @@ class TLRegIMSIC_WRAP(
       )),
       beatBytes = beatBytes
     )))
-
-  private val tee_sNode =  Option.when(params.HasTEEIMSIC)(TLManagerNode(Seq(TLSlavePortParameters.v1(
-    managers = Seq(TLSlaveParameters.v1(
-      address = Seq(
-        AddressSet(params.tee_mAddr, pow2(params.intFileMemWidth) - 1),
-        AddressSet(params.tee_sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
-      regionType = RegionType.UNCACHED,
-      executable = false,
-      supportsGet = TransferSizes(1, beatBytes),
-      supportsPutPartial = TransferSizes(1, beatBytes),
-      supportsPutFull = TransferSizes(1, beatBytes),
-      //          fifoId = Some(0)
-    )),
-    beatBytes = beatBytes
-  ))))
-  ree_sNode := imsic_xbar1to2
-  tee_sNode.foreach (_ := imsic_xbar1to2)
-  val ree_mNode = TLClientNode(
-    Seq(TLMasterPortParameters.v1(
-      Seq(TLMasterParameters.v1("s_tl_", IdRange(0, 65536)))
+    val tee_mNode = TLManagerNode(Seq(TLSlavePortParameters.v1(
+      managers = Seq(TLSlaveParameters.v1(
+        address = Seq(
+          AddressSet(params.tee_mAddr, pow2(params.intFileMemWidth) - 1)),
+        regionType = RegionType.UNCACHED,
+        executable = false,
+        supportsGet = TransferSizes(1, beatBytes),
+        supportsPutPartial = TransferSizes(1, beatBytes),
+        supportsPutFull = TransferSizes(1, beatBytes),
+        //          fifoId = Some(0)
+      )),
+      beatBytes = beatBytes
     )))
-  val tee_mNode = Option.when(params.HasTEEIMSIC)(
-    TLClientNode(
+    val tee_sgNode = TLManagerNode(Seq(TLSlavePortParameters.v1(
+      managers = Seq(TLSlaveParameters.v1(
+        address = Seq(
+          AddressSet(params.tee_sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
+        regionType = RegionType.UNCACHED,
+        executable = false,
+        supportsGet = TransferSizes(1, beatBytes),
+        supportsPutPartial = TransferSizes(1, beatBytes),
+        supportsPutFull = TransferSizes(1, beatBytes),
+        //          fifoId = Some(0)
+      )),
+      beatBytes = beatBytes
+    )))
+    // fromMem(0): for m interrupt file, fromMem(1): for s/vs interrupt file
+    ree_mNode := fromMem(0)
+    tee_mNode := fromMem(0)
+    ree_sgNode := fromMem(1)
+    tee_sgNode := fromMem(1)
+*/
+//
+//  val NonSepdef: Option[(TLClientNode,TLClientNode,TLManagerNode,TLManagerNode, // level 1
+//    TLClientNode,TLClientNode,TLClientNode,TLClientNode, // level 2 ree
+//    TLManagerNode,TLManagerNode,TLManagerNode,TLManagerNode)]
+  // level 1, level 2
+  val NonSepdef: Option[(Seq[TLClientNode], Seq[TLManagerNode])]
+  = Option.when(!seperateBus) {
+  // level1 addr: all M and all S/VS. level 2:ree m, tee m, tee m, tee s
+    val addrsetl1 = Seq(
+    Seq(
+      AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1), // ree m
+      AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)), // ree sg
+    Seq(
+      AddressSet(params.tee_mAddr, pow2(params.intFileMemWidth) - 1), // tee m
+      AddressSet(params.tee_sgAddr, pow2(params.intFileMemWidth) - 1)) // tee sg
+  )
+    val SNodesl1 = Seq.tabulate(2) { idx =>
+    TLManagerNode(Seq(TLSlavePortParameters.v1(
+      managers = Seq(TLSlaveParameters.v1(
+        address = addrsetl1(idx),
+        regionType = RegionType.UNCACHED,
+        executable = false,
+        supportsGet = TransferSizes(1, beatBytes),
+        supportsPutPartial = TransferSizes(1, beatBytes),
+        supportsPutFull = TransferSizes(1, beatBytes),
+        //          fifoId = Some(0)
+      )),
+      beatBytes = beatBytes
+    )))
+  }
+    for (i <- 0 until 2){
+      SNodesl1(i) :*= fromMem.head
+    }
+    // define level1 xbar
+    // xbarl1 <> MNodel1(0/1) <> SNodel1 ,0 for ree, 1 for tee
+    val NonSepNum = if(params.HasTEEIMSIC) 2 else 1
+    val MNodel1 = Seq.fill(NonSepNum){TLClientNode(
       Seq(TLMasterPortParameters.v1(
-        Seq(TLMasterParameters.v1("s_tl_", IdRange(0, 65536)))
-      ))))
-  axireg.fromMem.head := ree_mNode
-  tee_mNode.foreach(tee_axireg.get.fromMem.head := _)
+        Seq(TLMasterParameters.v1("s_tl_", IdRange(0,1 << params.AXIIDWidth)))
+      )))}
+    val xbarl1 = Seq.fill(NonSepNum)(TLXbar())
+    for (i <- 0 until NonSepNum) {
+      xbarl1(i) := MNodel1(i)
+    }
+    println("===NonSep def level 1 end===")
+
+  axireg.fromMem.head := xbarl1(0)
+  tee_axireg.foreach(_.fromMem.head := xbarl1(1))
+    // return node
+    (MNodel1,SNodesl1)
+}
+  println("===NonSep def end===")
+
   lazy val module = new TLRegIMSICImp(this)
   class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    println("===begin:: Enter Imp ===")
     val msiio = IO(Flipped(new MSITransBundle(params)))
     msiio <> axireg.module.msiio
     val teemsiio = if (params.HasTEEIMSIC) Some(IO(Flipped(new MSITransBundle(params))))
       else None // backpressure signal for axi4bus, from imsic working on cpu clock
-
+//    axireg.fromMem.head := ree_mNode
+//    tee_mNode.foreach(tee_axireg.get.fromMem.head := _)
     // code below will be compiled only when teeio is not none.
     teemsiio.foreach(teemsiio => tee_axireg.foreach(tee_axireg => teemsiio <> tee_axireg.module.msiio))
-    ree_mNode.out.head._1 <> ree_sNode.in.head._1
-    tee_mNode.foreach(_.out.head._1 <> tee_sNode.get.in.head._1)
+    println("===before Imp NonSepdef start inside===")
+    NonSepdef.foreach { node =>
+      for(i <- 0 until (if(params.HasTEEIMSIC) 2 else 1)){
+        node._1(i).out.head._1 <> node._2(i).in.head._1
+      }
+    }
+    println("===Imp def end inside===")
+
+//    Sepdef.foreach(sepdef =>
+//      axireg.fromMem(0) := sepdef(0)
+//        axireg.fromMem(1) := sepdef(1)
+//    tee_axireg.fromMem(0) := sepdef(2)
+//    tee_axireg.fromMem(1) := sepdef(3))
+//    ree_mNode.out.head._1 <> ree_sNode.in.head._1
+//    tee_mNode.foreach(_.out.head._1 <> tee_sNode.get.in.head._1)
   }
+  println("===Imp def end outside===")
 }
 
 //generate AXIRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one

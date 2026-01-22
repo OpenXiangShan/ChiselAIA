@@ -55,13 +55,13 @@ class TLAIA()(implicit p: Parameters) extends LazyModule {
       case imsic_params.sgAddr => groupID * pow2(aplic_params.groupStrideWidth) + 0x80010000L + memberID * pow2(aplic_params.sgStrideWidth)
       case _ => assert(false, f"unknown address ${addrSet.base}"); 0
     })(Parameters.empty)).node
-    val imsic = LazyModule(new TLIMSIC(imsic_params)(new Config((site, here, up) => {
-      case IMSICParameKey => IMSICParameters(HasTEEIMSIC = false)
+    val imsic = LazyModule(new TLIMSIC(imsic_params,seperateBus=false)(new Config((site, here, up) => {
+      case IMSICParameKey => IMSICParameters(HasTEEIMSIC = true)
     })))
-
 //    imsic.axireg.axireg.fromMem.head := map := imsics_fromMem_xbar
 //    imsic.axireg.tee_axireg.foreach { tee_axireg => tee_axireg.fromMem.head := teemap := imsics_fromMem_xbar }
-    imsic.axireg.imsic_xbar1to2 := map := imsics_fromMem_xbar
+    imsic.axireg.fromMem.head := map := imsics_fromMem_xbar
+    imsic.axireg.fromMem.head := map := imsics_fromMem_xbar
     imsic
   })
 
@@ -106,7 +106,7 @@ class TLAIA()(implicit p: Parameters) extends LazyModule {
 object TLAIA extends App {
   val top = LazyModule(new TLAIA()(
     Parameters.empty.alterPartial({
-      case IMSICParameKey => IMSICParameters(HasTEEIMSIC=false)
+      case IMSICParameKey => IMSICParameters(HasTEEIMSIC=true)
     })
   ))
 
