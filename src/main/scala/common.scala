@@ -96,21 +96,21 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       // val isAccessingValidRegisterAW = (addrAW(11, 2) === 0.U)  // Example valid register check for AW
       // val isAccessingValidRegisterAR = (addrAR(11, 2) === 0.U)  // Example valid register check for AR
 
-      val isWAligErr  = !((aw_l.size === 2.U) & (w_l.strb === 15.U) & isValidAlignmentAW)  // alignment with 4B.
-      val isWCacheErr = false.B//(aw_l.cache(3,1)).orR  //non device
+      val isWAligErr  = !((aw_l.size === 2.U) & ((w_l.strb === 15.U) | (w_l.strb === 0.U)) & isValidAlignmentAW)  // alignment with 4B.
+      val isWCacheErr = false.B //(aw_l.cache(3,1)).orR  //non device
       val isWLockErr = aw_l.lock      // AMO access
       val isWburstErr = false.B //aw_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
       val isWCErr = isWAligErr | isWCacheErr | isWburstErr
 
       val isRAligErr  = !((ar_l.size === 2.U) & isValidAlignmentAR)
-      val isRCacheErr = false.B//(ar_l.cache(3,1)).orR  //non device
+      val isRCacheErr = false.B //(ar_l.cache(3,1)).orR  //non device
       val isRLockErr = ar_l.lock      // AMO access
-      val isRburstErr = false.B//ar_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
+      val isRburstErr = false.B //ar_l.burst(1)  //0'b10 or 0'b11 : wrap or reserved
       val isRCErr = isRAligErr | isRCacheErr | isRburstErr
       // val isReservedAreaAccessAW = !(isAccessingValidRegisterAW) // Reserved area for AW
       // val isReservedAreaAccessAR = !(isAccessingValidRegisterAR) // Reserved area for AR
 
-      val isillegalAW = (!isValidAddressAW) | isWCErr | isWLockErr
+      val isillegalAW = (!isValidAddressAW) | isWCErr | isWLockErr | (w_l.strb === 0.U)
       val isillegalAR = (!isValidAlignmentAR) | isRCErr | isRLockErr
 
       in.r.bits.last := (arcnt === ar_l.len) && in.r.valid
