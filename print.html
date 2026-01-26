@@ -1,0 +1,1932 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ChiselAIA</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">ChiselAIA</li><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> 😺AIA</a></li><li class="chapter-item expanded "><a href="imsic.html"><strong aria-hidden="true">2.</strong> 📩IMSIC</a></li><li class="chapter-item expanded "><a href="aplic.html"><strong aria-hidden="true">3.</strong> 🧶APLIC</a></li><li class="chapter-item expanded "><a href="integration.html"><strong aria-hidden="true">4.</strong> 🧭集成指南（Integration Guide）</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">ChiselAIA</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://openxiangshan.github.io/ChiselAIA/" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="chiselaia"><a class="header" href="#chiselaia">😺ChiselAIA</a></h1>
+<!-- vim-markdown-toc GFM -->
+<ul>
+<li><a href="index.html#%E7%AE%80%E4%BB%8Bintroduction">简介（Introduction）</a></li>
+<li><a href="index.html#%E4%B8%AD%E6%96%AD%E9%80%9A%E8%B7%AFinterrupt-paths">中断通路（Interrupt Paths）</a></li>
+<li><a href="index.html#%E9%85%8D%E7%BD%AE%E9%80%9A%E8%B7%AFconfiguration-paths">配置通路（Configuration Paths）</a></li>
+<li><a href="index.html#%E5%BC%95%E7%94%A8references">引用（References）</a></li>
+</ul>
+<!-- vim-markdown-toc -->
+<p>ChiselAIA的实现遵循<a href="https://github.com/riscv/riscv-aia">RISC-V高级中断架构（Advanced Interrupt Architecture, AIA）规范</a>。
+实现与规范之间的任何差异都应视为实现bug。</p>
+<p>The implementation of ChiselAIA adheres to the <a href="https://github.com/riscv/riscv-aia">RISC-V Advanced Interrupt Architecture (AIA) Specification</a>.
+Any discrepancies between the implementation and specification should be treated as implementation bugs.</p>
+<h2 id="简介introduction"><a class="header" href="#简介introduction">简介（Introduction）</a></h2>
+<p>AIA旨在高效地将外部中断路由到对应的处理器核心（hart）和特权态。
+这种路由通过两个中断控制器来完成：</p>
+<p>AIA is designed to efficiently route external interrupts to the appropriate harts and privilege levels.
+This routing is accomplished by two interrupt controllers:</p>
+<ul>
+<li>Incoming Message-Signaled Interrupt Controller (<strong>IMSIC</strong>)</li>
+<li>Advanced Platform-Level Interrupt Controller (<strong>APLIC</strong>)</li>
+</ul>
+<p>为什么需要两种控制器？
+因为存在两类外部设备：</p>
+<ol>
+<li><strong>线设备</strong>：
+通过专用的电信号（边沿或电平）传输中断。
+它的特点是实现简单，可扩展性差。
+因为每个中断都意味着一根连接到处理器核心的物理线。</li>
+<li><strong>消息信号中断(Message-signaled-interrupt, MSI)设备</strong>：
+中断被编码为消息，并通过总线/网络传输。
+因为每个中断不需要专用的物理连线，因此MSI与线中断相比，有更好的可扩展性。</li>
+</ol>
+<p>Why two types of controllers?
+There are two types of external devices:</p>
+<ol>
+<li><strong>Wired devices</strong>:
+Interrupts are transmitted via dedicated electronic signals (edge or level),
+which is simple to implement but faces scalability challenges,
+as each interrupt requires an physical wire connected to the hart.</li>
+<li><strong>Message-signaled-interrupt (MSI) devices</strong>:
+Interrupts are encoded as messages and transmitted over bus/network,
+which offers better scalability compared to wired interrupts,
+as no dedicated physical wires needed for each interrupt.</li>
+</ol>
+<p>在 RISC-V AIA 中：</p>
+<ul>
+<li><strong>APLIC</strong>负责处理线外部中断。
+<strong>注意</strong>：APLIC可以在两种模式下运行(domaincfg.DM)：
+<ul>
+<li><strong>直接递送模式</strong>：APLIC直接将线中断路由到处理器核心，无需IMSIC参与。</li>
+<li>MSI递送模式：APLIC将线中断转换为MSI并转发给IMSIC。</li>
+<li>由于MSI更具扩展性，后续讨论默认APLIC采用MSI递送模式。</li>
+</ul>
+</li>
+<li><strong>IMSIC</strong>负责处理MSI。</li>
+</ul>
+<p>In RISC-V AIA:</p>
+<ul>
+<li><strong>APLIC</strong> handles wired external interrupts.
+<strong>Note</strong>: APLIC can operate in two modes (<code>domaincfg.DM</code>):
+<ul>
+<li><strong>Direct delivery mode</strong>: APLIC directly routes wired interrupts to harts without IMSIC involvement.</li>
+<li><strong>MSI delivery mode</strong>: APLIC converts wired interrupts into MSIs and forwards them to IMSIC.</li>
+<li>Since MSIs represent the more scalable approach, our subsequent discussion assumes the APLIC working in MSI delivery mode.</li>
+</ul>
+</li>
+<li><strong>IMSIC</strong> handles MSIs.</li>
+</ul>
+<p>设备、中断控制器和处理器核心之间的交互主要涉及两种数据通路：
+<strong>中断通路</strong>和<strong>配置通路</strong>，如下面两张图所示。</p>
+<p>The interaction between devices, interrupt controllers, and harts involves two main types of data paths:
+<strong>interrupt paths</strong> and <strong>configuration paths</strong>, shown as the following two figures.</p>
+<h2 id="中断通路interrupt-paths"><a class="header" href="#中断通路interrupt-paths">中断通路（Interrupt Paths）</a></h2>
+<p>外部中断主要源自外部设备，
+尽管在高级使用场景中，内部设备和处理器核心也可以生成“外部”中断
+（例如当监管态向虚拟化监管态注入外部中断时）。
+接下来的讨论重点关注外部设备生成中断并通过控制器路由到处理器核心的典型情况。</p>
+<p>External interrupts primarily originate from external devices,
+though in advanced scenarios, internal devices and harts can also generate "external" interrupts
+(e.g. when supervisor level injects external interrupts into virtualized supervisor level).
+The following discussion focuses on the typical case where external devices generate interrupts that are routed through controllers to harts.</p>
+<p><img src="./images/arch_interrupt_py.svg" alt="" /></p>
+<p>详细的中断通路如下（注：在语言清晰前提下，我们将省略“外部”）：</p>
+<ul>
+<li>中断来源于线设备或MSI设备：
+<ul>
+<li>线设备通路：
+<ul>
+<li>中断被转发到APLIC的<strong>中断域</strong>。</li>
+<li>每个域负责管理某一特权态的一组处理器核心的中断。</li>
+<li>对于大型对称多处理系统，通常两个域就足够了<sup class="footnote-reference"><a href="#two_interrupt_domains">1</a></sup>：
+<ul>
+<li>一个<strong>机器态域</strong>，</li>
+<li>一个<strong>监管态域</strong>。</li>
+</ul>
+</li>
+<li>域遵循层级结构：
+<ul>
+<li>所线中断首先到达机器态域。</li>
+<li>根据APLIC的配置，每个中断可以：
+<ul>
+<li>转换为MSI并通过总线/网络转发给IMSIC，</li>
+<li>委托给子域，然后遵循类似的处理流程。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>MSI设备通路：
+<ul>
+<li>MSI通过总线/网络直接路由到IMSIC。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>IMSIC处理流程：
+<ul>
+<li>每个处理器核心通常有其专用的IMSIC。</li>
+<li>每个IMSIC包含多个中断文件，每个特权态对应一个<strong>中断文件</strong><sup class="footnote-reference"><a href="#one_imsic_per_hart">2</a></sup>：
+<ul>
+<li>一个<strong>机器态</strong>，</li>
+<li>一个<strong>监管态</strong>，</li>
+<li>多个<strong>虚拟化监管态</strong>。</li>
+</ul>
+</li>
+<li>每个中断文件：
+<ul>
+<li>维护中断状态(待处理、使能等)，</li>
+<li>根据配置通过线路向处理器核心发出中断信号。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Here are the detailed interrupts paths (note: "external" is omitted where context is clear):</p>
+<ul>
+<li>Interrupts originate from either wired devices or MSI devices:
+<ul>
+<li>Wired device paths:
+<ul>
+<li>Interrupts are directed to APLIC's <strong>interrupt domains</strong>.</li>
+<li>Each domain manages interrupts for a specific set of harts at a given privilege level.</li>
+<li>For large symmetric multiprocessing systems, typically two domains suffice<sup class="footnote-reference"><a href="#two_interrupt_domains">1</a></sup>:
+<ul>
+<li>One <strong>machine-level domain</strong>,</li>
+<li>One <strong>supervisor-level domain</strong>.</li>
+</ul>
+</li>
+<li>Domains follow a hierarchical structure:
+<ul>
+<li>All wired interrupts fist arrive at the machine-level domain.</li>
+<li>Based on APLIC configuration, each interrup is either:
+<ul>
+<li>Converted to MSI and forwarded to IMSIC via bus/network,</li>
+<li>Delegated to child domains, which then follow similar processing.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>MSI device paths:
+<ul>
+<li>MSIs route directly to IMSIC via bus/network.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>IMSIC processing:
+<ul>
+<li>Each hart typically has its dedicated IMSIC.</li>
+<li>Each IMSIC contains multiple <strong>interrupt files</strong>, one per privilege level<sup class="footnote-reference"><a href="#one_imsic_per_hart">2</a></sup>:
+<ul>
+<li>One <strong>machine level</strong>,</li>
+<li>One <strong>supervisor level</strong>,</li>
+<li>Multiple <strong>virtualized supervisor levels</strong>.</li>
+</ul>
+</li>
+<li>Each interrupt file:
+<ul>
+<li>Maintains interrup status (pending, enabled, ...),</li>
+<li>Signals hart based on configuration via wire connection.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="配置通路configuration-paths"><a class="header" href="#配置通路configuration-paths">配置通路（Configuration Paths）</a></h2>
+<p>配置流程遵循两个不同的通路：</p>
+<ul>
+<li>IMSIC配置：
+<ul>
+<li>每个处理器核心只配置其专用的IMSIC，</li>
+<li>配置通过线路连接进行。</li>
+</ul>
+</li>
+<li>APLIC配置：
+<ul>
+<li>所有处理器核心都可以配置APLIC，</li>
+<li>配置以消息形式通过总线传输。</li>
+</ul>
+</li>
+</ul>
+<p>Configuration flow follows two distinct paths:</p>
+<ul>
+<li>IMSIC configuration:
+<ul>
+<li>Each hart configures only its dedicated IMSIC,</li>
+<li>Configuration occurs through direct wire connection.</li>
+</ul>
+</li>
+<li>APLIC Configuration:
+<ul>
+<li>All harts can configure APLIC,</li>
+<li>Configuration transmitted via bus as messages.</li>
+</ul>
+</li>
+</ul>
+<p><img src="./images/arch_configure_py.svg" alt="" /></p>
+<h2 id="引用references"><a class="header" href="#引用references">引用（References）</a></h2>
+<ul>
+<li>
+<div class="footnote-definition" id="two_interrupt_domains"><sup class="footnote-definition-label">1</sup>
+<p><em>The RISC-V Advanced Interrupt Architecture</em>: 4.2 Interrupt domains: Figure 4.</p>
+</div>
+</li>
+<li>
+<div class="footnote-definition" id="one_imsic_per_hart"><sup class="footnote-definition-label">2</sup>
+<p><em>The RISC-V Advanced Interrupt Architecture</em>: 1.3.2. External interrupts with IMSICs.</p>
+</div>
+</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="imsic"><a class="header" href="#imsic">📩IMSIC</a></h1>
+<!-- vim-markdown-toc GFM -->
+<ul>
+<li><a href="imsic.html#%E5%8D%95%E4%B8%AAimsic%E7%9A%84%E5%8A%9F%E8%83%BDindividual-imsic-functionality">单个IMSIC的功能（Individual IMSIC Functionality）</a>
+<ul>
+<li><a href="imsic.html#imsic%E7%9A%84%E8%BE%93%E5%85%A5%E4%B8%8E%E8%BE%93%E5%87%BAimsic-io">IMSIC的输入与输出（IMSIC IO）</a></li>
+<li><a href="imsic.html#%E4%B8%AD%E6%96%AD%E6%96%87%E4%BB%B6%E7%9A%84%E8%BE%93%E5%85%A5%E4%B8%8E%E8%BE%93%E5%87%BAinterrupt-file-io">中断文件的输入与输出（Interrupt File IO）</a></li>
+<li><a href="imsic.html#%E4%B8%AD%E6%96%AD%E6%96%87%E4%BB%B6%E7%9A%84%E5%86%85%E5%AD%98%E6%98%A0%E5%B0%84%E5%AF%84%E5%AD%98%E5%99%A8interrupt-file-memory-mapped-registers">中断文件的内存映射寄存器（Interrupt File Memory-mapped Registers）</a></li>
+<li><a href="imsic.html#%E4%B8%AD%E6%96%AD%E6%96%87%E4%BB%B6%E5%86%85%E9%83%A8%E7%9A%84%E5%AF%84%E5%AD%98%E5%99%A8interrupt-file-internal-registers">中断文件内部的寄存器（Interrupt File Internal Registers）</a></li>
+</ul>
+</li>
+<li><a href="imsic.html#%E5%A4%9A%E4%B8%AAimsic%E7%9A%84%E7%BB%84%E7%BB%87%E5%BD%A2%E5%BC%8Fmultiple-imsics-arrangement">多个IMSIC的组织形式（Multiple IMSICs Arrangement）</a>
+<ul>
+<li><a href="imsic.html#imsic%E5%9C%B0%E5%9D%80%E5%AD%97%E6%AE%B5imsic-address-fields">IMSIC地址字段（IMSIC Address Fields）</a></li>
+<li><a href="imsic.html#imsic%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9Fimsic-memory-regions">IMSIC内存区域（IMSIC Memory Regions）</a></li>
+</ul>
+</li>
+</ul>
+<!-- vim-markdown-toc -->
+<p>在典型的RISC-V系统中，每个处理器核心都配有专用的IMSIC。
+IMSIC执行三个主要功能:</p>
+<ul>
+<li>通过内存映射寄存器接收MSI，</li>
+<li>为其关联的处理器核心生成中断，</li>
+<li>管理处理器核心所需的AIA控制寄存器。</li>
+</ul>
+<p>In a typical RISC-V system, each hart is paired with its dedicated IMSIC.
+The IMSIC performs three main functions:</p>
+<ul>
+<li>Receives MSIs through memory-mapped registers,</li>
+<li>Generates interrupts for its associated hart,</li>
+<li>Manages AIA CSRs under hart control.</li>
+</ul>
+<p>在对称多处理系统中，多个“核-IMSIC”对可以划分成组，
+每组包含相同数量的核-IMSIC对。</p>
+<p>In symmetric multiprocessing systems, multiple harts-IMSIC pairs can be organized into groups,
+with each group containing an equal number of pairs.</p>
+<h2 id="单个imsic的功能individual-imsic-functionality"><a class="header" href="#单个imsic的功能individual-imsic-functionality">单个IMSIC的功能（Individual IMSIC Functionality）</a></h2>
+<h3 id="imsic的输入与输出imsic-io"><a class="header" href="#imsic的输入与输出imsic-io">IMSIC的输入与输出（IMSIC IO）</a></h3>
+<p>IMSIC与其处理器核心紧密耦合，
+直接使用线路连接而不是总线/网络进行信息传输。
+其关键信号包括:</p>
+<ul>
+<li><code>pendings</code>: 每个中断文件的待处理中断状态。</li>
+<li><code>{m,s,vs}topei</code>: 每个特权态中，优先级最高的外部中断号。</li>
+<li><code>{m.s,vs}iselect</code>: 每个特权态中，间接访问控制寄存器的地址。</li>
+<li><code>{m,s,vs}ireg</code>: 每个特权态中，间接访问控制寄存器所读写的数据。</li>
+<li><code>vgein</code>: 虚拟化监管态的选择信号。</li>
+</ul>
+<p>The IMSIC is tightly coupled with its hart,
+directly using wire connection rather than bus/network for information transfer.
+Key signals include:</p>
+<ul>
+<li><code>pendings</code>: Pending interrupt status for each interrupt file.</li>
+<li><code>{m,s,vs}topei</code>: Top external interrupt ID for each privilege level.</li>
+<li><code>{m.s,vs}iselect</code>: CSR indirect access address for each privilege level.</li>
+<li><code>{m,s,vs}ireg</code>: Read and write data for indirect CSR access for each privilege level.</li>
+<li><code>vgein</code>: Virtualized supervisor level selector.</li>
+</ul>
+<p><img src="./images/imsic_py.svg" alt="" /></p>
+<h3 id="中断文件的输入与输出interrupt-file-io"><a class="header" href="#中断文件的输入与输出interrupt-file-io">中断文件的输入与输出（Interrupt File IO）</a></h3>
+<p>一个IMSIC负责管理其处理器核心中的所有特权态，
+包括：一个机器态、一个监管态和多个虚拟化监管态。
+由于每个态的行为在一般情况下是相同的，AIA规范将这些功能模块化成独立且可重用的组件，称为中断文件。
+每个中断文件与IMSIC交换与特权态无关的信息:</p>
+<ul>
+<li><code>pending</code>: 该中断文件的中断状态。</li>
+<li><code>topei</code>: 该中断文件中，优先级最高的外部中断号。</li>
+<li><code>iselect</code>: 该中断文件中，间接访问控制寄存器的地址。</li>
+<li><code>ireg</code>: 该中断文件中，间接访问控制寄存器所读写的数据。</li>
+</ul>
+<p>One IMSIC manages all privilege levels in its hart,
+including: one machine level, one supervisor level, and multiple virtualized supervisor levels.
+As the behaviors of each level are identical in general, the AIA specification modularizes these functionalities of each level into independent and reusable components, called interrupt files.
+Each interrupt file exchanges privilege-agnostic information with IMSIC:</p>
+<ul>
+<li><code>pending</code>: Interrupt pending status for this interrupt file.</li>
+<li><code>topei</code>: Top external interrupt ID for this interrupt file.</li>
+<li><code>iselect</code>: CSR indirect access address for this interrupt file.</li>
+<li><code>ireg</code>: Read and write data for indirect CSR access for this interrupt file.</li>
+</ul>
+<h3 id="中断文件的内存映射寄存器interrupt-file-memory-mapped-registers"><a class="header" href="#中断文件的内存映射寄存器interrupt-file-memory-mapped-registers">中断文件的内存映射寄存器（Interrupt File Memory-mapped Registers）</a></h3>
+<p>每个中断文件包含一个4KB内存页，用于接收来自总线/网络的消息。
+内存页内仅包含一个4B内存映射寄存器:</p>
+<ul>
+<li><code>seteipnum</code>: 位于偏移量0x0处，接收传入的中断号。</li>
+</ul>
+<p>Each interrupt file includes a 4KB memory page for receiving messages from bus/network.
+The memory page including only one 4B memory-mapped register:</p>
+<ul>
+<li><code>seteipnum</code>: Located at offset of 0x0, receiving incoming interrupt IDs.</li>
+</ul>
+<h3 id="中断文件内部的寄存器interrupt-file-internal-registers"><a class="header" href="#中断文件内部的寄存器interrupt-file-internal-registers">中断文件内部的寄存器（Interrupt File Internal Registers）</a></h3>
+<p>所有上述接口都与中断文件的内部寄存器交互。
+关键的内部寄存器包括:</p>
+<ul>
+<li><code>eip[intSrcNum位]</code>: 表示该中断是否待处理。</li>
+<li><code>eie[intSrcNum位]</code>: 表示该中断是否使能。</li>
+</ul>
+<p>Each interrupt file maintains internal registers that interact with the interfaces above.
+The key internal registers consist of:</p>
+<ul>
+<li><code>eip[intSrcNum bits]</code>: Whether this interrupt is pending.</li>
+<li><code>eie[intSrcNum bits]</code>: Whether this interrupt is enabled.</li>
+</ul>
+<h2 id="多个imsic的组织形式multiple-imsics-arrangement"><a class="header" href="#多个imsic的组织形式multiple-imsics-arrangement">多个IMSIC的组织形式（Multiple IMSICs Arrangement）</a></h2>
+<p>在大型系统中，核-IMSIC对可以分成多组。
+下图显示了一个对称的4核-IMSIC系统。
+这4对被分为2<strong>组</strong>，每组包含2个<strong>成员</strong>(hart-IMSIC对)。</p>
+<p>In a large system, hart-IMSIC pairs can be divided into groups.
+The below figure shows a symmetric 4-hart-IMSIC system.
+These 4 pairs are divided into 2 <strong>groups</strong>, and each group contains 2 <strong>members</strong> (hart-IMSIC pairs).</p>
+<p><img src="./images/imsics_arrangement_py.svg" alt="" /></p>
+<h3 id="imsic地址字段imsic-address-fields"><a class="header" href="#imsic地址字段imsic-address-fields">IMSIC地址字段（IMSIC Address Fields）</a></h3>
+<p>为了支持物理内存保护(physical memory protection, PMP)，相同特权态的中断文件位于同一内存区域:</p>
+<ul>
+<li>机器态内存区域:
+<ul>
+<li>每个处理器核心对应一个机器态中断文件</li>
+</ul>
+</li>
+<li>监管态内存区域:
+<ul>
+<li>每个处理器核心对应一个监管态中断文件,</li>
+<li>每个处理器核心对应多个虚拟化监管态中断文件。</li>
+</ul>
+</li>
+</ul>
+<p>To support physical memory protection (PMP), interrupt files of the same privilege level are located in a same memory region:</p>
+<ul>
+<li>Machine-level memory region:
+<ul>
+<li>One machine-level interrupt file per hart</li>
+</ul>
+</li>
+<li>Supervisor-level memory region:
+<ul>
+<li>One supervisor-level interrupt file per hart,</li>
+<li>Multiple virtualized supervisor-level interrupt files per hart.</li>
+</ul>
+</li>
+</ul>
+<p>因此，每个处理器核心在机器态内存区域只占一页，但在监管态内存区域占多页，
+由<strong>客户号</strong>（监管态为0，虚拟化监管态为1、2、3、...)索引。
+需要四个字段来确定一个IMSIC的内存页的地址：</p>
+<ul>
+<li>特权态：机器态或监管态。</li>
+<li>组号：该IMSIC所属的组。</li>
+<li>成员号：该IMSIC所属的成员。</li>
+<li>客户号：监管态或虚拟化监管态之一。</li>
+</ul>
+<p>Thus, each hart has only one page in machine-level memory region and multiple pages in supervisor-level memory region,
+indexed by a <strong>guest ID</strong> (0 for supervisor-level, 1,2,3,... for virtualized supervisor level).
+When determining the memory page address for a given IMSIC, four fields are needed:</p>
+<ul>
+<li>Privilege Level: Machine level or supervisor level.</li>
+<li>Group ID: The group to which this IMSIC belongs.</li>
+<li>Member ID: The member to which this IMSIC belongs.</li>
+<li>Guest ID: Supervisor level or one of the virtualized supervisor levels.</li>
+</ul>
+<p><img src="./images/imsic_addr.svg" alt="" /></p>
+<p>机器态中断文件的地址表达式为：</p>
+<p>The formal expression for a machine-level interrupt file address:</p>
+<p>$$
+\begin{align}
+mIntFileAddr =
+&amp; mBaseAddr \\
+&amp; + groupID \times 2^{mGroupStrideWidth} \\
+&amp; + memberID \times 2^{mMemberStrideWidth} \\
+&amp; + guestID \times 4K
+\end{align}
+$$</p>
+<p>虚拟化监管态中断文件的地址表达式为：</p>
+<p>The formal expression for a virtualized supervisor-level interrupt file address:</p>
+<p>$$
+\begin{align}
+vsIntFileAddr =
+&amp; vsBaseAddr \\
+&amp; + groupID \times 2^{vsGroupStrideWidth} \\
+&amp; + memberID \times 2^{vsMemberStrideWidth} \\
+&amp; + guestID \times 4K
+\end{align}
+$$</p>
+<p>按照AIA规范的要求，<code>vsGroupStrideWidth</code>与<code>mGroupStrideWidth</code>相同。
+更多详细信息，请参阅AIA规范<sup class="footnote-reference"><a href="#imsic_memory_region">1</a></sup>。</p>
+<p>As required by the AIA specification, the <code>vsGroupStrideWidth</code> is the same as the <code>mGroupStrideWidth</code>.
+For more details, please refer to the AIA specification<sup class="footnote-reference"><a href="#imsic_memory_region">1</a></sup>.</p>
+<h3 id="imsic内存区域imsic-memory-regions"><a class="header" href="#imsic内存区域imsic-memory-regions">IMSIC内存区域（IMSIC Memory Regions）</a></h3>
+<p>机器和监管态的内存区域如下所示。</p>
+<p>The memory regions for machine and supervisor levels are shown as below.</p>
+<p><img src="./images/imsic_addr_space.svg" alt="" /></p>
+<p>这里展示一个具体的例子。
+假设机器态和监管态的内存区域基地址分别为<code>0x6100_0000</code>和<code>0x8290_0000</code>，那么每个中断文件的地址为：</p>
+<p>Here is a concrete example.
+Assuming the base addresses for machine-level and supervisor-level memory regions are <code>0x6100_0000</code> and <code>0x8290_0000</code>, respectively,
+the addresses for each interrupt file are:</p>
+<ul>
+<li>Machine-level interrupt files:
+<ul>
+<li>IMSIC00: <code>[0x61000000, 0x61000fff]</code></li>
+<li>IMSIC01: <code>[0x61001000, 0x61001fff]</code></li>
+<li>IMSIC10: <code>[0x61008000, 0x61008fff]</code></li>
+<li>IMSIC11: <code>[0x61009000, 0x61009fff]</code></li>
+</ul>
+</li>
+<li>Supervisor-level interrupt files:
+<ul>
+<li>IMSIC00: <code>[0x82900000, 0x82903fff]</code></li>
+<li>IMSIC01: <code>[0x82904000, 0x82907fff]</code></li>
+<li>IMSIC10: <code>[0x82908000, 0x8290bfff]</code></li>
+<li>IMSIC11: <code>[0x8290c000, 0x8290ffff]</code></li>
+</ul>
+</li>
+</ul>
+<div class="footnote-definition" id="imsic_memory_region"><sup class="footnote-definition-label">1</sup>
+<p>The RISC-V Advanced Interrupt Architecture: 3.6. Arrangement of the memory regions of multiple interrupt files</p>
+</div>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="aplic"><a class="header" href="#aplic">🧶APLIC</a></h1>
+<!-- vim-markdown-toc GFM -->
+<ul>
+<li><a href="aplic.html#%E5%9F%9Fdomain">域（Domain）</a>
+<ul>
+<li><a href="aplic.html#%E5%86%85%E9%83%A8%E5%AF%84%E5%AD%98%E5%99%A8internal-registers">内部寄存器（Internal Registers）</a></li>
+</ul>
+</li>
+</ul>
+<!-- vim-markdown-toc -->
+<p>在基于消息的中断模式下，APLIC将传统的线中断转换为MSI。
+为了提高效率，除非设备在物理上是分开的（例如在不同的芯片组上），单个APLIC实例即可服务所有处理器核心。</p>
+<p>In message-based interrupt mode, the APLIC converts traditional wired interrupts into MSIs.
+For efficiency, a single APLIC instance should serve all harts, unless devices are physically separated (e.g. on different chiplets).</p>
+<h2 id="域domain"><a class="header" href="#域domain">域（Domain）</a></h2>
+<p>APLIC实现了分层的域结构来管理不同的特权态:</p>
+<ul>
+<li>根域（机器态）直接接收所线中断,</li>
+<li>子域从其父域接收委托的中断,</li>
+<li>监管态域可以处理监管态和虚拟化监管态中断。</li>
+</ul>
+<p>The APLIC implements a hierarchical domain structure to manage different privilege levels:</p>
+<ul>
+<li>The root domain (machine level) directly receives all wired interrupts,</li>
+<li>Child domains receive delegated interrupts from their parent domains,</li>
+<li>A supervisor-level domain can handle both supervisor-level and virtualized supervisor-level interrupts.</li>
+</ul>
+<p>对于大型对称多处理系统，通常两个域的配置就足够了：</p>
+<ul>
+<li>一个机器态域,</li>
+<li>一个监管态域。</li>
+</ul>
+<p>For large symmetric multiprocessing systems, a two-domain configuration typically suffices:</p>
+<ul>
+<li>One machine-level domain,</li>
+<li>One supervisor-level domain.</li>
+</ul>
+<p><img src="./images/aplic.svg" alt="" /></p>
+<h3 id="内部寄存器internal-registers"><a class="header" href="#内部寄存器internal-registers">内部寄存器（Internal Registers）</a></h3>
+<p>APLIC在内部寄存器中维护中断状态，包括两个关键寄存器：</p>
+<ul>
+<li><code>ip[intSrcNum位]</code>: 中断待处理状态寄存器,</li>
+<li><code>ie[intSrcNum位]</code>: 中断使能控制寄存器。</li>
+</ul>
+<p>APLIC maintains interrupt status in internal registers, including two critical registers:</p>
+<ul>
+<li><code>ip[intSrcNum bits]</code>: Interrupt pending status registers,</li>
+<li><code>ie[intSrcNum bits]</code>: Interrupt enable control registers.</li>
+</ul>
+<p>这些寄存器通过内存映射接口进行控制。
+有关详细的寄存器规范，请参阅AIA规范<sup class="footnote-reference"><a href="#aplic_mem_regs">1</a></sup>。</p>
+<p>These registers are controlled through memory-mapped interfaces.
+For detailed register specifications, refer to the AIA specification<sup class="footnote-reference"><a href="#aplic_mem_regs">1</a></sup>.</p>
+<p><strong>竞争条件</strong>（<strong>Race Conditions</strong>）</p>
+<p><code>ip</code>寄存器可以被多个来源修改，从而产生潜在的竞争条件。
+AIA规范没有规定APLIC在这种竞争条件下的行为。
+ChiselAIA实现了一个基于优先级的解决机制。
+优先级(从高到低):</p>
+<ul>
+<li>APLIC内部操作：发送MSI后清除<code>ip</code>，</li>
+<li>线设备操作：通过<code>intSrc</code>设置<code>ip</code>，</li>
+<li>处理器核心操作：通过内存映射寄存器设置/清除<code>ip</code>。</li>
+</ul>
+<p>The <code>ip</code> registers can be modified by multiple sources, creating potential race conditions.
+The AIA specification does not specify the APLIC behaviors under this race condition.
+ChiselAIA implements a priority-based resolution mechanism.
+Priority levels (highest to lowest):</p>
+<ul>
+<li>APLIC internal operations: Clearing <code>ip</code> after sending an MSI,</li>
+<li>Wired device operations: Setting <code>ip</code> via <code>intSrc</code>,</li>
+<li>Hart operations: Setting/Clearing <code>ip</code> via memory mapped registers.</li>
+</ul>
+<p>高优先级操作会覆盖低优先级操作。
+我们推荐通过编程的方式避免竞争条件：
+在通过内存映射寄存器修改相应的<code>ip</code>之前，断开线设备。</p>
+<p>Higher priority operations override the lower priority ones.
+We recommend to avoid race conditions through programming:
+detaching the wired device before modifying corresponding <code>ip</code> through memory-mapped registers.</p>
+<div class="footnote-definition" id="aplic_mem_regs"><sup class="footnote-definition-label">1</sup>
+<p>The RISC-V Advanced Interrupt Architecture: 4.5. Memory-mapped control region for an interrupt domain</p>
+</div>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="集成指南integration-guide"><a class="header" href="#集成指南integration-guide">🧭集成指南（Integration Guide）</a></h1>
+<!-- vim-markdown-toc GFM -->
+<ul>
+<li><a href="integration.html#%E6%A6%82%E8%A7%88overview">概览（Overview）</a></li>
+<li><a href="integration.html#%E5%8F%82%E6%95%B0parameters">参数（Parameters）</a>
+<ul>
+<li><a href="integration.html#imsicparams"><code>IMSICParams</code></a></li>
+<li><a href="integration.html#aplicparams"><code>APLICParams</code></a></li>
+</ul>
+</li>
+<li><a href="integration.html#%E5%AE%9E%E4%BE%8B%E5%8C%96instantiation">实例化（Instantiation）</a>
+<ul>
+<li><a href="integration.html#span-stylecolorred%E5%85%B3%E4%BA%8Ehartindexabout-hartindexspan"><span style="color:red;">关于hartIndex（About hartIndex）</span></a></li>
+</ul>
+</li>
+<li><a href="integration.html#%E7%A4%BA%E4%BE%8Bexamples">示例（Examples）</a>
+<ul>
+<li><a href="integration.html#%E7%AE%80%E5%8D%95%E7%9A%844%E6%A0%B8%E7%B3%BB%E7%BB%9Fa-simple-4-hart-system">简单的4核系统（A Simple 4-Hart System）</a></li>
+<li><a href="integration.html#%E5%88%86%E7%BB%84%E7%9A%844%E6%A0%B8%E7%B3%BB%E7%BB%9Fa-grouped-4-hart-system">分组的4核系统（A Grouped 4-Hart System）</a></li>
+</ul>
+</li>
+</ul>
+<!-- vim-markdown-toc -->
+<p>本指南介绍如何将ChiselAIA集成到RISC-V系统中。</p>
+<p>This guide introduces the integration process of ChiselAIA into a RISC-V system.</p>
+<h2 id="概览overview"><a class="header" href="#概览overview">概览（Overview）</a></h2>
+<p>集成涉及2个Scala文件，共4个Scala类：</p>
+<ul>
+<li><code>APLIC.scala</code>：
+<ul>
+<li><code>APLICParams</code>：用于配置APLIC实例的参数类</li>
+<li><code>APLIC</code>：APLIC模块的核心逻辑</li>
+<li>每个系统需要一个实例：
+<ul>
+<li><code>TLAPLIC</code>：对<code>APLIC</code>模块的Tilelink协议包装</li>
+<li><code>AXI4APLIC</code>：对<code>APLIC</code>模块的AXI4协议包装</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>IMSIC.scala</code>：
+<ul>
+<li><code>IMSICParams</code>：用于配置IMSIC实例的参数类</li>
+<li><code>IMSIC</code>：IMSIC模块的核心逻辑</li>
+<li>每个处理器核心需要一个实例：
+<ul>
+<li><code>TLIMSIC</code>：对<code>IMSIC</code>模块的Tilelink协议包装</li>
+<li><code>AXI4IMSIC</code>：对<code>IMSIC</code>模块的AXI4协议包装</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>Integration involves 2 scala files, including 4 scala classes:</p>
+<ul>
+<li><code>APLIC.scala</code>:
+<ul>
+<li><code>APLICParams</code>: Parameter classes for configuring APLIC instance.</li>
+<li><code>APLIC</code>: The main logic of APLIC module.</li>
+<li>Requiring one instance per system:
+<ul>
+<li><code>TLAPLIC</code>: The <code>APLIC</code> module wrapped by Tilelink protocol,</li>
+<li><code>AXI4APLIC</code>: The <code>APLIC</code> module wrapped by AXI4 protocol.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>IMSIC.scala</code>:
+<ul>
+<li><code>IMSICParams</code>: Parameter classes for configuring IMSIC instances.</li>
+<li><code>IMSIC</code>: The main logic of IMSIC module.</li>
+<li>Requiring one instance per hart:
+<ul>
+<li><code>TLIMSIC</code>: The <code>IMSIC</code> module wrapped by Tilelink protocol,</li>
+<li><code>AXI4IMSIC</code>: The <code>IMSIC</code> module wrapped by AXI4 protocol.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><img src="images/integration_files.svg" alt="" /></p>
+<h2 id="参数parameters"><a class="header" href="#参数parameters">参数（Parameters）</a></h2>
+<p>本节概述了APLIC和IMSIC的可配置参数。
+虽然提供了默认值，但我们强烈建议根据具体的集成需求，自定义带有👉标记的参数。
+其他参数要么是派生的，要么是硬编码的（详情参见<code>Params.scala</code>）。</p>
+<p>This section outlines the configurable parameters for APLIC and IMSIC.
+While defaul values are provided,
+we strongly recommend customizing parameters marked with 👉 to suit your specific integration needs.
+Other parameters are either derived or hard-coded, (see <code>Params.scala</code> for details).</p>
+<p>命名约定：</p>
+<ul>
+<li><code>Num</code>后缀：某实体的数量，</li>
+<li><code>Width</code>后缀：某实体的位宽（通常是<code>log2(实体数量)</code>），</li>
+<li><code>Addr</code>后缀：某实体的地址。</li>
+</ul>
+<p>Naming conventions:</p>
+<ul>
+<li><code>Num</code> suffix: Number of the items.</li>
+<li><code>Width</code> suffix: Bit width of an item (typically <code>log2(number of the item)</code>).</li>
+<li><code>Addr</code> suffix: Address of an item.</li>
+</ul>
+<h3 id="imsicparams"><a class="header" href="#imsicparams"><code>IMSICParams</code></a></h3>
+<pre><code class="language-scala">package aia
+
+import chisel3._
+import chisel3.IO
+import chisel3.util._
+import freechips.rocketchip.amba.axi4._
+import freechips.rocketchip.amba.axi4.AXI4Xbar
+import freechips.rocketchip.devices.tilelink._
+import freechips.rocketchip.diplomacy._
+import freechips.rocketchip.prci.ClockSinkDomain
+import freechips.rocketchip.regmapper._
+import freechips.rocketchip.tilelink._
+import freechips.rocketchip.util._
+import org.chipsalliance.cde.config.Parameters
+import utility._
+
+object RegMapDV {
+  def Unwritable = null
+  def apply(addr: Int, reg: UInt, wfn: UInt =&gt; UInt = (x =&gt; x)) = (addr, (reg, wfn))
+  def generate(
+      default: UInt,
+      mapping: Map[Int, (UInt, UInt =&gt; UInt)],
+      raddr:   UInt,
+      rvld:    Bool,
+      rdata:   UInt,
+      rvalid:  Bool,
+      waddr:   UInt,
+      wen:     Bool,
+      wdata:   UInt,
+      wmask:   UInt,
+      illegal_priv: Bool,
+      illegal_op:   Bool
+  ): Unit = {
+    val chiselMapping = mapping.map { case (a, (r, w)) =&gt; (a.U, r, w) }
+    when(rvld) {
+      rdata := LookupTreeDefault(
+        raddr,
+        Cat(default),
+        chiselMapping.map { case (a, r, _) =&gt; (a, r) }
+      )
+      rvalid := true.B
+    }.otherwise {
+      rdata  := 0.U((rdata.getWidth).W)
+      rvalid := illegal_priv | illegal_op
+    }
+
+    chiselMapping.foreach { case (a, r, w) =&gt;
+      if (w != null) {
+        when(wen &amp;&amp; waddr === a &amp;&amp; !illegal_priv &amp;&amp; !illegal_op) {
+          r := w(MaskData(r, wdata, wmask))
+        }
+      }
+    }
+  }
+  def generate(
+      default: UInt,
+      mapping: Map[Int, (UInt, UInt =&gt; UInt)],
+      addr:    UInt,
+      rvld:    Bool,
+      rdata:   UInt,
+      rvalid:  Bool,
+      wen:     Bool,
+      wdata:   UInt,
+      wmask:   UInt,
+      illegal_priv: Bool,
+      illegal_wdata_op:   Bool
+  ): Unit = generate(default, mapping, addr, rvld, rdata, rvalid, addr, wen, wdata, wmask, illegal_priv, illegal_wdata_op)
+}
+
+// Based on Xiangshan NewCSR
+object OpType extends ChiselEnum {
+  val ILLEGAL = Value(0.U)
+  val CSRRW   = Value(1.U)
+  val CSRRS   = Value(2.U)
+  val CSRRC   = Value(3.U)
+}
+object PrivType extends ChiselEnum {
+  val U = Value(0.U)
+  val S = Value(1.U)
+  val H = Value(2.U)
+  val M = Value(3.U)
+}
+class MSITransBundle(params: IMSICParams) extends Bundle {
+  val vld_req = Input(Bool()) // request from axireg
+  val data = Input(UInt(params.MSI_INFO_WIDTH.W))
+  val vld_ack = Output(Bool())  // ack for axireg from imsic. which indicates imsic can work actively.
+}
+class ForCVMBundle extends Bundle {
+  val cmode = Input(Bool()) // add port: cpu mode is tee or ree
+  val notice_pending =
+    Output(Bool()) // add port: interrupt pending of ree when cmode is tee,else interrupt pending of tee.
+}
+class AddrBundle(params: IMSICParams) extends  Bundle {
+  val valid = Bool()                      // 表示 addr 是否有效
+  val bits  = new Bundle {
+    val addr = UInt(params.iselectWidth.W) // 存储实际地址值
+    val virt  = Bool()
+    val priv  = PrivType()
+  }
+}
+class CSRToIMSICBundle(params: IMSICParams) extends Bundle {
+  val addr  = new AddrBundle(params)
+  val vgein = UInt(params.vgeinWidth.W)
+  val wdata = ValidIO(new Bundle {
+    val op   = OpType()
+    val data = UInt(params.xlen.W)
+  })
+  val claims = Vec(params.privNum, Bool())
+}
+class IMSICToCSRBundle(params: IMSICParams) extends Bundle {
+  val rdata    = ValidIO(UInt(params.xlen.W))
+  val illegal  = Bool()
+  val pendings = UInt(params.intFilesNum.W)
+  val topeis   = Vec(params.privNum, UInt(32.W))
+}
+case class IMSICParams(
+    // MC IMSIC中断源数量的对数，默认值8表示IMSIC支持最多512（2^9）个中断源
+
+    // MC （Logarithm of number of interrupt sources to IMSIC.
+    // MC The default 9 means IMSIC support at most 256 (2^9) interrupt sources）:
+    // MC{visible}
+    imsicIntSrcWidth: Int = 9,
+    // MC 👉 本IMSIC的机器态中断文件的地址（Address of machine-level interrupt files for this IMSIC）：
+    mAddr: Long = 0x00000L,
+    // MC 👉 本IMSIC的监管态和客户态中断文件的地址（Addr for supervisor-level and guest-level interrupt files for this IMSIC）:
+    sgAddr: Long = 0x10000L,
+    // MC 👉 客户中断文件的数量（Number of guest interrupt files）:
+    geilen: Int = 7,
+    // MC vgein信号的位宽（The width of the vgein signal）:
+    vgeinWidth: Int = 6,
+    // MC iselect信号的位宽(The width of iselect signal):
+    iselectWidth:           Int = 12,
+    EnableImsicAsyncBridge: Boolean = true,
+    HasTEEIMSIC:            Boolean = false,
+    HartIDBits: Int = 9
+    // MC{hide}
+) {
+  lazy val xlen: Int = 64 // currently only support xlen = 64
+  lazy val xlenWidth = log2Ceil(xlen)
+  require(
+    imsicIntSrcWidth &lt;= 11 &amp;&amp; imsicIntSrcWidth &gt;= 6,
+    f"imsicIntSrcWidth=${imsicIntSrcWidth}, must not greater than log2(2048)=11, as there are at most 2048 eip/eie bits" +
+      "must not be less than log2(64)=6, as there must be at least 64 eip/eie bits"
+  )
+  lazy val privNum:     Int = 3          // number of privilege modes: machine, supervisor, virtualized supervisor
+  lazy val intFilesNum: Int = 2 + geilen // number of interrupt files, m, s, vs0, vs1, ...
+
+  lazy val eixNum: Int = pow2(imsicIntSrcWidth).toInt / xlen // number of eip/eie registers
+  lazy val intFileMemWidth: Int = 12 // interrupt file memory region width: 12-bit width =&gt; 4KB size
+  lazy val tee_mshift: Int = HartIDBits + intFileMemWidth // 9: max 512 hart, bit10 is 1, tee imsic accessed.
+  lazy val tee_sshift: Int = HartIDBits + log2Ceil(1+ geilen) + intFileMemWidth // 9: max 512 hart, bit10 is 1, tee imsic accessed.
+  lazy val tee_mAddr: Long = mAddr + (1L &lt;&lt; tee_mshift)
+  lazy val tee_sgAddr: Long = sgAddr + (1L &lt;&lt; tee_sshift)
+  require(vgeinWidth &gt;= log2Ceil(geilen))
+  require(
+    iselectWidth &gt;= 8,
+    f"iselectWidth=${iselectWidth} needs to be able to cover addr [0x70, 0xFF], that is from CSR eidelivery to CSR eie63"
+  )
+  lazy val INTP_FILE_WIDTH = log2Ceil(intFilesNum)
+  lazy val MSI_INFO_WIDTH  = imsicIntSrcWidth + INTP_FILE_WIDTH
+}
+
+class IMSIC(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+)(implicit p: Parameters) extends Module {
+  println(f"IMSICParams.geilen:            ${params.geilen}%d")
+
+  class IMSICGateWay extends Module {
+    // === io port define ===
+    val msiio = IO(new MSITransBundle(params))
+    val msi_data_o  = IO(Output(UInt(params.imsicIntSrcWidth.W)))
+    val msi_valid_o = IO(Output(UInt(params.intFilesNum.W)))
+
+    // === main body ===
+    val msi_in = Wire(UInt(params.MSI_INFO_WIDTH.W))
+    msi_in := msiio.data
+    val msi_vld_req_cpu = WireInit(false.B)
+    when(params.EnableImsicAsyncBridge.B) {
+      msi_vld_req_cpu := AsyncResetSynchronizerShiftReg(msiio.vld_req, 3, 0)
+    }.otherwise {
+      msi_vld_req_cpu := msiio.vld_req
+    }
+    val msi_vld_ack_cpu = RegInit(false.B)
+    when(msi_vld_req_cpu)(
+      msi_vld_ack_cpu := true.B
+    ).otherwise(
+      msi_vld_ack_cpu := false.B
+    )
+    // generate the msi_vld_ack,to handle with the input msi request.
+    msiio.vld_ack := msi_vld_ack_cpu
+    val msi_vld_ris_cpu = msi_vld_req_cpu &amp; (~msi_vld_ack_cpu) // rising of msi_vld_req
+    val msi_data_catch  = RegInit(0.U(params.imsicIntSrcWidth.W))
+    val msi_intf_valids = RegInit(0.U(params.intFilesNum.W))
+    msi_data_o  := msi_data_catch(params.imsicIntSrcWidth - 1, 0)
+    msi_valid_o := msi_intf_valids // multi-bis switch vector
+    when(msi_vld_ris_cpu) {
+      msi_data_catch := msi_in(params.imsicIntSrcWidth - 1, 0)
+      msi_intf_valids := 1.U &lt;&lt; msi_in(params.MSI_INFO_WIDTH - 1,params.imsicIntSrcWidth)
+    }.otherwise {
+      msi_intf_valids := 0.U
+    }
+  }
+  class IntFile extends Module {
+    override def desiredName = "IntFile"
+    val fromCSR = IO(Input(new Bundle {
+      val seteipnum = ValidIO(UInt(params.imsicIntSrcWidth.W))
+      val addr      = ValidIO(UInt(params.iselectWidth.W))
+      val virt      = Bool()
+      val priv      = PrivType()
+      val vgein     = UInt(params.vgeinWidth.W)
+      val wdata = ValidIO(new Bundle {
+        val op   = OpType()
+        val data = UInt(params.xlen.W)
+      })
+      val claim = Bool()
+    }))
+    val toCSR = IO(Output(new Bundle {
+      val rdata   = ValidIO(UInt(params.xlen.W))
+      val illegal = Bool()
+      val pending = Bool()
+      val topei   = UInt(params.imsicIntSrcWidth.W)
+    }))
+    val illegal_io = IO(new Bundle {
+      val illegal_priv = Input(Bool())
+    })
+    val illegal_priv = illegal_io.illegal_priv
+  
+    /// indirect CSRs
+    val eidelivery  = RegInit(0.U(params.xlen.W))
+    val eithreshold = RegInit(0.U(params.xlen.W))
+    val eips        = RegInit(VecInit.fill(params.eixNum)(0.U(params.xlen.W)))
+    val eies        = RegInit(VecInit.fill(params.eixNum)(0.U(params.xlen.W)))
+
+    val illegal_wdata_op = WireDefault(false.B)
+    locally { // scope for xiselect CSR reg map
+      val wdata = WireDefault(0.U(params.xlen.W))
+      val wmask = WireDefault(0.U(params.xlen.W))
+      when(fromCSR.wdata.valid) {
+        switch(fromCSR.wdata.bits.op) {
+          // is(OpType.ILLEGAL) {
+          //   illegal_wdata_op := true.B
+          // }
+          is(OpType.CSRRW) {
+            wdata := fromCSR.wdata.bits.data
+            wmask := Fill(params.xlen, 1.U)
+          }
+          is(OpType.CSRRS) {
+            wdata := Fill(params.xlen, 1.U)
+            wmask := fromCSR.wdata.bits.data
+          }
+          is(OpType.CSRRC) {
+            wdata := 0.U
+            wmask := fromCSR.wdata.bits.data
+          }
+        }
+      }
+      def bit0ReadOnlyZero(x: UInt): UInt = x &amp; ~1.U(x.getWidth.W)
+      def fixEIDelivery(x: UInt): UInt = x &amp; 1.U
+      RegMapDV.generate(
+        0.U,
+        Map(
+          RegMapDV(0x70, eidelivery, fixEIDelivery),
+          RegMapDV(0x72, eithreshold),
+          RegMapDV(0x80, eips(0), bit0ReadOnlyZero),
+          RegMapDV(0xc0, eies(0), bit0ReadOnlyZero)
+        ) ++ eips.drop(1).zipWithIndex.map { case (eip: UInt, i: Int) =&gt;
+          RegMapDV(0x82 + i * 2, eip)
+        } ++ eies.drop(1).zipWithIndex.map { case (eie: UInt, i: Int) =&gt;
+          RegMapDV(0xc2 + i * 2, eie)
+        },
+        /*raddr*/  fromCSR.addr.bits,
+        /*rvld */  fromCSR.addr.valid,
+        /*rdata*/  toCSR.rdata.bits,
+        /*rvalid*/ toCSR.rdata.valid,
+        /*waddr*/  fromCSR.addr.bits,
+        /*wen  */  fromCSR.wdata.valid,
+        /*wdata*/  wdata,
+        /*wmask*/  wmask,
+        /*priv*/   illegal_priv,
+        /*op*/     illegal_wdata_op
+      )
+      val illegal_csr = WireDefault(false.B)
+      when(fromCSR.addr.bits &gt;= 0x80.U &amp;&amp; fromCSR.addr.bits &lt;= 0xFF.U &amp;&amp;
+        fromCSR.addr.bits(0) === 1.U) {
+          illegal_csr := true.B
+      }
+      toCSR.illegal := illegal_csr
+    }
+    locally {
+      val index  = fromCSR.seteipnum.bits(params.imsicIntSrcWidth - 1, params.xlenWidth)
+      val offset = fromCSR.seteipnum.bits(params.xlenWidth - 1, 0)
+      when(fromCSR.seteipnum.valid) {
+        // set eips bit
+        eips(index) := eips(index) | UIntToOH(offset)
+      }
+    }
+
+    locally { // scope for xtopei
+      // The ":+ true.B" trick explain:
+      //  Append true.B to handle the cornor case, where all bits in eip and eie are disabled.
+      //  If do not append true.B, then we need to check whether the eip &amp; eie are empty,
+      //  otherwise, the returned topei will become the max index, that is 2^intSrcWidth-1
+      // Noted: the support max interrupt sources number = 2^intSrcWidth
+      //              [0,     2^intSrcWidth-1] :+ 2^intSrcWidth
+      val eipBools = Cat(eips.reverse).asBools :+ true.B
+      val eieBools = Cat(eies.reverse).asBools :+ true.B
+      
+      def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
+        val tmp_xtopei = Mux(xeidelivery(params.xlen - 1, 1) === 0.U, Mux(xeidelivery(0), xtopei, 0.U) , 0.U)
+        // {
+        //   all interrupts are enabled, when eithreshold == 1;
+        //   interrupts, when i &lt; eithreshold, are enabled;
+        // } &lt;=&gt; interrupts, when i &lt;= (eithreshold -1), are enabled
+        Mux(tmp_xtopei &lt;= (xeithreshold - 1.U), tmp_xtopei, 0.U)
+      }
+      toCSR.topei := xtopei_filter(
+        eidelivery,
+        eithreshold,
+        ParallelPriorityMux(
+          (eipBools zip eieBools).zipWithIndex.map {
+            case ((p: Bool, e: Bool), i: Int) =&gt; (p &amp; e, i.U)
+          }
+        )
+      )
+    } // end of scope for xtopei
+    toCSR.pending := toCSR.topei =/= 0.U
+
+    when(fromCSR.claim) {
+      val index  = toCSR.topei(params.imsicIntSrcWidth - 1, params.xlenWidth)
+      val offset = toCSR.topei(params.xlenWidth - 1, 0)
+      // clear the pending bit indexed by xtopei in xeip
+      eips(index) := eips(index) &amp; ~UIntToOH(offset)
+    }
+  }
+  val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
+  val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
+  val msiio   = IO(new MSITransBundle(params))
+  val illegal_priv = WireInit(false.B)
+
+  private val intFilesSelOH_r = WireDefault(0.U(params.intFilesNum.W))
+  private val intFilesSelOH_w = WireDefault(0.U(params.intFilesNum.W))
+  locally {
+    when (fromCSR.addr.valid)
+    {
+      when(fromCSR.addr.bits.virt === false.B )
+      {
+        when(((fromCSR.addr.bits.priv.asUInt === 3.U) || (fromCSR.addr.bits.priv.asUInt === 1.U))/* &amp;&amp; fromCSR.vgein === 0.U*/){
+          illegal_priv := false.B
+        }.otherwise{
+          illegal_priv := true.B
+        }
+      }.otherwise{
+        when(fromCSR.addr.bits.priv.asUInt === 1.U &amp;&amp; (fromCSR.vgein &gt;= 1.U) &amp;&amp; (fromCSR.vgein &lt; (params.geilen + 1).U((params.vgeinWidth+1).W)))
+        {
+          illegal_priv := false.B
+        }.otherwise{
+          illegal_priv := true.B
+        }
+      }
+    }
+    when (fromCSR.addr.valid &amp;&amp; !illegal_priv) // read
+    {
+      val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
+      when(pv === Cat(PrivType.M.asUInt, false.B)){intFilesSelOH_r := UIntToOH(0.U)}
+        .elsewhen(pv === Cat(PrivType.S.asUInt, false.B)){intFilesSelOH_r := UIntToOH(1.U)}
+        .elsewhen(pv === Cat(PrivType.S.asUInt, true.B)){intFilesSelOH_r := UIntToOH(1.U((fromCSR.vgein.getWidth+1).W)
+         + fromCSR.vgein.pad(params.vgeinWidth+1))
+      }
+    }
+    when (fromCSR.addr.valid &amp;&amp; fromCSR.wdata.valid &amp;&amp; !(fromCSR.wdata.bits.op.asUInt === 0.U) &amp;&amp; !illegal_priv) // write
+    {
+        val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
+        when(pv === Cat(PrivType.M.asUInt, false.B)){intFilesSelOH_w := UIntToOH(0.U)}
+        .elsewhen(pv === Cat(PrivType.S.asUInt, false.B)){intFilesSelOH_w := UIntToOH(1.U)}
+        .elsewhen(pv === Cat(PrivType.S.asUInt, true.B)){intFilesSelOH_w := UIntToOH(1.U((fromCSR.vgein.getWidth+1).W)
+         + fromCSR.vgein.pad(params.vgeinWidth+1))
+        }
+    }
+  }
+
+  private val topeis_forEachIntFiles   = Wire(Vec(params.intFilesNum, UInt(params.imsicIntSrcWidth.W)))
+  private val illegals_forEachIntFiles = Wire(Vec(params.intFilesNum, Bool()))
+  // instance and connect IMSICGateWay.
+  val imsicGateWay = Module(new IMSICGateWay)
+  imsicGateWay.msiio &lt;&gt; msiio
+  val pendings = Wire(Vec(params.intFilesNum,Bool()))
+  val vec_rdata = Wire(Vec(params.intFilesNum, ValidIO(UInt(params.xlen.W))))
+  Seq(1, 1 + params.geilen).zipWithIndex.map {
+    case (intFilesNum: Int, i: Int) =&gt; {
+      // j: index for S intFile: S, G1, G2, ...
+      val maps = (0 until intFilesNum).map { j =&gt;
+        val flati = i + j
+        val pi    = if (flati &gt; 2) 2 else flati // index for privileges: M, S, VS.
+
+        def sel_addr(old: AddrBundle): AddrBundle = {
+          val new_ = Wire(new AddrBundle(params))
+          new_.valid := old.valid &amp; intFilesSelOH_r(flati)
+          new_.bits.addr := old.bits.addr
+          new_.bits.virt := old.bits.virt
+          new_.bits.priv := old.bits.priv
+          new_
+        }
+        def sel_wdata[T &lt;: Data](old: Valid[T]): Valid[T] = {
+          val new_ = Wire(Valid(chiselTypeOf(old.bits)))
+          new_.bits  := old.bits
+          new_.valid := old.valid &amp; intFilesSelOH_w(flati)
+          new_
+        }
+
+        val intFile = Module(new IntFile)
+        // Preventing overflow
+        when (flati.U((params.vgeinWidth + 1).W) === fromCSR.vgein.pad(params.vgeinWidth + 1)+1.U) {
+          intFile.fromCSR.vgein := fromCSR.vgein
+        } .otherwise {
+          intFile.fromCSR.vgein := 0.U
+        }
+        val intfile_rdata_d = RegNext(intFile.toCSR.rdata)
+        val msi_valid_delayed = RegNext(imsicGateWay.msi_valid_o(flati), false.B)
+        intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
+        intFile.fromCSR.seteipnum.valid := imsicGateWay.msi_valid_o(flati) | msi_valid_delayed
+        intFile.fromCSR.addr.valid      := sel_addr(fromCSR.addr).valid
+        intFile.fromCSR.addr.bits       := sel_addr(fromCSR.addr).bits.addr
+        intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt
+        intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv
+        intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
+        intFile.fromCSR.claim           := fromCSR.claims(pi)
+        intFile.illegal_io.illegal_priv := illegal_priv
+        vec_rdata(flati)                := intfile_rdata_d
+        pendings(flati)                 := intFile.toCSR.pending
+        topeis_forEachIntFiles(flati)   := intFile.toCSR.topei
+        illegals_forEachIntFiles(flati) := intFile.toCSR.illegal
+      }
+    }
+  }
+  toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
+  toCSR.rdata.bits    := vec_rdata.map(_.bits).reduce(_|_)
+  toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) =&gt; p &lt;&lt; i.U}).reduce(_ | _) //vector -&gt; multi-bit
+  locally {
+    // Format of *topei:
+    // * bits 26:16 Interrupt identity
+    // * bits 10:0 Interrupt priority (same as identity)
+    // * All other bit positions are zeros.
+    // For detailed explainations of these memory region arguments,
+    // please refer to the manual *The RISC-V Advanced Interrupt Architeture*: 3.9. Top external interrupt CSRs
+    def wrap(topei: UInt): UInt = {
+      val zeros = 0.U((16 - params.imsicIntSrcWidth).W)
+      Cat(zeros, topei, zeros, topei)
+    }
+    val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
+    toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
+    toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
+    toCSR.topeis(2) := wrap(ParallelMux(
+      UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
+      topeis_forEachIntFiles.drop(2)
+    )) // vs
+  }  
+  val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) &amp; Seq(
+    illegals_forEachIntFiles.reduce(_ | _),
+    (fromCSR.wdata.valid &amp;&amp; fromCSR.wdata.bits.op.asUInt === 0.U),
+    illegal_priv
+  ).reduce(_ | _))
+  toCSR.illegal := toCSR_illegal_d
+}
+
+//define IMSIC_WRAP: instance one imsic when HasCVMExtention is supported, else instance two imsic modules.
+class IMSIC_WRAP(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+)(implicit p: Parameters) extends Module {
+  // define the ports
+  val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
+  val fromCSR = IO(Input(new CSRToIMSICBundle(params)))
+  val msiio = IO(new MSITransBundle(params))
+  // define additional ports when HasCVMExtention is supported.
+  val sec = if (params.HasTEEIMSIC) Some(IO(new ForCVMBundle()))
+  else None // include cmode input port,and o_notice_pending output port.
+  val teemsiio = if (params.HasTEEIMSIC) Some(IO(new MSITransBundle(params))) else None
+  // instance module,and body logic
+  private val imsic = Module(new IMSIC(params, beatBytes))
+  imsic.fromCSR := fromCSR
+  toCSR         := imsic.toCSR
+  imsic.msiio &lt;&gt; msiio
+  // define additional logic for sec extention
+  // .foreach logic only happens when sec is not none.
+  sec.foreach { secIO =&gt;
+    // get the sec.mode, connect sec.o_notice_pending to top.
+    val cmode          = Wire(Bool())
+    val notice_pending = Wire(Bool())
+    cmode                := secIO.cmode
+    secIO.notice_pending := notice_pending
+
+    // instance tee imsic module.
+    val teeimsic = Module(new IMSIC(params, beatBytes))
+    teemsiio.foreach(teemsiio =&gt; teeimsic.msiio &lt;&gt; teemsiio)
+    toCSR.rdata   := Mux(cmode, teeimsic.toCSR.rdata, imsic.toCSR.rdata) // toCSR needs to the selected depending cmode.
+    toCSR.illegal := Mux(cmode, teeimsic.toCSR.illegal, imsic.toCSR.illegal)
+    val s_pendings = Mux(cmode, teeimsic.toCSR.pendings(params.intFilesNum-1,1), imsic.toCSR.pendings(params.intFilesNum-1,1))
+    val m_pendings = imsic.toCSR.pendings(0) // machine mode only from imsic.
+    toCSR.pendings := Cat(s_pendings,m_pendings)
+    //  toCSR.pendings := VecInit((0 until params.intFilesNum).map(i =&gt; pendings(i))) // uint-&gt;vector
+    
+    toCSR.topeis    := Mux(cmode, teeimsic.toCSR.topeis, imsic.toCSR.topeis)
+    toCSR.topeis(0) := imsic.toCSR.topeis(0) // machine mode only from imsic.
+    // to get the o_notice_pending, excluding the machine interrupt
+//    val s_orpend_ree = imsic.toCSR.pendings.slice(1, params.intFilesNum) // extract the | of vector(1,N-1)
+//    val s_orpend_tee = teeimsic.toCSR.pendings.slice(1, params.intFilesNum)
+//    notice_pending := Mux(cmode, s_orpend_ree.reduce(_ | _), s_orpend_tee.reduce(_ | _))
+    val s_orpend_ree = imsic.toCSR.pendings(params.intFilesNum-1,1) // extract the | of vector(1,N-1)
+    val s_orpend_tee = teeimsic.toCSR.pendings(params.intFilesNum-1,1) //bit(params.intFilesNum-1:1)
+    notice_pending   := Mux(cmode, s_orpend_ree.orR, s_orpend_tee.orR)
+    teeimsic.fromCSR := fromCSR
+    teeimsic.fromCSR.addr.valid := cmode &amp; fromCSR.addr.valid // cmode=1,controls tee csr access to interrupt file indirectly
+    teeimsic.fromCSR.wdata.valid := cmode &amp; fromCSR.wdata.valid
+    teeimsic.fromCSR.claims(0)   := false.B // machine interrupts are inactive for tee imsic.
+    for (i &lt;- 1 until params.privNum) {
+      teeimsic.fromCSR.claims(i) := cmode &amp; fromCSR.claims(i)
+    }
+
+    imsic.fromCSR.addr.valid := (cmode === false.B) &amp; fromCSR.addr.valid // cmode=1,controls tee csr access to interrupt file indirectly
+    imsic.fromCSR.wdata.valid := (cmode === false.B) &amp; fromCSR.wdata.valid
+    imsic.fromCSR.claims(0)   := fromCSR.claims(0) // machine interrupts are inactive for tee imsic.
+    for (i &lt;- 1 until params.privNum) {
+      imsic.fromCSR.claims(i) := (cmode === false.B) &amp; fromCSR.claims(i)
+    }
+  }
+}
+
+//generate TLIMSIC top module:including TLRegIMSIC_WRAP and IMSIC_WRAP
+class TLIMSIC(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+//  asyncQueueParams: AsyncQueueParams
+)(implicit p: Parameters) extends LazyModule with HasIMSICParameters {
+  val axireg      = LazyModule(new TLRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+  lazy val module = new Imp
+
+  class Imp extends LazyModuleImp(this) {
+    val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
+    val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
+    private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+    toCSR := imsic.toCSR
+    imsic.fromCSR := fromCSR
+    axireg.module.msiio &lt;&gt; imsic.msiio // msi_req/msi_ack interconnect
+    // define additional ports for cvm extention
+    val io_sec = if (GHasTEEIMSIC) Some(IO(new ForCVMBundle()))
+    else None // include cmode input port,and o_notice_pending output port.
+    /* code on when imsic has two clock domains.*/
+    // --- define soc_clock for imsic bus logic ***//
+    val soc_clock = IO(Input(Clock()))
+    val soc_reset = IO(Input(Reset()))
+    axireg.module.clock := soc_clock
+    axireg.module.reset := soc_reset
+    imsic.clock         := clock
+    imsic.reset         := reset
+    axireg.module.msiio &lt;&gt; imsic.msiio // msi_req/msi_ack interconnect
+    // code will be compiled only when io_sec is not None.
+    io_sec.foreach(iosec =&gt; imsic.sec.foreach(imsicsec =&gt; imsicsec &lt;&gt; iosec))
+    // code will be compiled only when tee_axireg is not None.
+    axireg.module.teemsiio.foreach(tee_msi_trans =&gt; imsic.teemsiio.foreach(teemsiio =&gt; tee_msi_trans &lt;&gt; teemsiio))
+  }
+}
+
+class AXI4IMSIC(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+)(implicit p: Parameters) extends LazyModule with HasIMSICParameters {
+  val axireg      = LazyModule(new AXIRegIMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+  lazy val module = new Imp
+  class Imp extends LazyModuleImp(this) {
+    val toCSR         = IO(Output(new IMSICToCSRBundle(params)))
+    val fromCSR       = IO(Input(new CSRToIMSICBundle(params)))
+    private val imsic = Module(new IMSIC_WRAP(IMSICParams(HasTEEIMSIC = GHasTEEIMSIC), beatBytes))
+    toCSR := imsic.toCSR
+    imsic.fromCSR := fromCSR
+    axireg.module.msiio &lt;&gt; imsic.msiio // msi_req/msi_ack interconnect
+    // define additional ports for cvm extention
+    val io_sec = if (GHasTEEIMSIC) Some(IO(new ForCVMBundle()))
+    else None // include cmode input port,and o_notice_pending output port.
+    /* code on when imsic has two clock domains.*/
+    // --- define soc_clock for imsic bus logic ***//
+    val soc_clock = IO(Input(Clock()))
+    val soc_reset = IO(Input(Reset()))
+    axireg.module.clock := soc_clock
+    axireg.module.reset := soc_reset
+    imsic.clock         := clock
+    imsic.reset         := reset
+    // code will be compiled only when io_sec is not None.
+    io_sec.foreach(iosec =&gt; imsic.sec.foreach(imsicsec =&gt; imsicsec &lt;&gt; iosec))
+    // code will be compiled only when tee_axireg is not None.
+    axireg.module.teemsiio.foreach(tee_msi_trans =&gt; imsic.teemsiio.foreach(teemsiio =&gt; tee_msi_trans &lt;&gt; teemsiio))
+  }
+}
+
+
+// code below is for SEC IMSIC spec
+//generate TLRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one
+class TLRegIMSIC_WRAP(
+    params:    IMSICParams,
+    beatBytes: Int = 4,
+    seperateBus: Boolean = false
+)(implicit p: Parameters) extends LazyModule {
+  // def IMSIC access TLXbar
+//  require((params.HasTEEIMSIC &amp;&amp; seperateBus) == false,
+//    f"both seperateTLBus and HasTEEIMSIC are true !!")
+  require(seperateBus == false,
+    f"seperateTLBus is true inside TLRegIMSIC_WRAP !!")
+  val axireg = LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))
+  val tee_axireg =
+    if (params.HasTEEIMSIC) Some(LazyModule(new TLRegIMSIC(params, beatBytes)(Parameters.empty))) else None
+  val imsic_xbar1to2 = TLXbar()
+  private val ree_sNode = TLManagerNode(Seq(TLSlavePortParameters.v1(
+      managers = Seq(TLSlaveParameters.v1(
+        address = Seq(
+          AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
+          AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
+        regionType = RegionType.UNCACHED,
+        executable = false,
+        supportsGet = TransferSizes(1, beatBytes),
+        supportsPutPartial = TransferSizes(1, beatBytes),
+        supportsPutFull = TransferSizes(1, beatBytes),
+        //          fifoId = Some(0)
+      )),
+      beatBytes = beatBytes
+    )))
+
+  private val tee_sNode =  Option.when(params.HasTEEIMSIC)(TLManagerNode(Seq(TLSlavePortParameters.v1(
+    managers = Seq(TLSlaveParameters.v1(
+      address = Seq(
+        AddressSet(params.tee_mAddr, pow2(params.intFileMemWidth) - 1),
+        AddressSet(params.tee_sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
+      regionType = RegionType.UNCACHED,
+      executable = false,
+      supportsGet = TransferSizes(1, beatBytes),
+      supportsPutPartial = TransferSizes(1, beatBytes),
+      supportsPutFull = TransferSizes(1, beatBytes),
+      //          fifoId = Some(0)
+    )),
+    beatBytes = beatBytes
+  ))))
+  ree_sNode := imsic_xbar1to2
+  tee_sNode.foreach (_ := imsic_xbar1to2)
+  val ree_mNode = TLClientNode(
+    Seq(TLMasterPortParameters.v1(
+      Seq(TLMasterParameters.v1("s_tl_", IdRange(0, 65536)))
+    )))
+  val tee_mNode = Option.when(params.HasTEEIMSIC)(
+    TLClientNode(
+      Seq(TLMasterPortParameters.v1(
+        Seq(TLMasterParameters.v1("s_tl_", IdRange(0, 65536)))
+      ))))
+  axireg.fromMem.head := ree_mNode
+  tee_mNode.foreach(tee_axireg.get.fromMem.head := _)
+  lazy val module = new TLRegIMSICImp(this)
+  class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val msiio = IO(Flipped(new MSITransBundle(params)))
+    msiio &lt;&gt; axireg.module.msiio
+    val teemsiio = if (params.HasTEEIMSIC) Some(IO(Flipped(new MSITransBundle(params))))
+      else None // backpressure signal for axi4bus, from imsic working on cpu clock
+
+    // code below will be compiled only when teeio is not none.
+    teemsiio.foreach(teemsiio =&gt; tee_axireg.foreach(tee_axireg =&gt; teemsiio &lt;&gt; tee_axireg.module.msiio))
+    ree_mNode.out.head._1 &lt;&gt; ree_sNode.in.head._1
+    tee_mNode.foreach(_.out.head._1 &lt;&gt; tee_sNode.get.in.head._1)
+  }
+}
+
+//generate AXIRegIMSIC_WRAP for IMSIC, when HasCVMExtention is supported, IMSIC is instantiated by two times,else only one
+class AXIRegIMSIC_WRAP(
+    params:    IMSICParams,
+    beatBytes: Int = 4,
+    seperateBus: Boolean = false
+)(implicit p: Parameters) extends LazyModule {
+  // def IMSIC access AXI4Xbar
+  val imsic_xbar1to2 = AXI4Xbar()
+  val ree_sNode = {
+    AXI4SlaveNode(Seq(AXI4SlavePortParameters(
+      slaves = Seq(AXI4SlaveParameters(
+        address = Seq(
+        AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
+        AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
+        supportsWrite = TransferSizes(1, beatBytes),
+        supportsRead = TransferSizes(1, beatBytes)
+      )),
+      beatBytes = beatBytes
+    )))
+  }
+ val tee_sNode =  Option.when(params.HasTEEIMSIC) {
+    AXI4SlaveNode(Seq(AXI4SlavePortParameters(
+      slaves = Seq(AXI4SlaveParameters(
+        address = Seq(
+          AddressSet(params.tee_mAddr, pow2(params.intFileMemWidth) - 1),
+          AddressSet(params.tee_sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
+        supportsWrite = TransferSizes(1, beatBytes),
+        supportsRead = TransferSizes(1, beatBytes)
+      )),
+      beatBytes = beatBytes
+    )))
+  }
+  ree_sNode := imsic_xbar1to2
+  tee_sNode.foreach(_ := imsic_xbar1to2)
+  val axireg = LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))
+  //  val tee_axireg = if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(IMSICParams(teemode = true), beatBytes)(Parameters.empty))) else None
+  val tee_axireg =
+    if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))) else None
+  val ree_mNode = AXI4MasterNode(Seq(AXI4MasterPortParameters(
+    Seq(AXI4MasterParameters(
+      name = "s_axi_",
+      id = IdRange(0, 65536)
+    ))
+  )))
+  val tee_mNode = Option.when(params.HasTEEIMSIC) {
+    AXI4MasterNode(Seq(AXI4MasterPortParameters(
+      Seq(AXI4MasterParameters(
+        name = "s_axi_",
+        id = IdRange(0, 65536)
+      ))
+    )))
+  }
+  axireg.axi4tolite.head.node := ree_mNode
+  tee_axireg.foreach(_.axi4tolite.head.node := tee_mNode.get)
+  lazy val module = new AXIRegIMSICImp(this)
+
+  class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val msiio = IO(Flipped(new MSITransBundle(params))) // backpressure signal for axi4bus, from imsic working on cpu clock
+    msiio &lt;&gt; axireg.module.msiio
+    val teemsiio = if (params.HasTEEIMSIC) Some(IO(Flipped(new MSITransBundle(params))))
+    else None // backpressure signal for axi4bus, from imsic working on cpu clock
+    // code below will be compiled only when teeio is not none.
+    teemsiio.foreach(teemsiio =&gt; tee_axireg.foreach(tee_axireg =&gt; teemsiio &lt;&gt; tee_axireg.module.msiio))
+    ree_mNode.out.head._1 &lt;&gt; ree_sNode.in.head._1
+    tee_mNode.foreach(_.out.head._1 &lt;&gt; tee_sNode.get.in.head._1)
+  }
+}
+
+class TLRegIMSIC(
+    params:      IMSICParams,
+    beatBytes:   Int = 4,
+    seperateBus: Boolean = false
+)(implicit p: Parameters) extends LazyModule {
+  val fromMem = Seq.fill(if (seperateBus) 2 else 1)(TLXbar())
+  // val fromMem = LazyModule(new TLXbar).node
+  private val intfileFromMems = Seq(
+    AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
+    AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)
+  ).zipWithIndex.map { case (addrset, i) =&gt;
+    val intfileFromMem = TLRegMapperNode(
+      address = Seq(addrset),
+      beatBytes = beatBytes
+    )
+    intfileFromMem := (if (seperateBus) fromMem(i) else fromMem.head)
+    intfileFromMem
+  }
+
+  lazy val module = new TLRegIMSICImp(this)
+  class TLRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val msiio = IO(Flipped(new MSITransBundle(params)))  // backpressure signal for axi4bus, from imsic working on cpu clock
+    private val reggen = Module(new RegGen(params, beatBytes))
+    // ---- instance sync fifo ----//
+    // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
+    val FifoDataWidth = params.MSI_INFO_WIDTH
+    val fifo_wdata    = Wire(Valid(UInt(FifoDataWidth.W)))
+
+    // depth:8, data width: FifoDataWidth
+    private val fifo_sync = Module(new Queue(UInt(FifoDataWidth.W), 8))
+    // define about fifo write
+    fifo_wdata.bits        := reggen.io.seteipnum
+    fifo_wdata.valid       := reggen.io.valid
+    fifo_sync.io.enq.valid := fifo_wdata.valid
+    fifo_sync.io.enq.bits  := fifo_wdata.bits
+    // fifo rd,controlled by msi_vld_ack from imsic working on csr clock.
+    // msi_vld_ack_soc: sync result with soc clock
+    val msi_vld_ack_soc = WireInit(false.B)
+    val msi_vld_ack_cpu = msiio.vld_ack
+    val msi_vld_req     = RegInit(false.B)
+    when(params.EnableImsicAsyncBridge.B) {
+      msi_vld_ack_soc := AsyncResetSynchronizerShiftReg(msi_vld_ack_cpu, 3, 0)
+    }.otherwise {
+      msi_vld_ack_soc := msi_vld_ack_cpu
+    }
+    fifo_sync.io.deq.ready := ~msi_vld_req
+    // generate the msi_vld_req: high if ~empty,low when msi_vld_ack_soc
+    msiio.vld_req := msi_vld_req
+    val msi_vld_ack_soc_1f  = RegNext(msi_vld_ack_soc)
+    val msi_vld_ack_soc_ris = msi_vld_ack_soc &amp; (~msi_vld_ack_soc_1f)
+    //    val fifo_empty = ~fifo_sync.io.deq.valid
+    // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
+    when(msi_vld_ack_soc_ris) {
+      msi_vld_req := false.B
+    }.elsewhen(fifo_sync.io.deq.valid === true.B) {
+      msi_vld_req := true.B
+    }.otherwise {
+      msi_vld_req := msi_vld_req
+    }
+
+    // get the msi interrupt ID info
+    val msi_id_data = RegInit(0.U(params.MSI_INFO_WIDTH.W))
+    val rdata_vld   = fifo_sync.io.deq.fire // assign to fifo rdata
+    when(rdata_vld) { // fire: io.deq.valid &amp; io.deq.ready
+      msi_id_data := fifo_sync.io.deq.bits(params.MSI_INFO_WIDTH - 1, 0)
+    }.otherwise {
+      msi_id_data := msi_id_data
+    }
+    // port connect: io.valid is interrupt file index info.
+    msiio.data := msi_id_data
+    val backpress = fifo_sync.io.enq.ready
+    (intfileFromMems zip reggen.regmapIOs).map {
+      case (intfileFromMem, regmapIO) =&gt; intfileFromMem.regmap(regmapIO._1, regmapIO._2, backpress)
+    }
+  }
+}
+
+
+//generate axi42reg for IMSIC
+class AXIRegIMSIC(
+    params:      IMSICParams,
+    beatBytes:   Int = 4,
+    seperateBus: Boolean = false
+)(implicit p: Parameters) extends LazyModule {
+  val fromMem = Seq.fill(if (seperateBus) 2 else 1)(AXI4Xbar())
+  val axi4tolite = Seq.fill(if (seperateBus) 2 else 1)(LazyModule(new AXI4ToLite()(Parameters.empty)))
+  fromMem zip axi4tolite.map(_.node) foreach (x =&gt; x._1 := x._2)
+  private val intfileFromMems = Seq(
+    AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
+    AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)
+  ).zipWithIndex.map { case (addrset, i) =&gt;
+    val intfileFromMem = AXI4RegMapperNode(
+      address = addrset,
+      beatBytes = beatBytes
+    )
+    intfileFromMem := (if (seperateBus) fromMem(i) else fromMem.head)
+    intfileFromMem
+  }
+  
+  lazy val module = new AXIRegIMSICImp(this)
+  class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
+    val msiio          = IO(Flipped(new MSITransBundle(params))) // backpressure signal for axi4bus, from imsic working on cpu clock
+    private val reggen = Module(new RegGen(params, beatBytes))
+    // ---- instance sync fifo ----//
+    // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
+    val FifoDataWidth = params.MSI_INFO_WIDTH
+    val fifo_wdata    = Wire(Valid(UInt(FifoDataWidth.W)))
+
+    // depth:8, data width: FifoDataWidth
+    private val fifo_sync = Module(new Queue(UInt(FifoDataWidth.W), 8))
+    // define about fifo write
+    fifo_wdata.bits        := reggen.io.seteipnum
+    fifo_wdata.valid       := reggen.io.valid
+    fifo_sync.io.enq.valid := fifo_wdata.valid
+    fifo_sync.io.enq.bits  := fifo_wdata.bits
+    // fifo rd,controlled by msi_vld_ack from imsic working on csr clock.
+    // msi_vld_ack_soc: sync result with soc clock
+    val msi_vld_ack_soc = WireInit(false.B)
+    val msi_vld_ack_cpu = msiio.vld_ack
+    val msi_vld_req     = RegInit(false.B)
+    when(params.EnableImsicAsyncBridge.B) {
+      msi_vld_ack_soc := AsyncResetSynchronizerShiftReg(msi_vld_ack_cpu, 3, 0)
+    }.otherwise {
+      msi_vld_ack_soc := msi_vld_ack_cpu
+    }
+    fifo_sync.io.deq.ready := ~msi_vld_req
+    // generate the msi_vld_req: high if ~empty,low when msi_vld_ack_soc
+    msiio.vld_req := msi_vld_req
+    val msi_vld_ack_soc_1f  = RegNext(msi_vld_ack_soc)
+    val msi_vld_ack_soc_ris = msi_vld_ack_soc &amp; (~msi_vld_ack_soc_1f)
+    // val fifo_empty = ~fifo_sync.io.deq.valid
+    // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
+    when(msi_vld_ack_soc_ris) {
+      msi_vld_req := false.B
+    }.elsewhen(fifo_sync.io.deq.valid === true.B) {
+      msi_vld_req := true.B
+    }.otherwise {
+      msi_vld_req := msi_vld_req
+    }
+
+    // get the msi interrupt ID info
+    val msi_id_data = RegInit(0.U(params.MSI_INFO_WIDTH.W))
+    val rdata_vld   = fifo_sync.io.deq.fire // assign to fifo rdata
+    when(rdata_vld) { // fire: io.deq.valid &amp; io.deq.ready
+      msi_id_data := fifo_sync.io.deq.bits(params.MSI_INFO_WIDTH - 1, 0)
+    }.otherwise {
+      msi_id_data := msi_id_data
+    }
+    // port connect: io.valid is interrupt file index info.
+    msiio.data := msi_id_data
+    val backpress = fifo_sync.io.enq.ready
+    (intfileFromMems zip reggen.regmapIOs).map {
+      case (intfileFromMem, regmapIO) =&gt; intfileFromMem.regmap(regmapIO._1, regmapIO._2, backpress)
+    }
+  }
+}
+
+//integrated for async clock domain,kmh,zhaohong
+class RegGen(
+    params:    IMSICParams,
+    beatBytes: Int = 4
+) extends Module {
+  val regmapIOs = Seq(
+    params.intFileMemWidth,
+    params.intFileMemWidth + log2Ceil(1 + params.geilen)
+  ).map { width =&gt;
+    val regmapParams = RegMapperParams(width - log2Up(beatBytes), beatBytes)
+    (IO(Flipped(Decoupled(new RegMapperInput(regmapParams)))), IO(Decoupled(new RegMapperOutput(regmapParams))))
+  }
+  // define the output reg: seteipnum is the MSI id,vld[],valid flag for interrupt file domains: m,s,vs1~vsgeilen
+  val io = IO(Output(new Bundle {
+    val seteipnum = UInt(params.MSI_INFO_WIDTH.W)
+    val valid     = Bool()
+  }))
+  val valids       = WireInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
+  val seteipnums   = WireInit(VecInit(Seq.fill(params.intFilesNum)(0.U(params.imsicIntSrcWidth.W))))
+  val outseteipnum = RegInit(0.U(params.MSI_INFO_WIDTH.W))
+  val outvalids    = RegInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
+
+  (regmapIOs zip Seq(1, 1 + params.geilen)).zipWithIndex.map { // seq[0]: m interrupt file, seq[1]: s&amp;vs interrupt file
+    case ((regmapIO: (DecoupledIO[RegMapperInput], DecoupledIO[RegMapperOutput]), intFilesNum: Int), i: Int) =&gt;
+      {
+        // j: index is 0 for m file for seq[0],index is 0~params.geilen for S intFile for seq[1]: S, G1, G2, ...
+        val maps = (0 until intFilesNum).map { j =&gt;
+          val flati = i + j // seq[0]:0+0=0;seq[1]:(0~geilen)+1
+          val seteipnum = WireInit(0.U.asTypeOf(Valid(UInt(params.imsicIntSrcWidth.W)))); /*for debug*/
+          dontTouch(seteipnum)
+          valids(flati)     := seteipnum.valid
+          seteipnums(flati) := seteipnum.bits
+          j * pow2(params.intFileMemWidth).toInt -&gt; Seq(RegField(
+            32,
+            0.U,
+            RegWriteFn { (valid, data) =&gt;
+              when(valid) { seteipnum.bits := data(params.imsicIntSrcWidth - 1, 0); seteipnum.valid := true.B }; true.B
+            }
+          ))
+        }
+        regmapIO._2 &lt;&gt; RegMapper(beatBytes, 1, true, regmapIO._1, maps: _*)
+      }
+      for (i &lt;- 0 until params.intFilesNum) {
+        when(valids(i)) {
+          outseteipnum := Cat(i.U, seteipnums(i))
+        }
+      }
+      outvalids    := valids
+      io.seteipnum := outseteipnum
+      io.valid     := outvalids.reduce(_ | _)
+  }
+}```
+
+### `APLICParams`
+
+APLIC接收的中断源数量的对数。
+默认值7表示APLIC支持最多128（2^7）个中断源。
+**注意**：`aplicIntSrcWidth`必须小于`imsicIntSrcWidth`，
+因为APLIC的中断源将被转换为MSI，
+而APLIC转换成的MSI是IMSIC中断源的子集。
+（Logarithm of number of interrupt sources to APLIC:
+The default 7 means APLIC support at most 128 (2^7) interrupt sources.
+**Note**: `aplicIntSrcWidth` must be **less than** `imsicIntSrcWidth`,
+as APLIC interrupt sources are converted to MSIs,
+which are a subset of IMSIC's interrupt sources）：
+
+```scala
+  aplicIntSrcWidth: Int = 7,
+  imsicIntSrcWidth: Int = 9,
+</code></pre>
+<p>👉 APLIC域的基地址（Base address of APLIC domains）:</p>
+<pre><code class="language-scala">  baseAddr: Long = 0x19960000L,
+</code></pre>
+<p><strong>注意</strong>：下述中括号内的变量与AIA规范中的一致（第3.6节：用于多个中断文件的内存区域排列）。</p>
+<p><strong>Note</strong>: The following variables in bracket align with the AIA specification (Section 3.6: Memory Region Arrangement for Multiple Interrupt Files).</p>
+<p>👉 每个组的成员数量（Number of members per group）[\(h_{max}\)]：</p>
+<pre><code class="language-scala">  membersNum      : Int  = 2           ,
+</code></pre>
+<p>👉 所有IMSIC的机器态中断文件的基地址（Base address of machine-level interrupt files for all IMSICs）[\(A\)]：</p>
+<pre><code class="language-scala">  mBaseAddr       : Long = 0x61000000L ,
+</code></pre>
+<p>👉 所有IMSIC的监管态和客户态中断文件的基地址（Base addr for supervisor-level and guest-level interrupt files for all IMSICs）[\(B\)]:</p>
+<pre><code class="language-scala">  sgBaseAddr      : Long = 0x82900000L ,
+</code></pre>
+<p>👉 组的数量（Number of groups ）[\(g_{max}\)]:</p>
+<pre><code class="language-scala">  groupsNum       : Int  = 1           ,
+</code></pre>
+<p>👉 客户中断文件的数量（Number of guest interrupt files）:</p>
+<pre><code class="language-scala">  geilen          : Int  = 7           ,
+</code></pre>
+<h2 id="实例化instantiation"><a class="header" href="#实例化instantiation">实例化（Instantiation）</a></h2>
+<ul>
+<li>
+<p><code>APLICParams</code>和<code>IMSICParams</code>：</p>
+<ul>
+<li>每个类一个实例，</li>
+<li>根据<a href="integration.html#%E5%8F%82%E6%95%B0parameters">参数</a>部分的说明，实例化参数。</li>
+</ul>
+</li>
+<li>
+<p><code>TLAPLIC</code>/<code>AXI4APLIC</code>：</p>
+<ul>
+<li>单个实例，</li>
+<li>参数<code>params</code>：接收<code>APLICParams</code>的实例，</li>
+</ul>
+</li>
+<li>
+<p><code>TLIMSIC</code>/<code>AXI4IMSIC</code>：</p>
+<ul>
+<li>每个核心一个实例，</li>
+<li>参数<code>params</code>：接收<code>IMSICParams</code>的实例，</li>
+</ul>
+</li>
+<li>
+<p><code>APLICParams</code> and <code>IMSICParams</code>:</p>
+<ul>
+<li>Single instance each,</li>
+<li>Instantiation parameters according to <a href="integration.html#%E5%8F%82%E6%95%B0parameters">Parameters</a> section.</li>
+</ul>
+</li>
+<li>
+<p><code>TLAPLIC</code>/<code>AXI4APLIC</code>:</p>
+<ul>
+<li>Single instance,</li>
+<li>Parameter <code>params</code>: receiving the <code>APLICParams</code>'s instance,</li>
+</ul>
+</li>
+<li>
+<p><code>TLIMSIC</code>/<code>AXI4IMSIC</code>:</p>
+<ul>
+<li>One instance per hart,</li>
+<li>Parameter <code>params</code>: receiving the <code>IMSICParams</code>'s instance,</li>
+</ul>
+</li>
+</ul>
+<!-- TODO: find a right place for hartIndex -->
+<h3 id="关于hartindexabout-hartindex"><a class="header" href="#关于hartindexabout-hartindex"><span style="color:red;">关于hartIndex（About hartIndex）</span></a></h3>
+<p>根据AIA规范：
+<span style="color:red;">AIA的hart编号</span>
+可能与RISC-V特权架构分配给hart的唯一
+<span style="color:red;">hart标识符（“hart ID”）无关</span>。
+在ChiselAIA中，hartIndex编码为groupID拼接上memberID。</p>
+<p>According to the AIA specification:
+The <span style="color:red;">AIA's hart index</span> may or
+<span style="color:red;">may not have any relationship to</span> the unique
+<span style="color:red;">hart identifier ("hart ID")</span>
+that the RISC-V Privileged Architecture assigns to the hart.
+In ChiselAIA, the hartIndex is encoded as a concatenation of <code>groupID</code> and <code>memberID</code>:</p>
+<p><img src="./images/hart_index.svg" alt="" /></p>
+<h2 id="示例examples"><a class="header" href="#示例examples">示例（Examples）</a></h2>
+<!-- TODO: markcode A Grouped 4-Hart System -->
+<h3 id="简单的4核系统a-simple-4-hart-system"><a class="header" href="#简单的4核系统a-simple-4-hart-system">简单的4核系统（A Simple 4-Hart System）</a></h3>
+<p>对于一个简单的未分组系统，设置groupsNum=1，则可以将hart ID复用作为AIA的`hartIndex：</p>
+<p>For a simple ungrouped system, set groupsNum=1 to allow reuse of hart ID as AIA's <code>hartIndex</code>:</p>
+<pre><code class="language-scala">val imsic_params = IMSICParams()
+val aplic_params = APLICParams(groupsNum=1, membersNum=4)
+val imsics = (0 until 4).map( i =&gt; {
+  val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
+val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
+</code></pre>
+<h3 id="分组的4核系统a-grouped-4-hart-system"><a class="header" href="#分组的4核系统a-grouped-4-hart-system">分组的4核系统（A Grouped 4-Hart System）</a></h3>
+<p>在<code>src/main/scala/Example.AIA</code>和<code>src/main/scala/Example-axi.scala</code>中，我们提供了一个如何实例化APLIC核IMSIC的示例
+（我们的单元测试也是基于该示例）。
+以Tilelink为例，我们接下来展示一些关键的代码：</p>
+<p>We provide an example of instantiating the APLIC and IMSIC, in <code>src/main/scala/Example.AIA</code> and <code>src/main/scala/Example-axi.scala</code>
+(Furthermore, we will use this example to conduct unit tests.).
+Take Tilelink as an example, we provide key lines of code below:</p>
+<pre><code class="language-scala">val imsic_params = IMSICParams()
+val aplic_params = APLICParams(groupsNum=2, membersNum=2)
+val imsics = (0 until 4).map( i =&gt; {
+  val imsic = LazyModule(new TLIMSIC(imsic_params)(Parameters.empty))
+val aplic = LazyModule(new TLAPLIC(aplic_params)(Parameters.empty))
+</code></pre>
+<p>此配置创建了一个2位的<code>hartIndex</code>，高位表示 groupID，低位表示 memberID。
+有关详细的IO连接，请参考下图和<code>src/main/scala/Example.AIA</code>。</p>
+<p>This configuration creates a 2-bit <code>hartIndex</code> where the higher bit represents <code>groupID</code> and the lower bit represents <code>memberID</code>.
+For detailed IO connections, refer to the following figure and <code>src/main/scala/Example.AIA</code>.</p>
+<p><img src="./images/example_py.svg" alt="" /></p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+        <script>
+        window.addEventListener('load', function() {
+            MathJax.Hub.Register.StartupHook('End', function() {
+                window.setTimeout(window.print, 100);
+            });
+        });
+        </script>
+
+    </div>
+    </body>
+</html>
