@@ -330,7 +330,7 @@ class IMSIC(
       val index  = toCSR.topei(params.imsicIntSrcWidth - 1, params.xlenWidth)
       val offset = toCSR.topei(params.xlenWidth - 1, 0)
       // clear the pending bit indexed by xtopei in xeip
-      eips(index) := RegNext(eips(index) & ~UIntToOH(offset))
+      eips(index) := eips(index) & ~UIntToOH(offset)
     }
   }
   val toCSR   = IO(Output(new IMSICToCSRBundle(params)))
@@ -435,8 +435,7 @@ class IMSIC(
   }
   toCSR.rdata.valid   := vec_rdata.map(_.valid).reduce(_|_)
   toCSR.rdata.bits    := vec_rdata.map(_.bits).reduce(_|_)
-  //vector -> multi-bit
-  toCSR.pendings := RegNext((pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _), init=0.U(params.intFilesNum.W))
+  toCSR.pendings := (pendings.zipWithIndex.map{case (p,i) => p << i.U}).reduce(_ | _) //vector -> multi-bit
   locally {
     // Format of *topei:
     // * bits 26:16 Interrupt identity
@@ -449,12 +448,12 @@ class IMSIC(
       Cat(zeros, topei, zeros, topei)
     }
     val pv = Cat(fromCSR.addr.bits.priv.asUInt, fromCSR.addr.bits.virt)
-    toCSR.topeis(0) := RegNext(wrap(topeis_forEachIntFiles(0)), init=0.U(32.W)) // m
-    toCSR.topeis(1) := RegNext(wrap(topeis_forEachIntFiles(1)), init=0.U(32.W)) // s
-    toCSR.topeis(2) := RegNext(wrap(ParallelMux(
+    toCSR.topeis(0) := wrap(topeis_forEachIntFiles(0)) // m
+    toCSR.topeis(1) := wrap(topeis_forEachIntFiles(1)) // s
+    toCSR.topeis(2) := wrap(ParallelMux(
       UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
-    )), init=0.U(32.W)) // vs
+    )) // vs
   }  
   val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
