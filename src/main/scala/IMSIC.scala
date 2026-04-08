@@ -858,14 +858,14 @@ class AXIRegIMSIC(
     }.otherwise {
       msi_vld_ack_soc := msi_vld_ack_cpu
     }
-    fifo_sync.io.deq.ready := ~msi_vld_req
+    fifo_sync.io.deq.ready := ~(msi_vld_req | msi_vld_ack_soc)
     // generate the msi_vld_req: high if ~empty,low when msi_vld_ack_soc
     msiio.vld_req := msi_vld_req
     val msi_vld_ack_soc_1f  = RegNext(msi_vld_ack_soc)
     val msi_vld_ack_soc_ris = msi_vld_ack_soc & (~msi_vld_ack_soc_1f)
     // val fifo_empty = ~fifo_sync.io.deq.valid
     // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
-    when(msi_vld_ack_soc_ris) {
+    when(msi_vld_ack_soc) {
       msi_vld_req := false.B
     }.elsewhen(fifo_sync.io.deq.valid === true.B) {
       msi_vld_req := true.B
