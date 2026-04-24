@@ -2,9 +2,10 @@ import mill._
 import scalalib._
 import $file.`rocket-chip`.common
 import $file.`rocket-chip`.cde.common
-import $file.`rocket-chip`.hardfloat.build
+import $file.`rocket-chip`.hardfloat.common
 
 val defaultScalaVersion = "2.13.14"
+val pwd = os.Path(sys.env("MILL_WORKSPACE_ROOT"))
 def defaultVersions = Map(
   "chisel"        -> ivy"org.chipsalliance::chisel:6.5.0",
   "chisel-plugin" -> ivy"org.chipsalliance:::chisel-plugin:6.5.0",
@@ -25,15 +26,15 @@ trait HasChisel extends SbtModule {
 
 object utility extends SbtModule with HasChisel {
   override def ivyDeps = Agg(defaultVersions("chisel"))
-  override def millSourcePath = os.pwd / "Utility"
+  override def millSourcePath = pwd / "Utility"
   override def moduleDeps = super.moduleDeps ++ Seq(rocketchip)
 }
 
 object rocketchip
-extends millbuild.`rocket-chip`.common.RocketChipModule
+extends $file.`rocket-chip`.common.RocketChipModule
 with HasChisel {
   def scalaVersion: T[String] = T(defaultScalaVersion)
-  override def millSourcePath = os.pwd / "rocket-chip"
+  override def millSourcePath = pwd / "rocket-chip"
   def macrosModule = macros
   def hardfloatModule = hardfloat
   def cdeModule = cde
@@ -41,24 +42,24 @@ with HasChisel {
   def json4sJacksonIvy = ivy"org.json4s::json4s-jackson:4.0.7"
 
   object macros extends Macros
-  trait Macros extends millbuild.`rocket-chip`.common.MacrosModule with SbtModule {
+  trait Macros extends $file.`rocket-chip`.common.MacrosModule with SbtModule {
     def scalaVersion: T[String] = T(defaultScalaVersion)
     def scalaReflectIvy = ivy"org.scala-lang:scala-reflect:${defaultScalaVersion}"
   }
 
-  object hardfloat extends millbuild.`rocket-chip`.hardfloat.common.HardfloatModule with HasChisel {
+  object hardfloat extends $file.`rocket-chip`.hardfloat.common.HardfloatModule with HasChisel {
     def scalaVersion: T[String] = T(defaultScalaVersion)
-    override def millSourcePath = os.pwd / "rocket-chip" / "hardfloat" / "hardfloat"
+    override def millSourcePath = pwd / "rocket-chip" / "hardfloat" / "hardfloat"
   }
 
-  object cde extends millbuild.`rocket-chip`.cde.common.CDEModule with ScalaModule {
+  object cde extends $file.`rocket-chip`.cde.common.CDEModule with ScalaModule {
     def scalaVersion: T[String] = T(defaultScalaVersion)
-    override def millSourcePath = os.pwd / "rocket-chip" / "cde" / "cde"
+    override def millSourcePath = pwd / "rocket-chip" / "cde" / "cde"
   }
 }
 
 class ChiselAIA extends SbtModule { m =>
-  override def millSourcePath = os.pwd
+  override def millSourcePath = pwd
   override def scalaVersion = defaultScalaVersion
   override def scalacOptions = Seq(
     "-language:reflectiveCalls",

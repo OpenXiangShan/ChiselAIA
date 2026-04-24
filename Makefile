@@ -4,18 +4,22 @@ testcases=$(shell ls test/*/main.py | awk -F '/' '{print $$2}')
 default: $(addprefix run-,$(testcases))
 
 gen=gen/filelist.f
-gen_axi=gen_axi/filelist.f
+root_gen_axi=../gen_axi/filelist.f
 $(gen): $(wildcard src/main/scala/*)
 	mill TLAIA
-$(gen_axi): $(wildcard src/main/scala/*)
-	mill AXI4AIA
+
+check_root_gen_axi:
+	@test -f $(root_gen_axi) || (echo "Missing $(root_gen_axi). Generate or update the root gen_axi artifacts first." && false)
 
 compile=test/sim_build/Vtop
 compile_axi=test/sim_build_axi/Vtop
+compile_axi_fifo=test/sim_build_axi_fifo/Vtop
 $(compile): $(gen)
 	make -C test/integration ../sim_build/Vtop
-$(compile_axi): $(gen_axi)
+$(compile_axi): check_root_gen_axi
 	make -C test/axi ../sim_build_axi/Vtop
+$(compile_axi_fifo): check_root_gen_axi
+	make -C test/axi_fifo_full ../sim_build_axi_fifo/Vtop
 
 # let the `make run-...` can be auto completed
 define RUN_TESTCASE =
@@ -26,6 +30,8 @@ $(foreach testcase,$(testcases),$(eval $(call RUN_TESTCASE,$(testcase))))
 run-%: test/%/main.py $(compile)
 	ulimit -s 211487 && make -C test/$(subst run-,,$@)
 run-axi: test/axi/main.py $(compile_axi)
+	ulimit -s 211487 && make -C test/$(subst run-,,$@)
+run-axi_fifo_full: test/axi_fifo_full/main.py $(compile_axi_fifo)
 	ulimit -s 211487 && make -C test/$(subst run-,,$@)
 
 clean:

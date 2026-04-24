@@ -19,7 +19,7 @@ from cocotb.triggers import RisingEdge, FallingEdge, with_timeout
 from common import *
 
 async def axi4_aw_send(dut, addr, prot, size):
-  await FallingEdge(dut.clock)
+  await RisingEdge(dut.clock)
   dut.toaia_0_aw_valid.value = 1
   dut.toaia_0_aw_bits_addr.value = addr
   dut.toaia_0_aw_bits_prot.value = prot
@@ -27,12 +27,12 @@ async def axi4_aw_send(dut, addr, prot, size):
   # TODO: why need this? how to use axi4lite?
   dut.toaia_0_aw_bits_size.value = size
   while not dut.toaia_0_aw_ready.value:
-    await FallingEdge(dut.clock)
-  await FallingEdge(dut.clock)
+    await RisingEdge(dut.clock)
+  await RisingEdge(dut.clock)
   dut.toaia_0_aw_valid.value = 0
   
 async def axi4_w_send(dut, data, strb):
-  await FallingEdge(dut.clock)
+  await RisingEdge(dut.clock)
   # As AXI4RegMapperNode only receives a & w within same cycle
   # make sure a & w send within same cycle
   dut.toaia_0_w_valid.value = 1
@@ -40,8 +40,8 @@ async def axi4_w_send(dut, data, strb):
   dut.toaia_0_w_bits_data.value = data
   dut.toaia_0_w_bits_strb.value = strb
   while not dut.toaia_0_aw_ready.value:
-    await FallingEdge(dut.clock)
-  await FallingEdge(dut.clock)
+    await RisingEdge(dut.clock)
+  await RisingEdge(dut.clock)
   dut.toaia_0_w_valid.value = 0
   dut.toaia_0_w_bits_last.value = 0
 
@@ -49,15 +49,15 @@ async def axi4_w_send(dut, data, strb):
 async def axi4_b_receive(dut):
   await with_timeout(RisingEdge(dut.toaia_0_b_valid), 5, "ns")
 async def axi4_ar_send(dut, addr, prot, size):
-  await FallingEdge(dut.clock)
+  await RisingEdge(dut.clock)
   while not dut.toaia_0_ar_ready:
-    await FallingEdge(dut.clock)
+    await RisingEdge(dut.clock)
   dut.toaia_0_ar_valid.value = 1
   dut.toaia_0_ar_bits_addr.value = addr
   dut.toaia_0_ar_bits_prot.value = prot
   # TODO: why need this? how to use axi4lite?
   dut.toaia_0_ar_bits_size.value = size
-  await FallingEdge(dut.clock)
+  await RisingEdge(dut.clock)
   dut.toaia_0_ar_valid.value = 0
 async def axi4_r_receive(dut):
   await with_timeout(RisingEdge(dut.toaia_0_r_valid), 5, "ns")
@@ -75,10 +75,10 @@ async def axi4_write32(dut, addr, data):
   )
 
 async def axi4_toimsic_b_send(dut, id):
-  await FallingEdge(dut.clock)
+  await RisingEdge(dut.clock)
   dut.toimsic_0_b_valid.value = 1
   dut.toimsic_0_b_bits_id.value = id
-  await FallingEdge(dut.clock)
+  await RisingEdge(dut.clock)
   dut.toimsic_0_b_valid.value = 0
 
 async def axi4_read(dut, addr, size):

@@ -1,5 +1,6 @@
 SIM ?= verilator
 TOPLEVEL_LANG ?= verilog
 MODULE = main
+VERILATOR_TRACE ?= 1
 EXTRA_ARGS += --trace --trace-fst --trace-structs
 include $(shell cocotb-config --makefiles)/Makefile.sim

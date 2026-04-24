@@ -122,7 +122,7 @@ async def s_int(dut, intnum, imsicID=1):
 
 async def v_int_vgein(dut, intnum, imsicID=1, guestID=2):
   """Issue an interrupt to the VS-mode interrupt file with vgein2."""
-  await a_put_full32(dut, imsic_sg_base_addr+0x8000*imsicID + 0x1000*(1+guestID), intnum)
+  await a_put_full32(dut, imsic_sg_base_addr+0x8000*imsicID + 0x1000*guestID, intnum)
   await RisingEdge(dut.clock)
 
 async def claim(dut, imsicID=1):
@@ -137,6 +137,26 @@ def wrap_topei(in_):
   extract = in_ & 0x7ff
   out = extract | (extract << 16)
   return out
+
+
+async def wait_for_topei(dut, signal, expected, cycles=40, label=None):
+  for _ in range(cycles):
+    if int(signal.value) == expected:
+      return
+    await FallingEdge(dut.clock)
+  actual = int(signal.value)
+  name = label if label is not None else signal._name
+  assert False, f"Timeout waiting for {name} == {expected:#x}, got {actual:#x}"
+
+
+async def wait_for_value(dut, signal, expected, cycles=10, label=None):
+  for _ in range(cycles):
+    if int(signal.value) == expected:
+      return
+    await FallingEdge(dut.clock)
+  actual = int(signal.value)
+  name = label if label is not None else signal._name
+  assert False, f"Timeout waiting for {name} == {expected:#x}, got {actual:#x}"
 
 async def write_csr_op(dut, miselect, data, op, imsicID=1):
   fromCSRx_addr_valid      = getattr(dut, f"fromCSR{imsicID}_addr_valid"     )

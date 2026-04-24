@@ -46,30 +46,23 @@ async def imsic_1_test(dut):
   cocotb.log.info("mseteipnum began")
   await m_int(dut, 1996%256)
   topeis_0 = wrap_topei(1996%256)
-  await FallingEdge(dut.clock) ## delay one cycle caused by RegGen.
-  await delay_fifo(dut)
-  print(dut.toCSR1_topeis_0.value)
-  assert dut.toCSR1_topeis_0.value == topeis_0
+  await wait_for_topei(dut, dut.toCSR1_topeis_0, topeis_0)
   cocotb.log.info("mseteipnum passed")
 
   # mclaim began
   cocotb.log.info("mclaim began")
   await claim(dut)
-  assert dut.toCSR1_topeis_0.value == wrap_topei(0)
+  await wait_for_topei(dut, dut.toCSR1_topeis_0, wrap_topei(0))
   cocotb.log.info("mclaim passed")
 
   # 2_mseteipnum_1_bits_mclaim began
   cocotb.log.info("2_mseteipnum_1_bits_mclaim began")
   await m_int(dut, 12)
-  await FallingEdge(dut.clock) ## delay one cycle caused by RegGen.
-  await delay_fifo(dut)
-  assert dut.toCSR1_topeis_0.value == wrap_topei(12)
+  await wait_for_topei(dut, dut.toCSR1_topeis_0, wrap_topei(12), label="toCSR1_topeis_0 after irq 12")
   await m_int(dut, 8)
-  await FallingEdge(dut.clock) ## delay one cycle caused by RegGen.
-  await delay_fifo(dut)
-  assert dut.toCSR1_topeis_0.value == wrap_topei(8)
+  await wait_for_topei(dut, dut.toCSR1_topeis_0, wrap_topei(8), label="toCSR1_topeis_0 after irq 8")
   await claim(dut)
-  assert dut.toCSR1_topeis_0.value == wrap_topei(12)
+  await wait_for_topei(dut, dut.toCSR1_topeis_0, wrap_topei(12), label="toCSR1_topeis_0 after claim")
   cocotb.log.info("2_mseteipnum_1_bits_mclaim passed")
 
   # write_csr:op began
@@ -132,9 +125,7 @@ async def imsic_1_test(dut):
   await select_s_intfile(dut)
   assert dut.toCSR1_topeis_1.value == wrap_topei(0)
   await s_int(dut, 1234%256)
-  await FallingEdge(dut.clock) ## delay one cycle caused by RegGen.
-  await delay_fifo(dut)
-  assert dut.toCSR1_topeis_1.value == wrap_topei(1234%256)
+  await wait_for_topei(dut, dut.toCSR1_topeis_1, wrap_topei(1234%256), label="toCSR1_topeis_1")
   await select_m_intfile(dut)
   cocotb.log.info("simple_supervisor_level end")
 
@@ -143,9 +134,7 @@ async def imsic_1_test(dut):
   await select_vs_intfile(dut, 2)
   assert dut.toCSR1_topeis_2.value == wrap_topei(0)
   await v_int_vgein(dut, 137)
-  await FallingEdge(dut.clock)
-  await delay_fifo(dut)
-  assert dut.toCSR1_topeis_2.value == wrap_topei(137)
+  await wait_for_topei(dut, dut.toCSR1_topeis_2, wrap_topei(137), label="toCSR1_topeis_2")
   await select_m_intfile(dut)
   assert dut.toCSR1_topeis_2.value == wrap_topei(137)
   cocotb.log.info("simple_virtualized_supervisor_level:vgein2 end")
@@ -153,38 +142,32 @@ async def imsic_1_test(dut):
   # Illegal iselect test
   cocotb.log.info("illegal:iselect began")
   await write_csr_op(dut, 0x71, 0xc0, op_csrrs)
-  assert dut.toCSR1_illegal.value == 1
+  await wait_for_value(dut, dut.toCSR1_illegal, 1, label="toCSR1_illegal after illegal iselect")
   cocotb.log.info("illegal:iselect passed")
 
   # Illegal vgein test
   cocotb.log.info("illegal:vgein began")
-  await FallingEdge(dut.clock)
-  await FallingEdge(dut.clock)
-  dut.toCSR1_illegal.value = 0
+  await wait_for_value(dut, dut.toCSR1_illegal, 0, label="toCSR1_illegal clear before illegal vgein")
   await select_vs_intfile(dut, 5)
   await write_csr(dut, csr_addr_eidelivery, 1)
-  assert dut.toCSR1_illegal.value == 1
+  await wait_for_value(dut, dut.toCSR1_illegal, 1, label="toCSR1_illegal after illegal vgein")
   await select_m_intfile(dut)
   cocotb.log.info("illegal:vgein end")
 
   # Illegal wdata_op test
   cocotb.log.info("illegal:iselect:wdata_op began")
-  await FallingEdge(dut.clock)
-  await FallingEdge(dut.clock)
-  dut.toCSR1_illegal.value = 0
+  await wait_for_value(dut, dut.toCSR1_illegal, 0, label="toCSR1_illegal clear before illegal op")
   await write_csr_op(dut, csr_addr_eidelivery, 0xc0, op_illegal)
-  assert dut.toCSR1_illegal.value == 1
+  await wait_for_value(dut, dut.toCSR1_illegal, 1, label="toCSR1_illegal after illegal op")
   cocotb.log.info("illegal:iselect:wdata_op passed")
 
   # Illegal privilege test
   cocotb.log.info("illegal:priv began")
-  await FallingEdge(dut.clock)
-  await FallingEdge(dut.clock)
-  dut.toCSR1_illegal.value = 0
+  await wait_for_value(dut, dut.toCSR1_illegal, 0, label="toCSR1_illegal clear before illegal priv")
   dut.fromCSR1_priv.value = 3
   dut.fromCSR1_virt.value = 1
   await write_csr(dut, csr_addr_eidelivery, 0xfa)
-  assert dut.toCSR1_illegal.value == 1
+  await wait_for_value(dut, dut.toCSR1_illegal, 1, label="toCSR1_illegal after illegal priv")
   await select_m_intfile(dut)
   cocotb.log.info("illegal:priv passed")
 
