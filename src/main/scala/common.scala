@@ -518,16 +518,16 @@ case class TLRegMapperNode(
     // copy a.bits.{source, size} to d.bits.{source, size}
     val sourceReg = RegInit(0.U.asTypeOf(a.bits.source))
     val sizeReg   = RegInit(0.U.asTypeOf(a.bits.size))
-    when (a.fire) {
+    when (a.valid) {
       sourceReg := a.bits.source
       sizeReg   := a.bits.size
     }
 
     // No flow control needed
-    in.valid  := a.valid && (in.bits.read || backpress)
+    in.valid  := a.valid
     a.ready   := Mux(in.bits.read, in.ready, (backpress & in.ready))
-    d.valid   := out.valid
-    out.ready := d.ready && (out.bits.read || backpress)
+    d.valid   := Mux(out.bits.read, out.valid, (backpress & out.valid))
+    out.ready := d.ready
 
     // We must restore the size to enable width adapters to work
     d.bits := edge.AccessAck(toSource = sourceReg, lgSize = sizeReg)

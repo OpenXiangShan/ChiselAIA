@@ -757,53 +757,40 @@ class TLRegIMSIC(
     val msiio = IO(Flipped(new MSITransBundle(params)))  // backpressure signal for axi4bus, from imsic working on cpu clock
     private val reggen = Module(new RegGen(params, beatBytes))
     // ---- instance sync fifo ----//
+    // --- fifo wdata: {vector_valid,setipnum}, fifo wren: |vector_valid---//
     val FifoDataWidth = params.MSI_INFO_WIDTH
+    val fifo_wdata    = Wire(Valid(UInt(FifoDataWidth.W)))
 
     // depth:8, data width: FifoDataWidth
     private val fifo_sync = Module(new Queue(UInt(FifoDataWidth.W), 8))
-    val stageValid = RegInit(false.B)
-    val stageBits = Reg(UInt(FifoDataWidth.W))
-    val stageReady = !stageValid || fifo_sync.io.enq.ready
-    fifo_sync.io.enq.valid := stageValid
-    fifo_sync.io.enq.bits := stageBits
-    when(stageReady) {
-      stageValid := reggen.io.valid
-      when(reggen.io.valid) {
-        stageBits := reggen.io.seteipnum
-      }
-    }
+    // define about fifo write
+    fifo_wdata.bits        := reggen.io.seteipnum
+    fifo_wdata.valid       := reggen.io.valid
+    fifo_sync.io.enq.valid := fifo_wdata.valid
+    fifo_sync.io.enq.bits  := fifo_wdata.bits
     // fifo rd,controlled by msi_vld_ack from imsic working on csr clock.
     // msi_vld_ack_soc: sync result with soc clock
     val msi_vld_ack_soc = WireInit(false.B)
     val msi_vld_ack_cpu = msiio.vld_ack
     val msi_vld_req     = RegInit(false.B)
-    val s_idle :: s_waitAckSet :: s_waitAckClr :: Nil = Enum(3)
-    val handshakeState = RegInit(s_idle)
     when(params.EnableImsicAsyncBridge.B) {
       msi_vld_ack_soc := AsyncResetSynchronizerShiftReg(msi_vld_ack_cpu, 3, 0)
     }.otherwise {
       msi_vld_ack_soc := msi_vld_ack_cpu
     }
-    fifo_sync.io.deq.ready := handshakeState === s_idle
+    fifo_sync.io.deq.ready := ~msi_vld_req
+    // generate the msi_vld_req: high if ~empty,low when msi_vld_ack_soc
     msiio.vld_req := msi_vld_req
-    switch(handshakeState) {
-      is(s_idle) {
-        when(fifo_sync.io.deq.fire) {
-          msi_vld_req := true.B
-          handshakeState := s_waitAckSet
-        }
-      }
-      is(s_waitAckSet) {
-        when(msi_vld_ack_soc) {
-          msi_vld_req := false.B
-          handshakeState := s_waitAckClr
-        }
-      }
-      is(s_waitAckClr) {
-        when(!msi_vld_ack_soc) {
-          handshakeState := s_idle
-        }
-      }
+    val msi_vld_ack_soc_1f  = RegNext(msi_vld_ack_soc)
+    val msi_vld_ack_soc_ris = msi_vld_ack_soc & (~msi_vld_ack_soc_1f)
+    //    val fifo_empty = ~fifo_sync.io.deq.valid
+    // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
+    when(msi_vld_ack_soc_ris) {
+      msi_vld_req := false.B
+    }.elsewhen(fifo_sync.io.deq.valid === true.B) {
+      msi_vld_req := true.B
+    }.otherwise {
+      msi_vld_req := msi_vld_req
     }
 
     // get the msi interrupt ID info
@@ -816,7 +803,7 @@ class TLRegIMSIC(
     }
     // port connect: io.valid is interrupt file index info.
     msiio.data := msi_id_data
-    val backpress = stageReady
+    val backpress = fifo_sync.io.enq.ready
     (intfileFromMems zip reggen.regmapIOs).map {
       case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2, backpress)
     }
