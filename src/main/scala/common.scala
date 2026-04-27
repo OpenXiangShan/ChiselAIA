@@ -83,7 +83,6 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       // al r_l = RegEnable(in.r.bits, awpulse_l)
 
       //======TODO======//
-      val awcnt = RegInit(0.U(8.W)) // width of awcnt is same with awlen
       val arcnt = RegInit(0.U(8.W))
       val addrAW = aw_l.addr
       val addrAR = ar_l.addr
@@ -118,9 +117,14 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val wready = RegInit(false.B) // temp signal
       val aw_last = RegInit(false.B)
       val w_last = RegInit(false.B)
-      // aw_last: the last addr for burst,
+      val awready_dly = RegInit(false.B)
+      awready_dly := awready
+      val awready_ris = awready & (!awready_dly)
+
+      // AXI4ToLite only emits one downstream AW beat for a write request.
+      // Track whether that beat and the final W beat have been accepted.
       when (state === sWCH){
-        when((awcnt === aw_l.len) & awready){  //may be pulse signal
+        when(awready_ris){
           aw_last := true.B
         }
       }.otherwise{
@@ -160,7 +164,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       when(state === sWCH) {
         when((!isillegalAW) & (!awready) & out.aw.ready & in.aw.valid) { // only the first illegal data to downstream
           awready := true.B
-        }.elsewhen(aw_last | (awready & (awcnt === aw_l.len))) {
+        }.elsewhen(aw_last) {
           awready := false.B
         }.elsewhen(isillegalAW === true.B) {
           awready := true.B
@@ -180,15 +184,6 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }.otherwise {
         wready := false.B
       }
-      when(state === sWCH) {
-        when(awcnt >= aw_l.len) { // arrive the max length of burst
-          awcnt := awcnt
-        }.elsewhen(awready) {
-          awcnt := awcnt + 1.U
-        }
-      }.otherwise {
-        awcnt := 0.U
-      }
       when(rstate) {
         when(in.r.valid & in.r.ready) {
           arcnt := arcnt + 1.U
@@ -197,10 +192,6 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         arcnt := 0.U
       }
       // response for in
-      val awready_dly = RegInit(false.B)
-      awready_dly := awready
-      val awready_ris = awready & (!awready_dly)
-
       in.aw.ready := awready_ris
       in.w.ready := wready
       in.b.valid := state === sBCH
@@ -588,9 +579,9 @@ case class AXI4RegMapperNode(
     dontTouch(w.bits)
     dontTouch(b.bits)
     dontTouch(r.bits)
-    
+
     // Prefer to execute reads first
-    in.valid := ar.valid || (aw.valid && w.valid)
+    in.valid := ar.valid || (backpress && aw.valid && w.valid)
     ar.ready := in.ready
     aw.ready := backpress && in.ready && !ar.valid
     w .ready := backpress && in.ready && !ar.valid
@@ -600,8 +591,8 @@ case class AXI4RegMapperNode(
     val awEchoReg = RegInit(0.U.asTypeOf(aw.bits.echo))
     val arIdReg   = RegInit(0.U.asTypeOf(ar.bits.id))
     val awIdReg   = RegInit(0.U.asTypeOf(aw.bits.id))
-    when (ar.valid) { arEchoReg := ar.bits.echo; arIdReg := ar.bits.id }
-    when (aw.valid) { awEchoReg := aw.bits.echo; awIdReg := aw.bits.id }
+    when (ar.fire) { arEchoReg := ar.bits.echo; arIdReg := ar.bits.id }
+    when (aw.fire) { awEchoReg := aw.bits.echo; awIdReg := aw.bits.id }
 
     val addr = Mux(ar.valid, ar.bits.addr, aw.bits.addr)
     val mask = MaskGen(ar.bits.addr, ar.bits.size, beatBytes)
@@ -611,10 +602,23 @@ case class AXI4RegMapperNode(
     in.bits.data  := w.bits.data
     in.bits.mask  := Mux(ar.valid, mask, w.bits.strb)
 
-    // No flow control needed
-    out.ready := Mux(out.bits.read, r.ready, b.ready)
+    // Keep a missed write-response ready pulse until downstream backpressure clears.
+    // Once that response has already handshaken on AXI, suppress repeated B valid
+    // until the internal RegMapper response is finally retired.
+    val writeRespAccepted = RegInit(false.B)
+    val writeRespValid = out.valid && !out.bits.read
+    val writeRespMissed = writeRespValid && b.ready && !backpress
+    when (!writeRespValid) {
+      writeRespAccepted := false.B
+    }.elsewhen (writeRespMissed) {
+      writeRespAccepted := true.B
+    }.elsewhen (writeRespAccepted && backpress) {
+      writeRespAccepted := false.B
+    }
+
+    out.ready := Mux(out.bits.read, r.ready, backpress && (b.ready || writeRespAccepted))
     r.valid := out.valid &&  out.bits.read
-    b.valid := backpress && out.valid && !out.bits.read // backpressure for write operation.
+    b.valid := writeRespValid && !writeRespAccepted
 
     r.bits.id   := arIdReg
     r.bits.data := out.bits.data
