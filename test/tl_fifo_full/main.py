@@ -102,7 +102,7 @@ def set_tl_put32(dut, addr, data, source_id):
 
 @cocotb.test()
 async def tl_fifo_full_backpressure_test(dut):
-  cocotb.start_soon(Clock(dut.clock, 1, unit="ns").start())
+  cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
 
   dut.reset.value = 1
   dut.toaia_0_a_valid.value = 0
