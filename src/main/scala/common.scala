@@ -115,16 +115,57 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       in.r.bits.last := (arcnt === ar_l.len) && in.r.valid
       val awready = RegInit(false.B) // temp signal ,out.awready for the first data, true.B for other data transaction.
       val wready = RegInit(false.B) // temp signal
-      // aw_last, w_last 相关逻辑已移除，对齐main分支
-      // awready_dly, awready_ris, aw_last, w_last, isFinalBurst, w2b_vld 相关逻辑已移除，对齐main分支
+      val aw_last = RegInit(false.B)
+      val w_last = RegInit(false.B)
+      val awready_dly = RegInit(false.B)
+      awready_dly := awready
+      val awready_ris = awready & (!awready_dly)
+
+      // AXI4ToLite only emits one downstream AW beat for a write request.
+      // Track whether that beat and the final W beat have been accepted.
+      when (state === sWCH){
+        when(awready_ris){
+          aw_last := true.B
+        }
+      }.otherwise{
+        aw_last := false.B
+      }
+      when (state === sWCH){
+        when(in.w.bits.last & in.w.ready){
+          w_last := true.B
+        }
+      }.otherwise{
+        w_last := false.B
+      }
+      val isFinalBurst = aw_last & w_last // may be level signal ,the final data for a transaction
+      val w2b_vld = (state === sWCH) & (isillegalAW | out.b.valid) & isFinalBurst
       //      val rready = out.ar.ready //ready from downstream
 
       //code about write state
       next_state := state
-      // 状态机部分已移除w2b_vld相关判断，对齐main分支
+      switch(state){
+        is(sIDLE) {
+          when(awchvld){
+            next_state := sWCH
+          }
+        }
+        is(sWCH) {
+          when(w2b_vld.asBool){ // in.b.valid can be high,only when the last burst data done and the bvalid for data to downstream is high.
+            next_state := sBCH
+          }
+        }
+        is(sBCH) {
+          when(in.b.ready){
+            next_state := sIDLE
+          }
+        }
+
+      }
       when(state === sWCH) {
         when((!isillegalAW) & (!awready) & out.aw.ready & in.aw.valid) { // only the first illegal data to downstream
           awready := true.B
+        }.elsewhen(aw_last) {
+          awready := false.B
         }.elsewhen(isillegalAW === true.B) {
           awready := true.B
         }
@@ -135,7 +176,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       when(state === sWCH) {
         when((!isillegalAW) & (!wready) & out.w.ready & in.w.valid) { //first data
           wready := true.B
-        }.elsewhen(in.w.bits.last & in.w.ready) {
+        }.elsewhen(in.w.bits.last & in.w.ready | w_last) {
           wready := false.B // legal or non first data
         }.elsewhen(isillegalAW === true.B) {
           wready := true.B
