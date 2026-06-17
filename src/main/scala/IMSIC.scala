@@ -680,7 +680,8 @@ class AXIRegIMSIC_WRAP(
         AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
         AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
         supportsWrite = TransferSizes(1, beatBytes),
-        supportsRead = TransferSizes(1, beatBytes)
+        supportsRead = TransferSizes(1, beatBytes),
+        interleavedId = Some(0)
       )),
       beatBytes = beatBytes
     )))
@@ -692,7 +693,8 @@ class AXIRegIMSIC_WRAP(
           AddressSet(params.tee_mAddr, pow2(params.intFileMemWidth) - 1),
           AddressSet(params.tee_sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
         supportsWrite = TransferSizes(1, beatBytes),
-        supportsRead = TransferSizes(1, beatBytes)
+        supportsRead = TransferSizes(1, beatBytes),
+        interleavedId = Some(0)
       )),
       beatBytes = beatBytes
     )))
