@@ -56,7 +56,6 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       dontTouch(in.ar.ready)
       // in.ar.bits.addr = in.ar.bits.addr.pad(32)
       // in.aw.bits.addr = in.aw.bits.addr.pad(32)
-      val isAWValid = in.aw.valid
       val isARValid = in.ar.valid
       val sIDLE :: sWCH :: sBCH :: Nil =Enum(3)
       val state = RegInit(sIDLE)
@@ -73,11 +72,20 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       val rstate_dly = RegInit(false.B)
       rstate_dly := RegNext(rstate)
 
+      val awFull = RegInit(false.B)
+      val wFull = RegInit(false.B)
+      val awBits = Reg(chiselTypeOf(in.aw.bits))
+      val wBits = Reg(chiselTypeOf(in.w.bits))
+      val writeAwValid = awFull || in.aw.fire
+      val writeWValid = wFull || in.w.fire
+      val writeAwBits = Mux(awFull, awBits, in.aw.bits)
+      val writeWBits = Mux(wFull, wBits, in.w.bits)
+
       val awpulse_l = (state === sIDLE) && (next_state === sWCH)
       val arpulse_l = isARValid && (!rstate)
-      val awchvld = isAWValid & in.w.valid
-      val aw_l = RegEnable(in.aw.bits, awpulse_l)
-      val w_l = RegEnable(in.w.bits, awpulse_l)
+      val awchvld = writeAwValid & writeWValid
+      val aw_l = RegEnable(writeAwBits, awpulse_l)
+      val w_l = RegEnable(writeWBits, awpulse_l)
       // val b_l = RegEnable(in.b.bits, awpulse_l)
       val ar_l = RegEnable(in.ar.bits, arpulse_l)
       // al r_l = RegEnable(in.r.bits, awpulse_l)
@@ -131,7 +139,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         aw_last := false.B
       }
       when (state === sWCH){
-        when(in.w.bits.last & in.w.ready){
+        when(w_l.last & wready){
           w_last := true.B
         }
       }.otherwise{
@@ -162,7 +170,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
 
       }
       when(state === sWCH) {
-        when((!isillegalAW) & (!awready) & out.aw.ready & in.aw.valid) { // only the first illegal data to downstream
+        when((!isillegalAW) & (!awready) & out.aw.ready) { // only the first legal address to downstream
           awready := true.B
         }.elsewhen(aw_last) {
           awready := false.B
@@ -174,9 +182,9 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       }
 
       when(state === sWCH) {
-        when((!isillegalAW) & (!wready) & out.w.ready & in.w.valid) { //first data
+        when((!isillegalAW) & (!wready) & out.w.ready) { //first data
           wready := true.B
-        }.elsewhen(in.w.bits.last & in.w.ready | w_last) {
+        }.elsewhen(w_l.last & wready | w_last) {
           wready := false.B // legal or non first data
         }.elsewhen(isillegalAW === true.B) {
           wready := true.B
@@ -192,8 +200,20 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         arcnt := 0.U
       }
       // response for in
-      in.aw.ready := awready_ris
-      in.w.ready := wready
+      in.aw.ready := (state === sIDLE) && !awFull
+      in.w.ready := (state === sIDLE) && !wFull
+      when(awpulse_l) {
+        awFull := false.B
+      }.elsewhen(in.aw.fire) {
+        awFull := true.B
+        awBits := in.aw.bits
+      }
+      when(awpulse_l) {
+        wFull := false.B
+      }.elsewhen(in.w.fire) {
+        wFull := true.B
+        wBits := in.w.bits
+      }
       in.b.valid := state === sBCH
       in.b.bits.id := aw_l.id
       in.b.bits.resp := Cat(isWCErr, 0.U)
@@ -583,8 +603,8 @@ case class AXI4RegMapperNode(
     // Prefer to execute reads first
     in.valid := ar.valid || (backpress && aw.valid && w.valid)
     ar.ready := in.ready
-    aw.ready := backpress && in.ready && !ar.valid
-    w .ready := backpress && in.ready && !ar.valid
+    aw.ready := backpress && in.ready && !ar.valid && w.valid
+    w .ready := backpress && in.ready && !ar.valid && aw.valid
 
     // copy {ar,aw}_bits.{echo,id} to {r,b}_bits.{echo,id}
     val arEchoReg = RegInit(0.U.asTypeOf(ar.bits.echo))
