@@ -164,7 +164,11 @@ class APLIC(
       def wBitUI(ui:UInt, bit:Bool): Unit = when (sourcecfgs.actives(ui)) {
         when (sourcecfgs.regs(ui).SM===sourcecfgs.level1 || sourcecfgs.regs(ui).SM===sourcecfgs.level0) {
           when (domaincfg.DM) {
-            when (intSrcsRectified(ui)) { bits(ui):=bit }
+            // The !bit case is intentional: clear-to-zero writes must pass
+            // even when rectified is low. This covers low-rectified source
+            // clears, in_clrip/clripnum, and waiting_ack MSI D-channel ack
+            // clears after a forwarded MSI when rectified has since gone low.
+            when (!bit || intSrcsRectified(ui)) { bits(ui):=bit }
           }.otherwise {/* Currently not support domaincfg.DM===0 */}
         }.otherwise { bits(ui):=bit }
       }
@@ -257,7 +261,13 @@ class APLIC(
       trigger := rect && !RegNext(rect)
     }}
     intSrcsTriggered.zipWithIndex.map { case (trigger:Bool, i:Int) =>
-      when(trigger) {ips.wBitUI(i.U, true.B)}
+      val isLevel = sourcecfgs.regs(i).SM===sourcecfgs.level1 || sourcecfgs.regs(i).SM===sourcecfgs.level0
+      // Reuse wBitUI even though the outer guard repeats its predicates: this
+      // keeps the active/level/MSI pending-write rules centralized. The outer
+      // guard only selects the low-rectified clear case.
+      when (sourcecfgs.actives(i) && domaincfg.DM && isLevel && !intSrcsRectified(i)) {
+        ips.wBitUI(i.U, false.B)
+      }.elsewhen(trigger) {ips.wBitUI(i.U, true.B)}
     }
 
     // The ":+ true.B" trick explain:

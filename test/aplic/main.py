@@ -18,6 +18,11 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Edge
 from common import *
 
+# domaincfg.r has the fixed high field at bit31, DM=1 at bit2, and IE=0 here.
+domaincfg_read_high = 0x80000000
+domaincfg_dm_msi = 0x4
+domaincfg_msi_mode_ie_disabled = domaincfg_read_high | domaincfg_dm_msi
+
 @cocotb.test()
 async def aplic_write_read_test(dut):
   # Start the clock
@@ -194,6 +199,57 @@ async def aplic_in_clrips_test(dut):
   await FallingEdge(dut.clock)
 
 @cocotb.test()
+async def aplic_level_msi_pending_clear_on_low_test(dut):
+  # Start the clock
+  cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
+
+  dut.reset.value = 1
+  dut.toaia_0_d_ready.value = 1
+  dut.toaia_0_a_valid.value = 0
+  for i in range(64):
+    getattr(dut, f"intSrcs_{i}").value = 0
+  for _ in range(10):
+    await RisingEdge(dut.clock)
+  dut.reset.value = 0
+  await RisingEdge(dut.clock)
+
+  await a_put_full32(dut, aplic_m_base_addr+offset_domaincfg, domaincfg_msi_mode_ie_disabled)
+  # Keep domain IE and targets unconfigured here. The test intentionally
+  # observes only pending set/clear-on-low through setips; MSI forwarding is
+  # exercised separately by aplic_msi_test.
+
+  async def check_level_source(int_num, source_mode, asserted_value, deasserted_value):
+    intSrc = getattr(dut, f"intSrcs_{int_num}")
+    ip_addr = aplic_m_base_addr + offset_setips + (int_num // 32) * 4
+    ip_mask = 1 << (int_num % 32)
+
+    intSrc.value = deasserted_value
+    # APLIC source numbers are 1-based; sourcecfg register slots are 0-based.
+    await a_put_full32(dut, aplic_m_base_addr+offset_sourcecfg+(int_num-1)*4, source_mode)
+    for _ in range(6):
+      await FallingEdge(dut.clock)
+    assert (await a_get32(dut, ip_addr) & ip_mask) == 0
+
+    intSrc.value = asserted_value
+    for _ in range(6):
+      await FallingEdge(dut.clock)
+    assert (await a_get32(dut, ip_addr) & ip_mask) != 0
+
+    intSrc.value = deasserted_value
+    for _ in range(6):
+      await FallingEdge(dut.clock)
+    assert (await a_get32(dut, ip_addr) & ip_mask) == 0
+
+    await a_put_full32(dut, aplic_m_base_addr+offset_sourcecfg+(int_num-1)*4, 0)
+    intSrc.value = deasserted_value
+    for _ in range(2):
+      await FallingEdge(dut.clock)
+
+  await check_level_source(19, sourcecfg_sm_level1, 1, 0)
+  # Level0 is low-active: raw intSrc=0 is asserted, raw intSrc=1 is deasserted.
+  await check_level_source(20, sourcecfg_sm_level0, 0, 1)
+
+@cocotb.test()
 async def aplic_msi_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
@@ -258,4 +314,3 @@ async def aplic_msi_test(dut):
   await FallingEdge(dut.clock)
   dut.intSrcs_43.value = 0
   await expect_int_num(dut, eiid, imsic_sg_base_addr+0x1000*guest_id)
-
