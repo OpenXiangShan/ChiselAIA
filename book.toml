@@ -1,7 +1,6 @@
 [book]
 authors = ["xieby1"]
 language = "en"
-multilingual = false
 src = "docs/"
 title = "ChiselAIA"
 
