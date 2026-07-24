@@ -208,7 +208,6 @@ class IMSIC(
       val addr      = ValidIO(UInt(params.iselectWidth.W))
       val virt      = Bool()
       val priv      = PrivType()
-      val vgein     = UInt(params.vgeinWidth.W)
       val wdata = ValidIO(new Bundle {
         val op   = OpType()
         val data = UInt(params.xlen.W)
@@ -225,7 +224,7 @@ class IMSIC(
       val illegal_priv = Input(Bool())
     })
     val illegal_priv = illegal_io.illegal_priv
-  
+
     /// indirect CSRs
     val eidelivery  = RegInit(0.U(params.xlen.W))
     val eithreshold = RegInit(0.U(params.xlen.W))
@@ -305,7 +304,7 @@ class IMSIC(
       //              [0,     2^intSrcWidth-1] :+ 2^intSrcWidth
       val eipBools = Cat(eips.reverse).asBools :+ true.B
       val eieBools = Cat(eies.reverse).asBools :+ true.B
-      
+
       def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
         val tmp_xtopei = Mux(xeidelivery(params.xlen - 1, 1) === 0.U, Mux(xeidelivery(0), xtopei, 0.U) , 0.U)
         // {
@@ -410,11 +409,8 @@ class IMSIC(
 
         val intFile = Module(new IntFile)
         // Preventing overflow
-        when (flati.U((params.vgeinWidth + 1).W) === fromCSR.vgein.pad(params.vgeinWidth + 1)+1.U) {
-          intFile.fromCSR.vgein := fromCSR.vgein
-        } .otherwise {
-          intFile.fromCSR.vgein := 0.U
-        }
+        val selectedGuest = flati.U((params.vgeinWidth + 1).W) ===
+          fromCSR.vgein.pad(params.vgeinWidth + 1) + 1.U
         val intfile_rdata_d = RegNext(intFile.toCSR.rdata)
         val msi_valid_delayed = RegNext(imsicGateWay.msi_valid_o(flati), false.B)
         intFile.fromCSR.seteipnum.bits  := imsicGateWay.msi_data_o
@@ -424,7 +420,7 @@ class IMSIC(
         intFile.fromCSR.virt            := sel_addr(fromCSR.addr).bits.virt
         intFile.fromCSR.priv            := sel_addr(fromCSR.addr).bits.priv
         intFile.fromCSR.wdata           := sel_wdata(fromCSR.wdata)
-        intFile.fromCSR.claim           := fromCSR.claims(pi)
+        intFile.fromCSR.claim           := fromCSR.claims(pi) && (if (pi == 2) selectedGuest else true.B)
         intFile.illegal_io.illegal_priv := illegal_priv
         vec_rdata(flati)                := intfile_rdata_d
         pendings(flati)                 := intFile.toCSR.pending
@@ -454,7 +450,7 @@ class IMSIC(
       UIntToOH(fromCSR.vgein - 1.U, params.geilen).asBools,
       topeis_forEachIntFiles.drop(2)
     )) // vs
-  }  
+  }
   val toCSR_illegal_d = RegNext((fromCSR.addr.valid | fromCSR.wdata.valid) & Seq(
     illegals_forEachIntFiles.reduce(_ | _),
     (fromCSR.wdata.valid && fromCSR.wdata.bits.op.asUInt === 0.U),
@@ -499,7 +495,7 @@ class IMSIC_WRAP(
     val m_pendings = imsic.toCSR.pendings(0) // machine mode only from imsic.
     toCSR.pendings := Cat(s_pendings,m_pendings)
     //  toCSR.pendings := VecInit((0 until params.intFilesNum).map(i => pendings(i))) // uint->vector
-    
+
     toCSR.topeis    := Mux(cmode, teeimsic.toCSR.topeis, imsic.toCSR.topeis)
     toCSR.topeis(0) := imsic.toCSR.topeis(0) // machine mode only from imsic.
     // to get the o_notice_pending, excluding the machine interrupt
@@ -833,7 +829,7 @@ class AXIRegIMSIC(
     intfileFromMem := (if (seperateBus) fromMem(i) else fromMem.head)
     intfileFromMem
   }
-  
+
   lazy val module = new AXIRegIMSICImp(this)
   class AXIRegIMSICImp(outer: LazyModule) extends LazyModuleImp(outer) {
     val msiio          = IO(Flipped(new MSITransBundle(params))) // backpressure signal for axi4bus, from imsic working on cpu clock
