@@ -40,8 +40,14 @@ case class APLICParams(
   //MC{visible}
   aplicIntSrcWidth: Int = 7,
   imsicIntSrcWidth: Int = 9,
-  //MC 👉 APLIC域的基地址（Base address of APLIC domains）:
-  baseAddr: Long = 0x19960000L,
+  //MC 👉 APLIC机器态域的基地址（Base address of the machine-level APLIC domain）:
+  mDomainBaseAddr: Long = 0x19960000L,
+  //MC 👉 APLIC监管态域的基地址（Base address of the supervisor-level APLIC domain）:
+  sDomainBaseAddr: Long = 0x19964000L,
+  //MC 👉 APLIC机器态域地址窗口宽度（Address width of the machine-level APLIC domain）:
+  mDomainMemWidth: Int = 14,
+  //MC 👉 APLIC监管态域地址窗口宽度（Address width of the supervisor-level APLIC domain）:
+  sDomainMemWidth: Int = 14,
   //MC **注意**：下述中括号内的变量与AIA规范中的一致（第3.6节：用于多个中断文件的内存区域排列）。
   //MC
   //MC **Note**: The following variables in bracket align with the AIA specification (Section 3.6: Memory Region Arrangement for Multiple Interrupt Files).
@@ -62,8 +68,6 @@ case class APLICParams(
   require(aplicIntSrcWidth <= 10, f"aplicIntSrcWidth=${aplicIntSrcWidth}, must not greater than log2(1024)=10, as there are at most 1023 sourcecfgs")
   lazy val intSrcNum: Int = pow2(aplicIntSrcWidth).toInt
   lazy val ixNum: Int = pow2(aplicIntSrcWidth).toInt / 32
-  lazy val domainMemWidth : Int  = 14 // interrupt file memory region width: 14-bit width => 16KB size
-
   lazy val intFileMemWidth : Int  = 12        // interrupt file memory region width: 12-bit width => 4KB size
   // require(mStrideWidth >= intFileMemWidth)
   lazy val mStrideWidth    : Int  = intFileMemWidth // C: stride between each machine-level interrupt files
@@ -77,6 +81,15 @@ case class APLICParams(
   require((sgBaseAddr & (pow2(membersWidth + sgStrideWidth) - 1)) == 0, "sgBaseAddr should be aligned to a 2^(k+D)")
   require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & mBaseAddr ) == 0)
   require(( ((pow2(groupsWidth)-1) * pow2(groupStrideWidth)) & sgBaseAddr) == 0)
+  require(mDomainMemWidth >= 14, "machine-level domain size should be at least 16 KiB")
+  require(sDomainMemWidth >= 14, "supervisor-level domain size should be at least 16 KiB")
+  require((mDomainBaseAddr & (pow2(mDomainMemWidth) - 1)) == 0,
+    "mDomainBaseAddr should be aligned to the machine-level domain size")
+  require((sDomainBaseAddr & (pow2(sDomainMemWidth) - 1)) == 0,
+    "sDomainBaseAddr should be aligned to the supervisor-level domain size")
+  private val mDomainAddress = AddressSet(mDomainBaseAddr, pow2(mDomainMemWidth) - 1)
+  private val sDomainAddress = AddressSet(sDomainBaseAddr, pow2(sDomainMemWidth) - 1)
+  require(!mDomainAddress.overlaps(sDomainAddress), "machine- and supervisor-level domains should not overlap")
 
   def hartIndex_to_gh(hartIndex: Int): (Int, Int) = {
     val g = (hartIndex>>membersWidth) & (pow2(groupsWidth)-1)
@@ -95,6 +108,10 @@ class APLIC(
   println(f"APLICParams.membersWidth:      ${params.membersWidth    }%d")
   println(f"APLICParams.groupsWidth:       ${params.groupsWidth     }%d")
   println(f"APLICParams.membersNum:        ${params.membersNum      }%d")
+  println(f"APLICParams.mDomainBaseAddr: 0x${params.mDomainBaseAddr }%x")
+  println(f"APLICParams.mDomainMemWidth:   ${params.mDomainMemWidth }%d")
+  println(f"APLICParams.sDomainBaseAddr: 0x${params.sDomainBaseAddr }%x")
+  println(f"APLICParams.sDomainMemWidth:   ${params.sDomainMemWidth }%d")
   println(f"APLICParams.mBaseAddr:       0x${params.mBaseAddr       }%x")
   println(f"APLICParams.mStrideWidth:      ${params.mStrideWidth    }%d")
   println(f"APLICParams.sgBaseAddr:      0x${params.sgBaseAddr      }%x")
@@ -104,7 +121,7 @@ class APLIC(
   println(f"APLICParams.groupStrideWidth:  ${params.groupStrideWidth}%d")
 
   class Domain(
-    baseAddr: Long, // base address for this aplic domain
+    domainMemWidth: Int, // address width for this APLIC domain
     imsicBaseAddr: Long, // base address for imsic's interrupt files
     imsicMemberStrideWidth: Int, // C, D: stride between each interrupt files
     imsicGeilen: Int, // number of guest interrupt files, it is 0 for machine-level domain
@@ -120,7 +137,7 @@ class APLIC(
       val msi = Decoupled(new MSIBundle)
       val ack = Input(Bool())
       val (regmapIn, regmapOut) = {
-        val regmapParams = RegMapperParams(params.domainMemWidth-log2Up(beatBytes), beatBytes)
+        val regmapParams = RegMapperParams(domainMemWidth-log2Up(beatBytes), beatBytes)
         ( Flipped(Decoupled(new RegMapperInput(regmapParams))),
           Decoupled(new RegMapperOutput(regmapParams)) )
     }})
@@ -310,12 +327,12 @@ class APLIC(
 
   // domain(0) is m domain, domain(1) is sg domain
   private val domains = Seq(Module(new Domain(
-    params.baseAddr,
+    params.mDomainMemWidth,
     params.mBaseAddr,
     params.mStrideWidth,
     0,
   )), Module(new Domain(
-    params.baseAddr + pow2(params.domainMemWidth),
+    params.sDomainMemWidth,
     params.sgBaseAddr,
     params.sgStrideWidth,
     params.geilen,
@@ -334,13 +351,14 @@ class TLAPLIC(
   val fromCPU = LazyModule(new TLXbar).node
   val toIMSIC = LazyModule(new TLXbar).node
   private val domainFromCPUs = Seq(
-    params.baseAddr, params.baseAddr + pow2(params.domainMemWidth) 
-  ).map ( baseAddr => {
+    (params.mDomainBaseAddr, params.mDomainMemWidth),
+    (params.sDomainBaseAddr, params.sDomainMemWidth)
+  ).map { case (baseAddr, domainMemWidth) =>
     val domainFromCPU = TLRegMapperNode(
-      address = Seq(AddressSet(baseAddr, pow2(params.domainMemWidth)-1)),
+      address = Seq(AddressSet(baseAddr, pow2(domainMemWidth)-1)),
       beatBytes = beatBytes)
     domainFromCPU := fromCPU; domainFromCPU
-  })
+  }
   private val domainToIMSICs = (0 until 2).map (_ => {
     val domainToIMSIC = TLClientNode(Seq(TLMasterPortParameters.v1(Seq(TLMasterParameters.v1("toimsic", IdRange(0,16))))))
     toIMSIC := domainToIMSIC; domainToIMSIC
@@ -376,13 +394,14 @@ class AXI4APLIC(
   val fromCPU = LazyModule(new AXI4Xbar).node
   val toIMSIC = LazyModule(new AXI4Xbar).node
   private val domainFromCPUs = Seq(
-    params.baseAddr, params.baseAddr + pow2(params.domainMemWidth) 
-  ).map ( baseAddr => {
+    (params.mDomainBaseAddr, params.mDomainMemWidth),
+    (params.sDomainBaseAddr, params.sDomainMemWidth)
+  ).map { case (baseAddr, domainMemWidth) =>
     val domainFromCPU = AXI4RegMapperNode(
-      address = AddressSet(baseAddr, pow2(params.domainMemWidth)-1),
+      address = AddressSet(baseAddr, pow2(domainMemWidth)-1),
       beatBytes = beatBytes)
     domainFromCPU := fromCPU; domainFromCPU
-  })
+  }
   private val domainToIMSICs = (0 until 2).map (_ => {
     val domainToIMSIC = AXI4MasterNode(Seq(AXI4MasterPortParameters(Seq(AXI4MasterParameters("toimsic", IdRange(0,16))))))
     toIMSIC := domainToIMSIC; domainToIMSIC
