@@ -305,16 +305,14 @@ class IMSIC(
       val eipBools = Cat(eips.reverse).asBools :+ true.B
       val eieBools = Cat(eies.reverse).asBools :+ true.B
 
-      def xtopei_filter(xeidelivery: UInt, xeithreshold: UInt, xtopei: UInt): UInt = {
-        val tmp_xtopei = Mux(xeidelivery(params.xlen - 1, 1) === 0.U, Mux(xeidelivery(0), xtopei, 0.U) , 0.U)
+      def xtopei_filter(xeithreshold: UInt, xtopei: UInt): UInt = {
         // {
         //   all interrupts are enabled, when eithreshold == 1;
         //   interrupts, when i < eithreshold, are enabled;
         // } <=> interrupts, when i <= (eithreshold -1), are enabled
-        Mux(tmp_xtopei <= (xeithreshold - 1.U), tmp_xtopei, 0.U)
+        Mux(xtopei <= (xeithreshold - 1.U), xtopei, 0.U)
       }
       toCSR.topei := xtopei_filter(
-        eidelivery,
         eithreshold,
         ParallelPriorityMux(
           (eipBools zip eieBools).zipWithIndex.map {
@@ -323,7 +321,7 @@ class IMSIC(
         )
       )
     } // end of scope for xtopei
-    toCSR.pending := toCSR.topei =/= 0.U
+    toCSR.pending := (eidelivery(params.xlen - 1, 1) === 0.U) && eidelivery(0) && (toCSR.topei =/= 0.U)
 
     when(fromCSR.claim) {
       val index  = toCSR.topei(params.imsicIntSrcWidth - 1, params.xlenWidth)
