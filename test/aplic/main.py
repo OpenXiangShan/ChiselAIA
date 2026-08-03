@@ -18,6 +18,15 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, FallingEdge, Edge
 from common import *
 
+
+async def init_aplic_dut(dut):
+  dut.reset.value = 1
+  for _ in range(10):
+    await RisingEdge(dut.clock)
+  dut.reset.value = 0
+  dut.toaia_0_d_ready.value = 1
+  await RisingEdge(dut.clock)
+
 @cocotb.test()
 async def aplic_write_read_test(dut):
   # Start the clock
@@ -80,6 +89,11 @@ async def aplic_write_read_test(dut):
 async def aplic_set_clr_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
+  await init_aplic_dut(dut)
+
+  # Standalone set/clr tests need their sources marked active first.
+  for int_num in (27, 54, 63):
+    await a_put_full32(dut, aplic_m_base_addr+offset_sourcecfg+(int_num-1)*4, sourcecfg_sm_edge1)
 
   # setienum 0, which should be ignored
   ie0 = await a_get32(dut, aplic_m_base_addr+offset_seties)
@@ -120,12 +134,13 @@ async def aplic_set_clr_test(dut):
 async def aplic_triggered_int_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
+  await init_aplic_dut(dut)
 
   # int sources
   async def expect_intSrcsTriggered_2(dut, value):
     for _ in range(10):
       await RisingEdge(dut.clock)
-      if dut.aplic.aplic.domains_0.intSrcsTriggered_2 == value:
+      if int(dut.aplic.aplic.domains_0.intSrcsTriggered_2.value) == value:
         break
     else:
       assert False, f"Timeout waiting for dut.aplic.intSrcsTriggered_2"
@@ -134,7 +149,7 @@ async def aplic_triggered_int_test(dut):
   await a_put_full32(dut, aplic_m_base_addr+offset_sourcecfg+1*4, sourcecfg_sm_edge1)
   await FallingEdge(dut.clock)
   dut.intSrcs_2.value = 0
-  assert dut.aplic.aplic.domains_0.intSrcsTriggered_2 == 0
+  assert int(dut.aplic.aplic.domains_0.intSrcsTriggered_2.value) == 0
   await FallingEdge(dut.clock)
   dut.intSrcs_2.value = 1
   await expect_intSrcsTriggered_2(dut, 1)
@@ -161,6 +176,7 @@ async def aplic_triggered_int_test(dut):
 async def aplic_in_clrips_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
+  await init_aplic_dut(dut)
 
   await a_put_full32(dut, aplic_m_base_addr+offset_seties, 0)
   rect_before = await a_get32(dut, aplic_m_base_addr+offset_in_clrips+0*4)
@@ -197,15 +213,18 @@ async def aplic_in_clrips_test(dut):
 async def aplic_msi_test(dut):
   # Start the clock
   cocotb.start_soon(Clock(dut.clock, 1, units="ns").start())
+  await init_aplic_dut(dut)
 
   async def expect_int_num(dut, num, addr):
     for _ in range(0,10):
       await RisingEdge(dut.clock)
-      if dut.aplic.auto_toIMSIC_out_a_bits_data == num:
-        assert dut.aplic.auto_toIMSIC_out_a_bits_address == addr
+      if int(dut.aplic.auto_toIMSIC_out_a_bits_data.value) == num:
+        assert int(dut.aplic.auto_toIMSIC_out_a_bits_address.value) == addr
         break
     else:
       assert False, f"Timeout waiting for dut.aplic.auto_toIMSIC_out_a_bits_data"
+
+  await a_put_full32(dut, aplic_m_base_addr+offset_domaincfg, 0x80000104)
 
   # # setipnum 0, which should be ignored
   # ip0 = await a_get32(dut, base_addr+offset_setips)
@@ -217,6 +236,7 @@ async def aplic_msi_test(dut):
   int_num = 27
   eiid = 0xCA
   guest_id = 2
+  await a_put_full32(dut, aplic_m_base_addr+offset_sourcecfg+(int_num-1)*4, sourcecfg_sm_edge1)
   await a_put_full32(dut, aplic_m_base_addr+offset_targets+(int_num-1)*4, (guest_id<<12)|eiid)
   await a_put_full32(dut, aplic_m_base_addr+offset_seties+0*4, 0xffffffff)
   await a_put_full32(dut, aplic_m_base_addr+offset_setipnum, int_num)
@@ -229,6 +249,7 @@ async def aplic_msi_test(dut):
   # setipnum ip1
   int_num = 63
   eiid = 0xEF
+  await a_put_full32(dut, aplic_m_base_addr+offset_sourcecfg+(int_num-1)*4, sourcecfg_sm_edge1)
   await a_put_full32(dut, aplic_m_base_addr+offset_targets+(int_num-1)*4, eiid)
   await a_put_full32(dut, aplic_m_base_addr+offset_seties+1*4, 1<<(int_num-32))
   await a_put_full32(dut, aplic_m_base_addr+offset_setipnum, int_num)
