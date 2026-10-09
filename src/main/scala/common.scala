@@ -518,7 +518,7 @@ case class TLRegMapperNode(
     // copy a.bits.{source, size} to d.bits.{source, size}
     val sourceReg = RegInit(0.U.asTypeOf(a.bits.source))
     val sizeReg   = RegInit(0.U.asTypeOf(a.bits.size))
-    when (a.valid) {
+    when (a.fire) {
       sourceReg := a.bits.source
       sizeReg   := a.bits.size
     }
@@ -538,10 +538,8 @@ case class TLRegMapperNode(
     }
 
     // No flow control needed
-    in.valid  := a.valid
+    in.valid  := a.valid && (in.bits.read || backpress)
     a.ready   := Mux(in.bits.read, in.ready, (backpress & in.ready))
- // d.valid   := Mux(out.bits.read, out.valid, (backpress & out.valid))
- // out.ready := d.ready
     d.valid   := Mux(out.bits.read, out.valid, (writeRespValid && !writeRespAccepted))
     out.ready := Mux(out.bits.read, d.ready, backpress && (d.ready || writeRespAccepted))
 
