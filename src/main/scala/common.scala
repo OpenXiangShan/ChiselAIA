@@ -523,11 +523,27 @@ case class TLRegMapperNode(
       sizeReg   := a.bits.size
     }
 
+    // Keep a write response visible to TL exactly once even if it arrives while
+    // the downstream IMSIC path is backpressured. Retire it internally once
+    // backpressure clears.
+    val writeRespAccepted = RegInit(false.B)
+    val writeRespValid = out.valid && !out.bits.read
+    val writeRespMissed = writeRespValid && d.ready && !backpress
+    when (!writeRespValid) {
+      writeRespAccepted := false.B
+    }.elsewhen (writeRespMissed) {
+      writeRespAccepted := true.B
+    }.elsewhen (writeRespAccepted && backpress) {
+      writeRespAccepted := false.B
+    }
+
     // No flow control needed
     in.valid  := a.valid
     a.ready   := Mux(in.bits.read, in.ready, (backpress & in.ready))
-    d.valid   := Mux(out.bits.read, out.valid, (backpress & out.valid))
-    out.ready := d.ready
+ // d.valid   := Mux(out.bits.read, out.valid, (backpress & out.valid))
+ // out.ready := d.ready
+    d.valid   := Mux(out.bits.read, out.valid, (writeRespValid && !writeRespAccepted))
+    out.ready := Mux(out.bits.read, d.ready, backpress && (d.ready || writeRespAccepted))
 
     // We must restore the size to enable width adapters to work
     d.bits := edge.AccessAck(toSource = sourceReg, lgSize = sizeReg)
