@@ -948,7 +948,11 @@ class RegGen(
             32,
             0.U,
             RegWriteFn { (valid, data) =>
-              when(valid) { seteipnum.bits := data(params.imsicIntSrcWidth - 1, 0); seteipnum.valid := true.B }; true.B
+              when(valid && data =/= 0.U && data < (BigInt(1) << params.imsicIntSrcWidth).U) {
+                seteipnum.bits := data(params.imsicIntSrcWidth - 1, 0)
+                seteipnum.valid := true.B
+              }
+              true.B
             }
           ))
         }
