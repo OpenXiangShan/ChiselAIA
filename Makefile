@@ -5,17 +5,23 @@ default: $(addprefix run-,$(testcases))
 
 gen=gen/filelist.f
 gen_axi=gen_axi/filelist.f
+gen_imsic_axi_id=gen_imsic_axi_id/filelist.f
 $(gen): $(wildcard src/main/scala/*)
 	mill TLAIA
 $(gen_axi): $(wildcard src/main/scala/*)
 	mill AXI4AIA
+$(gen_imsic_axi_id): $(wildcard src/main/scala/*)
+	mill AXI4IMSICIDTop
 
 compile=test/sim_build/Vtop
 compile_axi=test/sim_build_axi/Vtop
+compile_imsic_axi_id=test/sim_build_imsic_axi_id/Vtop
 $(compile): $(gen)
 	make -C test/integration ../sim_build/Vtop
 $(compile_axi): $(gen_axi)
 	make -C test/axi ../sim_build_axi/Vtop
+$(compile_imsic_axi_id): $(gen_imsic_axi_id)
+	make -C test/imsic_axi_id ../sim_build_imsic_axi_id/Vtop
 
 # let the `make run-...` can be auto completed
 define RUN_TESTCASE =
@@ -27,6 +33,8 @@ run-%: test/%/main.py $(compile)
 	ulimit -s 211487 && make -C test/$(subst run-,,$@)
 run-axi: test/axi/main.py $(compile_axi)
 	ulimit -s 211487 && make -C test/$(subst run-,,$@)
+run-imsic_axi_id: test/imsic_axi_id/main.py $(compile_imsic_axi_id)
+	ulimit -s 211487 && make -C test/imsic_axi_id
 
 clean:
 	rm -rf out/ gen*/ test/sim_build*/
