@@ -1,0 +1,471 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>📩IMSIC - ChiselAIA</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded affix "><li class="part-title">ChiselAIA</li><li class="chapter-item expanded "><a href="index.html"><strong aria-hidden="true">1.</strong> 😺AIA</a></li><li class="chapter-item expanded "><a href="imsic.html" class="active"><strong aria-hidden="true">2.</strong> 📩IMSIC</a></li><li class="chapter-item expanded "><a href="aplic.html"><strong aria-hidden="true">3.</strong> 🧶APLIC</a></li><li class="chapter-item expanded "><a href="integration.html"><strong aria-hidden="true">4.</strong> 🧭集成指南（Integration Guide）</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">ChiselAIA</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+                        <a href="https://openxiangshan.github.io/ChiselAIA/" title="Git repository" aria-label="Git repository">
+                            <i id="git-repository-button" class="fa fa-github"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="imsic"><a class="header" href="#imsic">📩IMSIC</a></h1>
+<!-- vim-markdown-toc GFM -->
+<ul>
+<li><a href="#%E5%8D%95%E4%B8%AAimsic%E7%9A%84%E5%8A%9F%E8%83%BDindividual-imsic-functionality">单个IMSIC的功能（Individual IMSIC Functionality）</a>
+<ul>
+<li><a href="#imsic%E7%9A%84%E8%BE%93%E5%85%A5%E4%B8%8E%E8%BE%93%E5%87%BAimsic-io">IMSIC的输入与输出（IMSIC IO）</a></li>
+<li><a href="#%E4%B8%AD%E6%96%AD%E6%96%87%E4%BB%B6%E7%9A%84%E8%BE%93%E5%85%A5%E4%B8%8E%E8%BE%93%E5%87%BAinterrupt-file-io">中断文件的输入与输出（Interrupt File IO）</a></li>
+<li><a href="#%E4%B8%AD%E6%96%AD%E6%96%87%E4%BB%B6%E7%9A%84%E5%86%85%E5%AD%98%E6%98%A0%E5%B0%84%E5%AF%84%E5%AD%98%E5%99%A8interrupt-file-memory-mapped-registers">中断文件的内存映射寄存器（Interrupt File Memory-mapped Registers）</a></li>
+<li><a href="#%E4%B8%AD%E6%96%AD%E6%96%87%E4%BB%B6%E5%86%85%E9%83%A8%E7%9A%84%E5%AF%84%E5%AD%98%E5%99%A8interrupt-file-internal-registers">中断文件内部的寄存器（Interrupt File Internal Registers）</a></li>
+</ul>
+</li>
+<li><a href="#%E5%A4%9A%E4%B8%AAimsic%E7%9A%84%E7%BB%84%E7%BB%87%E5%BD%A2%E5%BC%8Fmultiple-imsics-arrangement">多个IMSIC的组织形式（Multiple IMSICs Arrangement）</a>
+<ul>
+<li><a href="#imsic%E5%9C%B0%E5%9D%80%E5%AD%97%E6%AE%B5imsic-address-fields">IMSIC地址字段（IMSIC Address Fields）</a></li>
+<li><a href="#imsic%E5%86%85%E5%AD%98%E5%8C%BA%E5%9F%9Fimsic-memory-regions">IMSIC内存区域（IMSIC Memory Regions）</a></li>
+</ul>
+</li>
+</ul>
+<!-- vim-markdown-toc -->
+<p>在典型的RISC-V系统中，每个处理器核心都配有专用的IMSIC。
+IMSIC执行三个主要功能:</p>
+<ul>
+<li>通过内存映射寄存器接收MSI，</li>
+<li>为其关联的处理器核心生成中断，</li>
+<li>管理处理器核心所需的AIA控制寄存器。</li>
+</ul>
+<p>In a typical RISC-V system, each hart is paired with its dedicated IMSIC.
+The IMSIC performs three main functions:</p>
+<ul>
+<li>Receives MSIs through memory-mapped registers,</li>
+<li>Generates interrupts for its associated hart,</li>
+<li>Manages AIA CSRs under hart control.</li>
+</ul>
+<p>在对称多处理系统中，多个“核-IMSIC”对可以划分成组，
+每组包含相同数量的核-IMSIC对。</p>
+<p>In symmetric multiprocessing systems, multiple harts-IMSIC pairs can be organized into groups,
+with each group containing an equal number of pairs.</p>
+<h2 id="单个imsic的功能individual-imsic-functionality"><a class="header" href="#单个imsic的功能individual-imsic-functionality">单个IMSIC的功能（Individual IMSIC Functionality）</a></h2>
+<h3 id="imsic的输入与输出imsic-io"><a class="header" href="#imsic的输入与输出imsic-io">IMSIC的输入与输出（IMSIC IO）</a></h3>
+<p>IMSIC与其处理器核心紧密耦合，
+直接使用线路连接而不是总线/网络进行信息传输。
+其关键信号包括:</p>
+<ul>
+<li><code>pendings</code>: 每个中断文件的待处理中断状态。</li>
+<li><code>{m,s,vs}topei</code>: 每个特权态中，优先级最高的外部中断号。</li>
+<li><code>{m.s,vs}iselect</code>: 每个特权态中，间接访问控制寄存器的地址。</li>
+<li><code>{m,s,vs}ireg</code>: 每个特权态中，间接访问控制寄存器所读写的数据。</li>
+<li><code>vgein</code>: 虚拟化监管态的选择信号。</li>
+</ul>
+<p>The IMSIC is tightly coupled with its hart,
+directly using wire connection rather than bus/network for information transfer.
+Key signals include:</p>
+<ul>
+<li><code>pendings</code>: Pending interrupt status for each interrupt file.</li>
+<li><code>{m,s,vs}topei</code>: Top external interrupt ID for each privilege level.</li>
+<li><code>{m.s,vs}iselect</code>: CSR indirect access address for each privilege level.</li>
+<li><code>{m,s,vs}ireg</code>: Read and write data for indirect CSR access for each privilege level.</li>
+<li><code>vgein</code>: Virtualized supervisor level selector.</li>
+</ul>
+<p><img src="./images/imsic_py.svg" alt="" /></p>
+<h3 id="中断文件的输入与输出interrupt-file-io"><a class="header" href="#中断文件的输入与输出interrupt-file-io">中断文件的输入与输出（Interrupt File IO）</a></h3>
+<p>一个IMSIC负责管理其处理器核心中的所有特权态，
+包括：一个机器态、一个监管态和多个虚拟化监管态。
+由于每个态的行为在一般情况下是相同的，AIA规范将这些功能模块化成独立且可重用的组件，称为中断文件。
+每个中断文件与IMSIC交换与特权态无关的信息:</p>
+<ul>
+<li><code>pending</code>: 该中断文件的中断状态。</li>
+<li><code>topei</code>: 该中断文件中，优先级最高的外部中断号。</li>
+<li><code>iselect</code>: 该中断文件中，间接访问控制寄存器的地址。</li>
+<li><code>ireg</code>: 该中断文件中，间接访问控制寄存器所读写的数据。</li>
+</ul>
+<p>One IMSIC manages all privilege levels in its hart,
+including: one machine level, one supervisor level, and multiple virtualized supervisor levels.
+As the behaviors of each level are identical in general, the AIA specification modularizes these functionalities of each level into independent and reusable components, called interrupt files.
+Each interrupt file exchanges privilege-agnostic information with IMSIC:</p>
+<ul>
+<li><code>pending</code>: Interrupt pending status for this interrupt file.</li>
+<li><code>topei</code>: Top external interrupt ID for this interrupt file.</li>
+<li><code>iselect</code>: CSR indirect access address for this interrupt file.</li>
+<li><code>ireg</code>: Read and write data for indirect CSR access for this interrupt file.</li>
+</ul>
+<h3 id="中断文件的内存映射寄存器interrupt-file-memory-mapped-registers"><a class="header" href="#中断文件的内存映射寄存器interrupt-file-memory-mapped-registers">中断文件的内存映射寄存器（Interrupt File Memory-mapped Registers）</a></h3>
+<p>每个中断文件包含一个4KB内存页，用于接收来自总线/网络的消息。
+内存页内仅包含一个4B内存映射寄存器:</p>
+<ul>
+<li><code>seteipnum</code>: 位于偏移量0x0处，接收传入的中断号。</li>
+</ul>
+<p>Each interrupt file includes a 4KB memory page for receiving messages from bus/network.
+The memory page including only one 4B memory-mapped register:</p>
+<ul>
+<li><code>seteipnum</code>: Located at offset of 0x0, receiving incoming interrupt IDs.</li>
+</ul>
+<h3 id="msi写入背压与跨时钟握手msi-backpressure-and-clock-crossing"><a class="header" href="#msi写入背压与跨时钟握手msi-backpressure-and-clock-crossing">MSI写入背压与跨时钟握手（MSI Backpressure and Clock Crossing）</a></h3>
+<p>CPU/CSR 时钟可以低于 IMSIC 总线时钟。总线写入经过 RegMapper 后，通过共享仲裁器送入深度为 8 的 MSI FIFO。
+FIFO 满时，<code>RegGen.io.ready</code> 必须阻止寄存器写副作用完成；未获准的请求保持在总线/RegMapper 流水线中，
+不能先生成不可重试的单周期事件，再仅通过总线入口背压来保护 FIFO。
+M、S 和 VS 中断文件共享仲裁器，每次只提交一个事件，未获准的写入继续等待，避免并发写入相互覆盖。
+写入 FIFO 后单独记录待返回的写响应；响应有效性不再依赖 FIFO 空间或其他中断文件的仲裁结果，
+总线响应等待期间也不会再次提交同一事件。
+<code>common.scala</code> 不再提供额外的 <code>backpress</code> 门控；TL/AXI 仍通过 RegMapper 的标准 ready/valid
+握手传播背压。FIFO 满后，未提交的写入等待，RegMapper 请求缓冲耗尽后，总线 ready 自然拉低。</p>
+<p>FIFO 出队后，MSI 数据保持不变，直到四相握手完成：<code>req↑ → ack↑ → req↓ → ack↓</code>。
+只有 ACK 回到低电平后才能开始下一笔传输，否则慢 CPU 可能观察不到相邻请求之间的低电平。
+CPU 侧同步请求并在其上升沿锁存中断文件号和中断号；不能把快时钟域的单周期 valid 直接送入 CPU。</p>
+<p>The CPU/CSR clock may be slower than the IMSIC bus clock. RegMapper writes share an arbiter feeding an eight-entry MSI FIFO.
+FIFO readiness gates completion of the register write itself, retaining outstanding requests under backpressure rather than
+dropping one-cycle events. Concurrent interrupt-file writes are arbitrated instead of overwriting one another.
+Each transfer holds its data through a complete four-phase request/acknowledge handshake before the next FIFO dequeue.</p>
+<p>根目录回归命令（run from the XiangShan repository root）：</p>
+<pre><code class="language-sh">mill -i chiselAIA.test.testOnly aia.IMSICBackpressureTest
+</code></pre>
+<p>测试使用 Verilator。若本机 <code>VERILATOR_ROOT</code> 指向无效目录，需要先取消该环境变量。
+本机 Verilator 5.052 与 chiseltest 6 的 <code>WData</code> 类型兼容问题可仅在测试进程中设置
+<code>USER_CPPFLAGS=-DWData=uint32_t</code>，不需要修改 RTL 或系统安装。</p>
+<h3 id="中断文件内部的寄存器interrupt-file-internal-registers"><a class="header" href="#中断文件内部的寄存器interrupt-file-internal-registers">中断文件内部的寄存器（Interrupt File Internal Registers）</a></h3>
+<p>所有上述接口都与中断文件的内部寄存器交互。
+关键的内部寄存器包括:</p>
+<ul>
+<li><code>eip[intSrcNum位]</code>: 表示该中断是否待处理。</li>
+<li><code>eie[intSrcNum位]</code>: 表示该中断是否使能。</li>
+</ul>
+<p>Each interrupt file maintains internal registers that interact with the interfaces above.
+The key internal registers consist of:</p>
+<ul>
+<li><code>eip[intSrcNum bits]</code>: Whether this interrupt is pending.</li>
+<li><code>eie[intSrcNum bits]</code>: Whether this interrupt is enabled.</li>
+</ul>
+<h2 id="多个imsic的组织形式multiple-imsics-arrangement"><a class="header" href="#多个imsic的组织形式multiple-imsics-arrangement">多个IMSIC的组织形式（Multiple IMSICs Arrangement）</a></h2>
+<p>在大型系统中，核-IMSIC对可以分成多组。
+下图显示了一个对称的4核-IMSIC系统。
+这4对被分为2<strong>组</strong>，每组包含2个<strong>成员</strong>(hart-IMSIC对)。</p>
+<p>In a large system, hart-IMSIC pairs can be divided into groups.
+The below figure shows a symmetric 4-hart-IMSIC system.
+These 4 pairs are divided into 2 <strong>groups</strong>, and each group contains 2 <strong>members</strong> (hart-IMSIC pairs).</p>
+<p><img src="./images/imsics_arrangement_py.svg" alt="" /></p>
+<h3 id="imsic地址字段imsic-address-fields"><a class="header" href="#imsic地址字段imsic-address-fields">IMSIC地址字段（IMSIC Address Fields）</a></h3>
+<p>为了支持物理内存保护(physical memory protection, PMP)，相同特权态的中断文件位于同一内存区域:</p>
+<ul>
+<li>机器态内存区域:
+<ul>
+<li>每个处理器核心对应一个机器态中断文件</li>
+</ul>
+</li>
+<li>监管态内存区域:
+<ul>
+<li>每个处理器核心对应一个监管态中断文件,</li>
+<li>每个处理器核心对应多个虚拟化监管态中断文件。</li>
+</ul>
+</li>
+</ul>
+<p>To support physical memory protection (PMP), interrupt files of the same privilege level are located in a same memory region:</p>
+<ul>
+<li>Machine-level memory region:
+<ul>
+<li>One machine-level interrupt file per hart</li>
+</ul>
+</li>
+<li>Supervisor-level memory region:
+<ul>
+<li>One supervisor-level interrupt file per hart,</li>
+<li>Multiple virtualized supervisor-level interrupt files per hart.</li>
+</ul>
+</li>
+</ul>
+<p>因此，每个处理器核心在机器态内存区域只占一页，但在监管态内存区域占多页，
+由<strong>客户号</strong>（监管态为0，虚拟化监管态为1、2、3、...)索引。
+需要四个字段来确定一个IMSIC的内存页的地址：</p>
+<ul>
+<li>特权态：机器态或监管态。</li>
+<li>组号：该IMSIC所属的组。</li>
+<li>成员号：该IMSIC所属的成员。</li>
+<li>客户号：监管态或虚拟化监管态之一。</li>
+</ul>
+<p>Thus, each hart has only one page in machine-level memory region and multiple pages in supervisor-level memory region,
+indexed by a <strong>guest ID</strong> (0 for supervisor-level, 1,2,3,... for virtualized supervisor level).
+When determining the memory page address for a given IMSIC, four fields are needed:</p>
+<ul>
+<li>Privilege Level: Machine level or supervisor level.</li>
+<li>Group ID: The group to which this IMSIC belongs.</li>
+<li>Member ID: The member to which this IMSIC belongs.</li>
+<li>Guest ID: Supervisor level or one of the virtualized supervisor levels.</li>
+</ul>
+<p><img src="./images/imsic_addr.svg" alt="" /></p>
+<p>机器态中断文件的地址表达式为：</p>
+<p>The formal expression for a machine-level interrupt file address:</p>
+<p>$$
+\begin{align}
+mIntFileAddr =
+&amp; mBaseAddr \\
+&amp; + groupID \times 2^{mGroupStrideWidth} \\
+&amp; + memberID \times 2^{mMemberStrideWidth} \\
+&amp; + guestID \times 4K
+\end{align}
+$$</p>
+<p>虚拟化监管态中断文件的地址表达式为：</p>
+<p>The formal expression for a virtualized supervisor-level interrupt file address:</p>
+<p>$$
+\begin{align}
+vsIntFileAddr =
+&amp; vsBaseAddr \\
+&amp; + groupID \times 2^{vsGroupStrideWidth} \\
+&amp; + memberID \times 2^{vsMemberStrideWidth} \\
+&amp; + guestID \times 4K
+\end{align}
+$$</p>
+<p>按照AIA规范的要求，<code>vsGroupStrideWidth</code>与<code>mGroupStrideWidth</code>相同。
+更多详细信息，请参阅AIA规范<sup class="footnote-reference"><a href="#imsic_memory_region">1</a></sup>。</p>
+<p>As required by the AIA specification, the <code>vsGroupStrideWidth</code> is the same as the <code>mGroupStrideWidth</code>.
+For more details, please refer to the AIA specification<sup class="footnote-reference"><a href="#imsic_memory_region">1</a></sup>.</p>
+<h3 id="imsic内存区域imsic-memory-regions"><a class="header" href="#imsic内存区域imsic-memory-regions">IMSIC内存区域（IMSIC Memory Regions）</a></h3>
+<p>机器和监管态的内存区域如下所示。</p>
+<p>The memory regions for machine and supervisor levels are shown as below.</p>
+<p><img src="./images/imsic_addr_space.svg" alt="" /></p>
+<p>这里展示一个具体的例子。
+假设机器态和监管态的内存区域基地址分别为<code>0x6100_0000</code>和<code>0x8290_0000</code>，那么每个中断文件的地址为：</p>
+<p>Here is a concrete example.
+Assuming the base addresses for machine-level and supervisor-level memory regions are <code>0x6100_0000</code> and <code>0x8290_0000</code>, respectively,
+the addresses for each interrupt file are:</p>
+<ul>
+<li>Machine-level interrupt files:
+<ul>
+<li>IMSIC00: <code>[0x61000000, 0x61000fff]</code></li>
+<li>IMSIC01: <code>[0x61001000, 0x61001fff]</code></li>
+<li>IMSIC10: <code>[0x61008000, 0x61008fff]</code></li>
+<li>IMSIC11: <code>[0x61009000, 0x61009fff]</code></li>
+</ul>
+</li>
+<li>Supervisor-level interrupt files:
+<ul>
+<li>IMSIC00: <code>[0x82900000, 0x82903fff]</code></li>
+<li>IMSIC01: <code>[0x82904000, 0x82907fff]</code></li>
+<li>IMSIC10: <code>[0x82908000, 0x8290bfff]</code></li>
+<li>IMSIC11: <code>[0x8290c000, 0x8290ffff]</code></li>
+</ul>
+</li>
+</ul>
+<div class="footnote-definition" id="imsic_memory_region"><sup class="footnote-definition-label">1</sup>
+<p>The RISC-V Advanced Interrupt Architecture: 3.6. Arrangement of the memory regions of multiple interrupt files</p>
+</div>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="aplic.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="aplic.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+    </div>
+    </body>
+</html>
