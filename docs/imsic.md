@@ -93,6 +93,36 @@ The memory page including only one 4B memory-mapped register:
 
 * `seteipnum`: Located at offset of 0x0, receiving incoming interrupt IDs.
 
+### MSI写入背压与跨时钟握手（MSI Backpressure and Clock Crossing）
+
+CPU/CSR 时钟可以低于 IMSIC 总线时钟。总线写入经过 RegMapper 后，通过共享仲裁器送入深度为 8 的 MSI FIFO。
+FIFO 满时，`RegGen.io.ready` 必须阻止寄存器写副作用完成；未获准的请求保持在总线/RegMapper 流水线中，
+不能先生成不可重试的单周期事件，再仅通过总线入口背压来保护 FIFO。
+M、S 和 VS 中断文件共享仲裁器，每次只提交一个事件，未获准的写入继续等待，避免并发写入相互覆盖。
+写入 FIFO 后单独记录待返回的写响应；响应有效性不再依赖 FIFO 空间或其他中断文件的仲裁结果，
+总线响应等待期间也不会再次提交同一事件。
+`common.scala` 不再提供额外的 `backpress` 门控；TL/AXI 仍通过 RegMapper 的标准 ready/valid
+握手传播背压。FIFO 满后，未提交的写入等待，RegMapper 请求缓冲耗尽后，总线 ready 自然拉低。
+
+FIFO 出队后，MSI 数据保持不变，直到四相握手完成：`req↑ → ack↑ → req↓ → ack↓`。
+只有 ACK 回到低电平后才能开始下一笔传输，否则慢 CPU 可能观察不到相邻请求之间的低电平。
+CPU 侧同步请求并在其上升沿锁存中断文件号和中断号；不能把快时钟域的单周期 valid 直接送入 CPU。
+
+The CPU/CSR clock may be slower than the IMSIC bus clock. RegMapper writes share an arbiter feeding an eight-entry MSI FIFO.
+FIFO readiness gates completion of the register write itself, retaining outstanding requests under backpressure rather than
+dropping one-cycle events. Concurrent interrupt-file writes are arbitrated instead of overwriting one another.
+Each transfer holds its data through a complete four-phase request/acknowledge handshake before the next FIFO dequeue.
+
+根目录回归命令（run from the XiangShan repository root）：
+
+```sh
+mill -i chiselAIA.test.testOnly aia.IMSICBackpressureTest
+```
+
+测试使用 Verilator。若本机 `VERILATOR_ROOT` 指向无效目录，需要先取消该环境变量。
+本机 Verilator 5.052 与 chiseltest 6 的 `WData` 类型兼容问题可仅在测试进程中设置
+`USER_CPPFLAGS=-DWData=uint32_t`，不需要修改 RTL 或系统安装。
+
 
 ### 中断文件内部的寄存器（Interrupt File Internal Registers）
 

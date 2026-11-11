@@ -764,6 +764,7 @@ class TLRegIMSIC(
     fifo_wdata.valid       := reggen.io.valid
     fifo_sync.io.enq.valid := fifo_wdata.valid
     fifo_sync.io.enq.bits  := fifo_wdata.bits
+    reggen.io.ready := fifo_sync.io.enq.ready
     // fifo rd,controlled by msi_vld_ack from imsic working on csr clock.
     // msi_vld_ack_soc: sync result with soc clock
     val msi_vld_ack_soc = WireInit(false.B)
@@ -774,19 +775,29 @@ class TLRegIMSIC(
     }.otherwise {
       msi_vld_ack_soc := msi_vld_ack_cpu
     }
-    fifo_sync.io.deq.ready := ~msi_vld_req
+    val s_idle :: s_waitAckSet :: s_waitAckClr :: Nil = Enum(3)
+    val handshakeState = RegInit(s_idle)
+    fifo_sync.io.deq.ready := handshakeState === s_idle
     // generate the msi_vld_req: high if ~empty,low when msi_vld_ack_soc
     msiio.vld_req := msi_vld_req
-    val msi_vld_ack_soc_1f  = RegNext(msi_vld_ack_soc)
-    val msi_vld_ack_soc_ris = msi_vld_ack_soc & (~msi_vld_ack_soc_1f)
-    //    val fifo_empty = ~fifo_sync.io.deq.valid
-    // msi_vld_req : high when fifo empty is false, low when ack is high. and io.deq.valid := ~empty
-    when(msi_vld_ack_soc_ris) {
-      msi_vld_req := false.B
-    }.elsewhen(fifo_sync.io.deq.valid === true.B) {
-      msi_vld_req := true.B
-    }.otherwise {
-      msi_vld_req := msi_vld_req
+    switch(handshakeState) {
+      is(s_idle) {
+        when(fifo_sync.io.deq.fire) {
+          msi_vld_req := true.B
+          handshakeState := s_waitAckSet
+        }
+      }
+      is(s_waitAckSet) {
+        when(msi_vld_ack_soc) {
+          msi_vld_req := false.B
+          handshakeState := s_waitAckClr
+        }
+      }
+      is(s_waitAckClr) {
+        when(!msi_vld_ack_soc) {
+          handshakeState := s_idle
+        }
+      }
     }
 
     // get the msi interrupt ID info
@@ -799,9 +810,8 @@ class TLRegIMSIC(
     }
     // port connect: io.valid is interrupt file index info.
     msiio.data := msi_id_data
-    val backpress = fifo_sync.io.enq.ready
     (intfileFromMems zip reggen.regmapIOs).map {
-      case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2, backpress)
+      case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2)
     }
   }
 }
@@ -837,17 +847,9 @@ class AXIRegIMSIC(
 
     // depth:8, data width: FifoDataWidth
     private val fifo_sync = Module(new Queue(UInt(FifoDataWidth.W), 8))
-    val stageValid = RegInit(false.B)
-    val stageBits = Reg(UInt(FifoDataWidth.W))
-    val stageReady = !stageValid || fifo_sync.io.enq.ready
-    fifo_sync.io.enq.valid := stageValid
-    fifo_sync.io.enq.bits := stageBits
-    when(stageReady) {
-      stageValid := reggen.io.valid
-      when(reggen.io.valid) {
-        stageBits := reggen.io.seteipnum
-      }
-    }
+    fifo_sync.io.enq.valid := reggen.io.valid
+    fifo_sync.io.enq.bits := reggen.io.seteipnum
+    reggen.io.ready := fifo_sync.io.enq.ready
     // fifo rd,controlled by msi_vld_ack from imsic working on csr clock.
     // msi_vld_ack_soc: sync result with soc clock
     val msi_vld_ack_soc = WireInit(false.B)
@@ -892,9 +894,8 @@ class AXIRegIMSIC(
     }
     // port connect: io.valid is interrupt file index info.
     msiio.data := msi_id_data
-    val backpress = stageReady
     (intfileFromMems zip reggen.regmapIOs).map {
-      case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2, backpress)
+      case (intfileFromMem, regmapIO) => intfileFromMem.regmap(regmapIO._1, regmapIO._2)
     }
   }
 }
@@ -912,14 +913,15 @@ class RegGen(
     (IO(Flipped(Decoupled(new RegMapperInput(regmapParams)))), IO(Decoupled(new RegMapperOutput(regmapParams))))
   }
   // define the output reg: seteipnum is the MSI id,vld[],valid flag for interrupt file domains: m,s,vs1~vsgeilen
-  val io = IO(Output(new Bundle {
-    val seteipnum = UInt(params.MSI_INFO_WIDTH.W)
-    val valid     = Bool()
-  }))
-  val valids       = WireInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
-  val seteipnums   = WireInit(VecInit(Seq.fill(params.intFilesNum)(0.U(params.imsicIntSrcWidth.W))))
-  val outseteipnum = RegInit(0.U(params.MSI_INFO_WIDTH.W))
-  val outvalids    = RegInit(VecInit(Seq.fill(params.intFilesNum)(false.B)))
+  val io = IO(new Bundle {
+    val seteipnum = Output(UInt(params.MSI_INFO_WIDTH.W))
+    val valid     = Output(Bool())
+    val ready     = Input(Bool())
+  })
+  val events = Module(new RRArbiter(UInt(params.MSI_INFO_WIDTH.W), params.intFilesNum))
+  events.io.out.ready := io.ready
+  io.seteipnum := events.io.out.bits
+  io.valid := events.io.out.valid
 
   (regmapIOs zip Seq(1, 1 + params.geilen)).zipWithIndex.map { // seq[0]: m interrupt file, seq[1]: s&vs interrupt file
     case ((regmapIO: (DecoupledIO[RegMapperInput], DecoupledIO[RegMapperOutput]), intFilesNum: Int), i: Int) =>
@@ -927,27 +929,27 @@ class RegGen(
         // j: index is 0 for m file for seq[0],index is 0~params.geilen for S intFile for seq[1]: S, G1, G2, ...
         val maps = (0 until intFilesNum).map { j =>
           val flati = i + j // seq[0]:0+0=0;seq[1]:(0~geilen)+1
-          val seteipnum = WireInit(0.U.asTypeOf(Valid(UInt(params.imsicIntSrcWidth.W))));
-          dontTouch(seteipnum)
-          valids(flati)     := seteipnum.valid
-          seteipnums(flati) := seteipnum.bits
+          val respValid_o = RegInit(false.B)
+          events.io.in(flati).valid := false.B
+          events.io.in(flati).bits := 0.U
           j * pow2(params.intFileMemWidth).toInt -> Seq(RegField(
             32,
             0.U,
-            RegWriteFn { (valid, data) =>
-              when(valid) { seteipnum.bits := data(params.imsicIntSrcWidth - 1, 0); seteipnum.valid := true.B }; true.B
+            RegWriteFn { (reqValid_i, respReady_i, data_i) =>
+              val idValid = data_i =/= 0.U && data_i < (BigInt(1) << params.imsicIntSrcWidth).U
+              val reqReady_o = (!idValid || events.io.in(flati).ready) && !respValid_o
+              events.io.in(flati).valid := reqValid_i && idValid && !respValid_o
+              events.io.in(flati).bits := Cat(flati.U(params.INTP_FILE_WIDTH.W), data_i(params.imsicIntSrcWidth - 1, 0))
+              when(reqValid_i && reqReady_o) {
+                respValid_o := true.B
+              }.elsewhen(respReady_i && respValid_o) {
+                respValid_o := false.B
+              }
+              (reqReady_o, respValid_o)
             }
           ))
         }
         regmapIO._2 <> RegMapper(beatBytes, 1, true, regmapIO._1, maps: _*)
       }
-      for (i <- 0 until params.intFilesNum) {
-        when(valids(i)) {
-          outseteipnum := Cat(i.U, seteipnums(i))
-        }
-      }
-      outvalids    := valids
-      io.seteipnum := outseteipnum
-      io.valid     := outvalids.reduce(_ | _)
   }
 }

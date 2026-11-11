@@ -131,7 +131,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
         aw_last := false.B
       }
       when (state === sWCH){
-        when(in.w.bits.last & in.w.ready){
+        when(in.w.fire && in.w.bits.last){
           w_last := true.B
         }
       }.otherwise{
@@ -176,7 +176,7 @@ class AXI4ToLite()(implicit p: Parameters) extends LazyModule {
       when(state === sWCH) {
         when((!isillegalAW) & (!wready) & out.w.ready & in.w.valid) { //first data
           wready := true.B
-        }.elsewhen(in.w.bits.last & in.w.ready | w_last) {
+        }.elsewhen((in.w.fire && in.w.bits.last) || w_last) {
           wready := false.B // legal or non first data
         }.elsewhen(isillegalAW === true.B) {
           wready := true.B
@@ -502,7 +502,7 @@ case class TLRegMapperNode(
       s"TLRegMapperNode addresses (${address}) must be aligned to its size ${size}")
   }
 
-  def regmap(in: DecoupledIO[RegMapperInput], out: DecoupledIO[RegMapperOutput], backpress: Bool = true.B) = {
+  def regmap(in: DecoupledIO[RegMapperInput], out: DecoupledIO[RegMapperOutput]) = {
     val (bundleIn, edge) = this.in(0)
     val a = bundleIn.a
     val d = bundleIn.d
@@ -525,8 +525,8 @@ case class TLRegMapperNode(
 
     // No flow control needed
     in.valid  := a.valid
-    a.ready   := Mux(in.bits.read, in.ready, (backpress & in.ready))
-    d.valid   := Mux(out.bits.read, out.valid, (backpress & out.valid))
+    a.ready   := in.ready
+    d.valid   := out.valid
     out.ready := d.ready
 
     // We must restore the size to enable width adapters to work
@@ -565,8 +565,7 @@ case class AXI4RegMapperNode(
 
   // Calling this method causes the matching AXI4 bundle to be
   // configured to route all requests to the listed RegFields.
-  //backpress: add by zhaohong for bus backpressure
-  def regmap(in: DecoupledIO[RegMapperInput],out: DecoupledIO[RegMapperOutput], backpress: Bool = true.B) = {
+  def regmap(in: DecoupledIO[RegMapperInput],out: DecoupledIO[RegMapperOutput]) = {
     val (io, _) = this.in(0)
     val ar = io.ar
     val aw = io.aw
@@ -581,10 +580,10 @@ case class AXI4RegMapperNode(
     dontTouch(r.bits)
 
     // Prefer to execute reads first
-    in.valid := ar.valid || (backpress && aw.valid && w.valid)
+    in.valid := ar.valid || (aw.valid && w.valid)
     ar.ready := in.ready
-    aw.ready := backpress && in.ready && !ar.valid
-    w .ready := backpress && in.ready && !ar.valid
+    aw.ready := in.ready && !ar.valid && w.valid
+    w .ready := in.ready && !ar.valid && aw.valid
 
     // copy {ar,aw}_bits.{echo,id} to {r,b}_bits.{echo,id}
     val arEchoReg = RegInit(0.U.asTypeOf(ar.bits.echo))
@@ -602,23 +601,9 @@ case class AXI4RegMapperNode(
     in.bits.data  := w.bits.data
     in.bits.mask  := Mux(ar.valid, mask, w.bits.strb)
 
-    // Keep a missed write-response ready pulse until downstream backpressure clears.
-    // Once that response has already handshaken on AXI, suppress repeated B valid
-    // until the internal RegMapper response is finally retired.
-    val writeRespAccepted = RegInit(false.B)
-    val writeRespValid = out.valid && !out.bits.read
-    val writeRespMissed = writeRespValid && b.ready && !backpress
-    when (!writeRespValid) {
-      writeRespAccepted := false.B
-    }.elsewhen (writeRespMissed) {
-      writeRespAccepted := true.B
-    }.elsewhen (writeRespAccepted && backpress) {
-      writeRespAccepted := false.B
-    }
-
-    out.ready := Mux(out.bits.read, r.ready, backpress && (b.ready || writeRespAccepted))
+    out.ready := Mux(out.bits.read, r.ready, b.ready)
     r.valid := out.valid &&  out.bits.read
-    b.valid := writeRespValid && !writeRespAccepted
+    b.valid := out.valid && !out.bits.read
 
     r.bits.id   := arIdReg
     r.bits.data := out.bits.data
