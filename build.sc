@@ -78,3 +78,5 @@ class ChiselAIA extends SbtModule { m =>
 }
 object TLAIA extends ChiselAIA { def mainClass = Some("aia.TLAIA") }
 object AXI4AIA extends ChiselAIA { def mainClass = Some("aia.AXI4AIA") }
+
+object AXI4IMSICIDTop extends ChiselAIA { def mainClass = Some("aia.AXI4IMSICIDTop") }

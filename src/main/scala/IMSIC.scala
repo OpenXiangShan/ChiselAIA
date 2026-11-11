@@ -667,19 +667,20 @@ class AXIRegIMSIC_WRAP(
 )(implicit p: Parameters) extends LazyModule {
   // def IMSIC access AXI4Xbar
   val imsic_xbar1to2 = AXI4Xbar()
-  val ree_sNode = {
-    AXI4SlaveNode(Seq(AXI4SlavePortParameters(
-      slaves = Seq(AXI4SlaveParameters(
-        address = Seq(
-        AddressSet(params.mAddr, pow2(params.intFileMemWidth) - 1),
-        AddressSet(params.sgAddr, pow2(params.intFileMemWidth) * pow2(log2Ceil(1 + params.geilen)) - 1)),
-        supportsWrite = TransferSizes(1, beatBytes),
-        supportsRead = TransferSizes(1, beatBytes),
-        interleavedId = Some(0)
-      )),
-      beatBytes = beatBytes
-    )))
-  }
+  val axireg = LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))
+  //  val tee_axireg = if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(IMSICParams(teemode = true), beatBytes)(Parameters.empty))) else None
+  val tee_axireg =
+    if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))) else None
+  // Connect the (REE) interrupt files diplomatically, so AXI4ToLite gets the ID width the upstream xbar actually
+  // produces. The previous raw bridge (an AXI4SlaveNode joined to a separate AXI4MasterNode with a fixed
+  // IdRange(0, 65536) by `<>`) silently dropped every ID bit above bit 15: when more than 64K IDs reach the
+  // wrapper (e.g. XiangShan's imsic_bus_top xbar merges a 16-bit external master, the APLIC and the CPU),
+  // R/B responses came back with a truncated ID and were routed to the wrong master, so the requester hung.
+  // The address sets (mAddr, sgAddr), transfer sizes and interleavedId seen by the xbar are those of the
+  // AXI4RegMapperNodes behind AXI4ToLite, i.e. the same windows the removed slave node declared.
+  axireg.axi4tolite.head.node := imsic_xbar1to2
+  // The TEE files keep their raw bridge (their window tee_mAddr/tee_sgAddr differs from the addresses their
+  // register mappers are built with), so they are not connected diplomatically here.
  val tee_sNode =  Option.when(params.HasTEEIMSIC) {
     AXI4SlaveNode(Seq(AXI4SlavePortParameters(
       slaves = Seq(AXI4SlaveParameters(
@@ -693,18 +694,7 @@ class AXIRegIMSIC_WRAP(
       beatBytes = beatBytes
     )))
   }
-  ree_sNode := imsic_xbar1to2
   tee_sNode.foreach(_ := imsic_xbar1to2)
-  val axireg = LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))
-  //  val tee_axireg = if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(IMSICParams(teemode = true), beatBytes)(Parameters.empty))) else None
-  val tee_axireg =
-    if (params.HasTEEIMSIC) Some(LazyModule(new AXIRegIMSIC(params, beatBytes)(Parameters.empty))) else None
-  val ree_mNode = AXI4MasterNode(Seq(AXI4MasterPortParameters(
-    Seq(AXI4MasterParameters(
-      name = "s_axi_",
-      id = IdRange(0, 65536)
-    ))
-  )))
   val tee_mNode = Option.when(params.HasTEEIMSIC) {
     AXI4MasterNode(Seq(AXI4MasterPortParameters(
       Seq(AXI4MasterParameters(
@@ -713,7 +703,6 @@ class AXIRegIMSIC_WRAP(
       ))
     )))
   }
-  axireg.axi4tolite.head.node := ree_mNode
   tee_axireg.foreach(_.axi4tolite.head.node := tee_mNode.get)
   lazy val module = new AXIRegIMSICImp(this)
 
@@ -724,7 +713,6 @@ class AXIRegIMSIC_WRAP(
     else None // backpressure signal for axi4bus, from imsic working on cpu clock
     // code below will be compiled only when teeio is not none.
     teemsiio.foreach(teemsiio => tee_axireg.foreach(tee_axireg => teemsiio <> tee_axireg.module.msiio))
-    ree_mNode.out.head._1 <> ree_sNode.in.head._1
     tee_mNode.foreach(_.out.head._1 <> tee_sNode.get.in.head._1)
   }
 }
