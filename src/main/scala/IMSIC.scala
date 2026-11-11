@@ -918,7 +918,7 @@ class RegGen(
     val valid     = Output(Bool())
     val ready     = Input(Bool())
   })
-  val events = Module(new RRArbiter(UInt(params.MSI_INFO_WIDTH.W), params.intFilesNum))
+  val events = Module(new RRArbiterInit(UInt(params.MSI_INFO_WIDTH.W), params.intFilesNum))
   events.io.out.ready := io.ready
   io.seteipnum := events.io.out.bits
   io.valid := events.io.out.valid
