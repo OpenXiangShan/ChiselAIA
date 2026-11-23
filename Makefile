@@ -1,14 +1,15 @@
 .NOTINTERMEDIATE:
 # export MILL_JVM_OPTS="-Xmx16G"
+CHISEL_VERSION ?=
 testcases=$(shell ls test/*/main.py | awk -F '/' '{print $$2}')
 default: $(addprefix run-,$(testcases))
 
 gen=gen/filelist.f
 gen_axi=gen_axi/filelist.f
 $(gen): $(wildcard src/main/scala/*)
-	mill TLAIA
+	mill 'TLAIA[$(CHISEL_VERSION)]'
 $(gen_axi): $(wildcard src/main/scala/*)
-	mill AXI4AIA
+	mill 'AXI4AIA[$(CHISEL_VERSION)]'
 
 compile=test/sim_build/Vtop
 compile_axi=test/sim_build_axi/Vtop
